@@ -1,0 +1,5 @@
+# 统一行尾:文本文件一律 LF 入库、LF 检出
+* text=auto eol=lf
+
+# 二进制资源不做任何行尾/编码转换
+*.ttf binary
