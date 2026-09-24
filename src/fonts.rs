@@ -6,14 +6,9 @@
 //!
 //! 字体均为 TTF 直接内嵌、经 [`install`] 注册，[`crate::init`] 默认调用。
 //!
-//! **体积**：三个 TTF 共约 2MB，由 `embedded-fonts` feature（默认开启）
-//! 控制。关闭后 [`install`] 为 no-op，字体解析依赖运行系统
-//! （图标字体族名 [`ICON_FONT_FAMILY`] 与正文字体族名不变）。
-//!
 //! **图标字体按官方 Material Symbols 自托管指引生成**（Google Fonts css2：
 //! 可变轴实例化 `opsz,wght,FILL,GRAD@24,400,0,0`，全字形 TTF）。
 
-#[cfg(feature = "embedded-fonts")]
 use std::borrow::Cow;
 
 use gpui::App;
@@ -26,31 +21,23 @@ pub const TEXT_FONT_FAMILY: &str = "Roboto";
 
 /// 注册内嵌字体（Roboto Regular/Medium + Material Symbols Rounded）。
 ///
-/// `embedded-fonts` feature 关闭时为 no-op（依赖系统字体）。
 /// 幂等：重复调用只会重复注册（平台层通常去重）。
 /// 失败不 panic，返回错误交由调用方决定（[`crate::init`] 会记录并忽略）。
 pub fn install(cx: &mut App) -> anyhow::Result<()> {
-    #[cfg(feature = "embedded-fonts")]
-    {
-        const ROBOTO_REGULAR: &[u8] = include_bytes!("fonts/Roboto-Regular.ttf");
-        const ROBOTO_MEDIUM: &[u8] = include_bytes!("fonts/Roboto-Medium.ttf");
-        const MATERIAL_SYMBOLS_ROUNDED: &[u8] =
-            include_bytes!("fonts/MaterialSymbolsRounded-Regular.ttf");
+    const ROBOTO_REGULAR: &[u8] = include_bytes!("fonts/Roboto-Regular.ttf");
+    const ROBOTO_MEDIUM: &[u8] = include_bytes!("fonts/Roboto-Medium.ttf");
+    const MATERIAL_SYMBOLS_ROUNDED: &[u8] =
+        include_bytes!("fonts/MaterialSymbolsRounded-Regular.ttf");
 
-        for (name, data) in [
-            ("Roboto Regular", ROBOTO_REGULAR),
-            ("Roboto Medium", ROBOTO_MEDIUM),
-            ("Material Symbols Rounded", MATERIAL_SYMBOLS_ROUNDED),
-        ] {
-            // 逐字体注册：单个失败不影响其余字体
-            cx.text_system()
-                .add_fonts(vec![Cow::Borrowed(data)])
-                .map_err(|err| anyhow::anyhow!("{name}: {err}"))?;
-        }
-    }
-    #[cfg(not(feature = "embedded-fonts"))]
-    {
-        let _ = cx;
+    for (name, data) in [
+        ("Roboto Regular", ROBOTO_REGULAR),
+        ("Roboto Medium", ROBOTO_MEDIUM),
+        ("Material Symbols Rounded", MATERIAL_SYMBOLS_ROUNDED),
+    ] {
+        // 逐字体注册：单个失败不影响其余字体
+        cx.text_system()
+            .add_fonts(vec![Cow::Borrowed(data)])
+            .map_err(|err| anyhow::anyhow!("{name}: {err}"))?;
     }
     Ok(())
 }

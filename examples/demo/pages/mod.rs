@@ -22,7 +22,7 @@ use gpui::{AnyElement, App, Entity, FontWeight, IntoElement, Styled, div, prelud
 // 页面间回调类型（页 → 根）。
 pub type PageCallback<A> = std::rc::Rc<dyn Fn(A, &mut App)>;
 
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 /// 页面集合：根视图持有并按导航切换。
 #[derive(Clone)]

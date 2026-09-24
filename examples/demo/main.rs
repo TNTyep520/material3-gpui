@@ -17,8 +17,8 @@ use gpui::{
     WindowBounds, WindowOptions, div, prelude::*, px, size,
 };
 use gpui_platform::application;
-use md3_gpui::overlay::host;
-use md3_gpui::prelude::*;
+use material3_gpui::overlay::host;
+use material3_gpui::prelude::*;
 use pages::Pages;
 
 const DEFAULT_SEED: u32 = 0x6750A4;
@@ -457,7 +457,7 @@ impl Render for Demo {
 
 fn main() {
     application().with_assets(Md3Assets).run(|cx: &mut App| {
-        md3_gpui::init(cx);
+        material3_gpui::init(cx);
         let bounds = Bounds::centered(None, size(px(1200.), px(860.)), cx);
         cx.open_window(
             WindowOptions {

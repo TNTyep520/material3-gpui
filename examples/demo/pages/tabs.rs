@@ -1,7 +1,7 @@
 //! Tabs 页：指示条以 fastSpatial 弹簧滑动。
 
 use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 

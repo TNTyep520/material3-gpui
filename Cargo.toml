@@ -54,6 +54,7 @@ incremental = false
 rpath = false
 
 [profile.release-fast]
+inherits = "release"
 opt-level = "z"
 strip = true
 codegen-units = 1

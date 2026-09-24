@@ -1,7 +1,7 @@
 //! Navigation 页：图标预览 + TopAppBar / NavigationBar / Rail / Drawer。
 
 use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
@@ -93,7 +93,7 @@ impl Render for NavigationPage {
                 "Top App Bar",
                 [div()
                     .w_full()
-                    .child(md3_gpui::TopAppBar::new("Navigation").leading(IconName::Menu))
+                    .child(material3_gpui::TopAppBar::new("Navigation").leading(IconName::Menu))
                     .into_any_element()],
             ),
             showcase_group(
@@ -114,7 +114,7 @@ impl Render for NavigationPage {
                     .h(px(320.))
                     .child(self.nav_rail.clone())
                     .child(
-                        md3_gpui::Card::new()
+                        material3_gpui::Card::new()
                             .outlined()
                             .overflow_hidden()
                             .w(px(360.))

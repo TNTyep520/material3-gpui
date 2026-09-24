@@ -1,7 +1,7 @@
 //! Buttons 页：五种变体按钮演示。
 
 use gpui::{App, Entity, IntoElement, Render, Window, prelude::*};
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
@@ -21,10 +21,10 @@ impl ButtonsPage {
         let b_filled = Button::new("b-filled", "Filled")
             .filled()
             .on_click(|_, window, cx| {
-                md3_gpui::overlay::show_snackbar(
+                material3_gpui::overlay::show_snackbar(
                     window,
                     cx,
-                    md3_gpui::overlay::Snackbar::new("Filled button clicked"),
+                    material3_gpui::overlay::Snackbar::new("Filled button clicked"),
                     None,
                 );
             })

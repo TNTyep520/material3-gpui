@@ -1,7 +1,7 @@
 //! Text fields 页：含动态色种子输入（输入 hex 实时应用主题）。
 
 use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 

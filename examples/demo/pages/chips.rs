@@ -1,7 +1,7 @@
 //! Chips 页。
 
 use gpui::{AnyElement, App, AppContext as _, Entity, IntoElement, Render, Window};
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
@@ -47,10 +47,10 @@ impl ChipsPage {
                         page.chip_input = None;
                         cx.notify();
                     });
-                    md3_gpui::overlay::show_snackbar(
+                    material3_gpui::overlay::show_snackbar(
                         window,
                         cx,
-                        md3_gpui::overlay::Snackbar::new("Chip removed"),
+                        material3_gpui::overlay::Snackbar::new("Chip removed"),
                         None,
                     );
                 })

@@ -1,7 +1,7 @@
 //! Icon buttons & FAB 页。
 
 use gpui::{App, AppContext as _, Entity, IntoElement, Render, Window};
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 

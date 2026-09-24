@@ -1,10 +1,10 @@
 //! Overlays 页：Snackbar / Menu / Tooltip（经窗口 OverlayHost 渲染）。
 
 use gpui::{App, Bounds, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px, size};
-use md3_gpui::overlay::{
+use material3_gpui::overlay::{
     MenuItem, MenuState, Snackbar, close_tooltip, show_menu, show_snackbar, show_tooltip,
 };
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 

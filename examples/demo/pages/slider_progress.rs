@@ -4,7 +4,7 @@
 //! 不再惊动整棵应用树（掉帧修复）。
 
 use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
@@ -46,11 +46,9 @@ impl Render for SliderProgressPage {
                         .items_center()
                         .gap(px(16.))
                         .w_full()
-                        .child(
-                            div().flex_1().child(
-                                md3_gpui::LinearProgress::new("lp").value(slider_value / 100.),
-                            ),
-                        )
+                        .child(div().flex_1().child(
+                            material3_gpui::LinearProgress::new("lp").value(slider_value / 100.),
+                        ))
                         .child(
                             typography
                                 .label_medium
@@ -59,7 +57,7 @@ impl Render for SliderProgressPage {
                                 .child(format!("{slider_value:.0}%")),
                         )
                         .into_any_element(),
-                    md3_gpui::LinearProgress::new("lp-ind")
+                    material3_gpui::LinearProgress::new("lp-ind")
                         .indeterminate()
                         .into_any_element(),
                 ],
@@ -67,7 +65,7 @@ impl Render for SliderProgressPage {
             showcase_group(
                 cx,
                 "Standard Circular",
-                [md3_gpui::CircularProgress::new()
+                [material3_gpui::CircularProgress::new()
                     .size(px(40.))
                     .into_any_element()],
             ),

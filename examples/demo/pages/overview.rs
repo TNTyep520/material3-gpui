@@ -1,7 +1,7 @@
 //! Components overview 页：全部页面的导航列表。
 
 use gpui::{App, Entity, IntoElement, Render, Styled, Window, prelude::*, px};
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 use crate::PAGES;
@@ -32,15 +32,15 @@ impl Render for OverviewPage {
         gallery([showcase_group(
             cx,
             "Material Components",
-            [md3_gpui::Card::new()
+            [material3_gpui::Card::new()
                 .outlined()
                 .overflow_hidden()
                 .w_full()
                 .child(
-                    md3_gpui::List::new().children(PAGES.iter().enumerate().skip(1).map(
+                    material3_gpui::List::new().children(PAGES.iter().enumerate().skip(1).map(
                         |(ix, meta)| {
                             let on_navigate = on_navigate.clone();
-                            md3_gpui::ListItem::new(("overview", ix), meta.title)
+                            material3_gpui::ListItem::new(("overview", ix), meta.title)
                                 .supporting_text(meta.subtitle)
                                 .leading_icon(meta.icon)
                                 .trailing(

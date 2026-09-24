@@ -1,7 +1,7 @@
 //! Cards 页。
 
 use gpui::{App, Entity, IntoElement, Render, Window, prelude::*};
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 use super::{demo_card, gallery, showcase_group};
 

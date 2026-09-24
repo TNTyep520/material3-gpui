@@ -1,7 +1,7 @@
 //! Selection controls 页(对齐 m3fx demo 的 `SwitchesDemoPage` 画廊风格)。
 
 use gpui::{AnyElement, App, Entity, Hsla, IntoElement, Styled, Window, div, prelude::*, px};
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
