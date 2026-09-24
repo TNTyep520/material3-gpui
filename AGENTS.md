@@ -1,6 +1,6 @@
-# Agent instructions for md3-gpui
+# Agent instructions for material3-gpui
 
-This file defines the expectations for all contributions (human and LLM‑assisted) to the `md3-gpui` repository.
+This file defines the expectations for all contributions (human and LLM‑assisted) to the `material3-gpui` repository.
 
 ---
 

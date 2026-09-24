@@ -1,4 +1,4 @@
-# md3-gpui
+# material3-gpui
 
 Based on [GPUI](https://github.com/zed-industries/zed/tree/main/crates/gpui), the GPU-accelerated UI framework from Zed, this is a **Material Design 3** component library. Component specs follow Google’s [material-web](https://github.com/material-components/material-web); the token, motion and theme architecture is ported from [m3fx](https://github.com/Glavo/m3fx) (Apache-2.0).
 
@@ -10,14 +10,14 @@ Pure gpui implementation for rendering; dynamic color uses the `mcu-*` algorithm
   - `TokenSet`: color / typography / shape / elevation / motion / state-layer / component token groups with builder-level overrides
   - `Profile::Baseline2021` (baseline shape scale, type scale and motion scheme)
   - Dynamic color: `Theme::from_seed(seed, mode, profile)` via material-color-utilities (HCT), reproducing the material-web baseline palette
-- **m3fx motion system** (`md3_gpui::motion`)
+- **m3fx motion system** (`material3_gpui::motion`)
   - `MotionScheme`: six semantic roles (fast/default/slow × effects/spatial), standard preset
   - Closed-form damped spring solver with retargetable `Animatable` values (velocity-preserving retargeting)
   - 13 MD3 easing curves incl. the three-segment emphasized curve; `reduce_motion` support
 - **m3fx interaction behaviors**: spring-animated state layers, pointer ripples, spring-driven switch / checkbox / radio / tab-indicator animations
-- **Window-level overlay system** (`md3_gpui::overlay`): `OverlayHost` + `show_snackbar` / `show_menu` / `show_tooltip`
+- **Window-level overlay system** (`material3_gpui::overlay`): `OverlayHost` + `show_snackbar` / `show_menu` / `show_tooltip`
 - **Font-glyph icons** (m3fx `M3Icon` style): `Icon` renders Material Symbols **Rounded ligature names**; the bundled Regular-weight TTF carries the full 2500+ glyph set, so any icon works via `Icon::new(IconName::Custom("bolt"))` with no subsetting or extra downloads
-- **Component style layer** (`md3_gpui::styles`): one `XxxStyle` struct per component (geometry, shape, colors, typography) with token-derived defaults — renders consume styles instead of hardcoding them; entity components accept `.style(|s| …)` instance overrides
+- **Component style layer** (`material3_gpui::styles`): one `XxxStyle` struct per component (geometry, shape, colors, typography) with token-derived defaults — renders consume styles instead of hardcoding them; entity components accept `.style(|s| …)` instance overrides
 - **Components** (aligned with material-web component specs)
 
   | Category | Components |
@@ -37,7 +37,7 @@ Pure gpui implementation for rendering; dynamic color uses the `mcu-*` algorithm
 ```toml
 [dependencies]
 gpui = { git = "https://github.com/zed-industries/zed" }
-md3-gpui = { path = "../md3-gpui" }
+material3-gpui = { path = "../material3-gpui" }
 
 # The application entry point also needs a platform layer:
 gpui_platform = { git = "https://github.com/zed-industries/zed", features = [
@@ -50,7 +50,7 @@ gpui_platform = { git = "https://github.com/zed-industries/zed", features = [
 ```rust
 use gpui::*;
 use gpui_platform::application;
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 struct MyApp;
 
@@ -77,7 +77,7 @@ fn main() {
     application()
         .with_assets(Md3Assets)   // Icon assets (use Md3Assets::with_fallback if you already have your own AssetSource)
         .run(|cx| {
-            md3_gpui::init(cx);   // Install the default light theme
+            material3_gpui::init(cx);   // Install the default light theme
             cx.open_window(WindowOptions::default(), |_, cx| cx.new(|_| MyApp))
                 .unwrap();
             cx.activate(true);
@@ -98,7 +98,7 @@ The demo window shows all components; the header switch toggles light/dark (exac
 ## Theme customization
 
 ```rust
-use md3_gpui::prelude::*;
+use material3_gpui::prelude::*;
 
 // Baseline light/dark (seed #6750A4, Baseline2021)
 Theme::set(cx, Theme::dark());
@@ -134,7 +134,7 @@ Simple containers (`Card`, `Divider`, `List` / `ListItem`, `Dialog`, progress in
 
 ## Design mapping
 
-| md3-gpui | material-web | Key specs |
+| material3-gpui | material-web | Key specs |
 |---|---|---|
 | `Button` | `md-filled-button`, etc. | 40dp height, capsule shape, label-large, 24dp horizontal padding |
 | `IconButton` | `md-icon-button`, etc. | 40dp container, 24dp icon |
@@ -152,7 +152,7 @@ Simple containers (`Card`, `Divider`, `List` / `ListItem`, `Dialog`, progress in
 
 ## Fonts (embedded TTF, zero app code)
 
-`md3_gpui::init()` registers the bundled fonts automatically — plain **TTF**, no compression or subsetting:
+`material3_gpui::init()` registers the bundled fonts automatically — plain **TTF**, no compression or subsetting:
 
 - **Roboto** Regular / Medium (Apache-2.0)
 - **Material Symbols Rounded**, Regular weight instance (~1.2 MB, Apache-2.0) — full glyph set, instantiated per the official Material Symbols self-hosting guide (`opsz,wght,FILL,GRAD@24,400,0,0`)

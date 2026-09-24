@@ -61,8 +61,8 @@ impl TokenSet {
 ///
 /// 用法：
 /// ```ignore
-/// use md3_gpui::theme::{Profile, TokenSet};
-/// use md3_gpui::motion::MotionScheme;
+/// use material3_gpui::theme::{Profile, TokenSet};
+/// use material3_gpui::motion::MotionScheme;
 ///
 /// let tokens = TokenSet::builder(Profile::Baseline2021, colors)
 ///     .with_motion(MotionScheme::standard())

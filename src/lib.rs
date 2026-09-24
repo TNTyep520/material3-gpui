@@ -1,4 +1,4 @@
-//! # md3-gpui
+//! # material3-gpui
 //!
 //! 基于 [gpui](https://github.com/zed-industries/zed/tree/main/crates/gpui) 的
 //! Material Design 3 组件库。令牌与运动系统移植自
@@ -10,13 +10,13 @@
 //! ```ignore
 //! use gpui::*;
 //! use gpui_platform::application;
-//! use md3_gpui::prelude::*;
+//! use material3_gpui::prelude::*;
 //!
 //! fn main() {
 //!     application()
 //!         .with_assets(Md3Assets)          // 安装内嵌图标资源
 //!         .run(|cx| {
-//!             md3_gpui::init(cx);          // 安装默认（亮色）主题
+//!             material3_gpui::init(cx);          // 安装默认（亮色）主题
 //!             // 或者：自定义种子色动态色
 //!             // Theme::set(cx, Theme::from_seed(0x006A6A, ThemeMode::Light, Profile::Baseline2021));
 //!             cx.open_window(WindowOptions::default(), |_, cx| {
@@ -56,7 +56,7 @@ use gpui::App;
 /// 注册内嵌字体并安装默认（亮色）主题。若已有主题则不覆盖。
 pub fn init(cx: &mut App) {
     if let Err(err) = fonts::install(cx) {
-        eprintln!("md3-gpui: failed to register embedded fonts: {err}");
+        eprintln!("material3-gpui: failed to register embedded fonts: {err}");
     }
     if !cx.has_global::<Theme>() {
         cx.set_global(Theme::light());

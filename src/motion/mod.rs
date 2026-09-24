@@ -13,7 +13,7 @@
 //!
 //! 用法（组件内）：
 //! ```ignore
-//! use md3_gpui::motion::{Animatable, AnimationDriver, AnimatedComponent, MotionRole};
+//! use material3_gpui::motion::{Animatable, AnimationDriver, AnimatedComponent, MotionRole};
 //!
 //! struct MyControl {
 //!     opacity: Animatable,

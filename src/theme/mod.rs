@@ -6,10 +6,10 @@
 //!
 //! 用法：
 //! ```ignore
-//! use md3_gpui::prelude::*;
+//! use material3_gpui::prelude::*;
 //!
 //! application().run(|cx| {
-//!     md3_gpui::init(cx);                          // 安装默认亮色主题
+//!     material3_gpui::init(cx);                          // 安装默认亮色主题
 //!     // 或者：种子色动态色主题
 //!     Theme::set(cx, Theme::from_seed(0x6750A4, ThemeMode::Light, Profile::Baseline2021));
 //! });

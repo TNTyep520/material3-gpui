@@ -6,7 +6,7 @@
 //! 不再使用 SVG 资源——任意图标无需手动导入，直接写 ligature 名即可。
 //!
 //! ```ignore
-//! use md3_gpui::prelude::*;
+//! use material3_gpui::prelude::*;
 //!
 //! Icon::new(IconName::Favorite).size(px(24.)).color(theme.colors().primary)
 //! Icon::new(IconName::Custom("bolt")).size(px(24.))   // 任意图标

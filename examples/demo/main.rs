@@ -1,7 +1,7 @@
 // Windows 下隐藏随 GUI 程序弹出的控制台窗口
 #![windows_subsystem = "windows"]
 
-//! md3-gpui 组件演示（入口）。
+//! material3-gpui 组件演示（入口）。
 //!
 //! 结构：
 //! - `Demo`：根视图——主题状态、页面导航、侧栏与头部开关、对话框与弹层宿主；
@@ -53,7 +53,7 @@ const PAGES: [PageMeta; 13] = [
     PageMeta {
         id: PageId::Overview,
         title: "Components overview",
-        subtitle: "Browse every implemented Material Design 3 component in md3-gpui",
+        subtitle: "Browse every implemented Material Design 3 component in material3-gpui",
         icon: IconName::Home,
     },
     PageMeta {
@@ -310,7 +310,7 @@ impl Render for Demo {
                         .title_large
                         .apply(div())
                         .text_color(colors.on_surface)
-                        .child("md3-gpui"),
+                        .child("material3-gpui"),
                 ),
             )
             .children(PAGES.iter().map(|meta| {
@@ -463,7 +463,7 @@ fn main() {
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 titlebar: Some(TitlebarOptions {
-                    title: Some("md3-gpui".into()),
+                    title: Some("material3-gpui".into()),
                     ..Default::default()
                 }),
                 ..Default::default()

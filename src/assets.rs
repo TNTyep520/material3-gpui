@@ -22,7 +22,7 @@ static RESOURCES: &[(&str, &[u8])] = &[(
     include_bytes!("assets/progress_arc.svg").as_slice(),
 )];
 
-/// md3-gpui 的内嵌资源源
+/// material3-gpui 的内嵌资源源
 pub struct Md3Assets;
 
 impl Md3Assets {

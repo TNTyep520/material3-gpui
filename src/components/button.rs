@@ -8,7 +8,7 @@
 //! `M3ButtonSkin` / `M3LabeledButtonSkinBase`（Apache-2.0，© 2026 Glavo）。
 //!
 //! ```ignore
-//! use md3_gpui::prelude::*;
+//! use material3_gpui::prelude::*;
 //!
 //! // 在视图的 render 中（cx 为 &mut Context<V>）：
 //! Button::new("save", "Save")
