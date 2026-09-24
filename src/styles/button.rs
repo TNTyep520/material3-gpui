@@ -150,12 +150,12 @@ impl ButtonStyle {
         let state = &tokens.state_layer;
         Self {
             container_color: if disabled {
-                Some(colors.on_surface.opacity(state.disabled_container))
+                Some(colors.disabled_container(state))
             } else {
                 container
             },
             content_color: if disabled {
-                colors.on_surface.opacity(state.disabled_content)
+                colors.disabled_content(state)
             } else {
                 content
             },
@@ -169,8 +169,8 @@ impl ButtonStyle {
             }),
             elevation,
             shadow_color: colors.shadow,
-            disabled_container_color: colors.on_surface.opacity(state.disabled_container),
-            disabled_content_color: colors.on_surface.opacity(state.disabled_content),
+            disabled_container_color: colors.disabled_container(state),
+            disabled_content_color: colors.disabled_content(state),
             state_layer_color: content,
             state_layer_opacity: state.pressed,
             height: px(button.height),
@@ -248,7 +248,7 @@ impl IconButtonStyle {
             corner_radius: tokens.shapes.full,
             state_layer_color: content,
             state_layer_opacity: state.pressed,
-            disabled_content_color: colors.on_surface.opacity(state.disabled_content),
+            disabled_content_color: colors.disabled_content(state),
         }
     }
 }

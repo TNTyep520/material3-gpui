@@ -67,7 +67,8 @@ pub fn init(cx: &mut App) {
 pub mod prelude {
     pub use crate::assets::Md3Assets;
     pub use crate::components::*;
-    pub use crate::fonts::{ICON_FONT_FAMILY, TEXT_FONT_FAMILY};
+    pub use crate::fonts::TEXT_FONT_FAMILY;
+    pub use crate::icon::ICON_FONT_FAMILY;
     pub use crate::icon::{Icon, IconName};
     pub use crate::motion::{
         Animatable, AnimatedComponent, AnimationDriver, Easing, MotionRole, MotionScheme,
@@ -77,9 +78,11 @@ pub mod prelude {
         MenuItem, MenuState, OverlayHostState, OverlayRegistry, Snackbar, close_menu,
         close_tooltip, host, show_menu, show_snackbar, show_tooltip,
     };
+    #[cfg(feature = "dynamic-color")]
+    pub use crate::theme::color_scheme_from_seed;
     pub use crate::theme::{
         ActiveTheme, ColorScheme, ComponentTokens, Density, Elevation, ElevationTokens, Profile,
         Shapes, StateLayerTokens, Theme, ThemeMode, TokenSet, TokenSetBuilder, TypeScale,
-        TypeStyle, color_scheme_from_seed,
+        TypeStyle,
     };
 }

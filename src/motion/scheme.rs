@@ -58,7 +58,7 @@ impl MotionSpec {
 }
 
 /// MD3 运动方案：按语义角色归组的不可变运动规格集合。
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct MotionScheme {
     specs: [MotionSpec; 6],
 }

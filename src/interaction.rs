@@ -267,7 +267,7 @@ impl InteractiveSurface {
             } else {
                 None
             },
-            ripples: self.ripple_elements(base_color, pressed_opacity, corner_radius, false),
+            ripple: self.ripple_elements(base_color, pressed_opacity, corner_radius, false),
             corner_radius,
         }
     }
@@ -279,29 +279,33 @@ impl InteractiveSurface {
     pub fn overlay_unclipped(&self, base_color: Hsla, ripple_opacity: f32) -> InteractiveOverlay {
         InteractiveOverlay {
             state_layer_color: None,
-            ripples: self.ripple_elements(base_color, ripple_opacity, px(0.), true),
+            ripple: self.ripple_elements(base_color, ripple_opacity, px(0.), true),
             corner_radius: px(0.),
         }
     }
 
-    /// 按当前涟漪状态构建涟漪元素列表。
+    /// 按当前涟漪状态构建涟漪元素（同时最多一个涟漪，故返回 Option）。
     fn ripple_elements(
         &self,
         base_color: Hsla,
         ripple_opacity: f32,
         corner_radius: Pixels,
         unclipped: bool,
-    ) -> Vec<AnyElement> {
-        self.ripple
-            .iter()
-            .filter(|r| r.fade.value() > 0.0 && r.radius.value() > 0.0)
-            .map(|r| {
-                let radius = r.radius.value() as f32;
-                let alpha = f32::clamp(r.fade.value() as f32 * ripple_opacity, 0.0, 1.0);
-                let color = lerp_color(Hsla::transparent_black(), base_color, alpha);
-                ripple_element(r.origin, radius, color, corner_radius, unclipped)
-            })
-            .collect()
+    ) -> Option<AnyElement> {
+        let ripple = self.ripple.as_ref()?;
+        if ripple.fade.value() <= 0.0 || ripple.radius.value() <= 0.0 {
+            return None;
+        }
+        let radius = ripple.radius.value() as f32;
+        let alpha = f32::clamp(ripple.fade.value() as f32 * ripple_opacity, 0.0, 1.0);
+        let color = lerp_color(Hsla::transparent_black(), base_color, alpha);
+        Some(ripple_element(
+            ripple.origin,
+            radius,
+            color,
+            corner_radius,
+            unclipped,
+        ))
     }
 }
 
@@ -309,8 +313,8 @@ impl InteractiveSurface {
 pub struct InteractiveOverlay {
     /// 状态层颜色（透明时为 None）。
     state_layer_color: Option<Hsla>,
-    /// 涟漪圆元素。
-    ripples: Vec<AnyElement>,
+    /// 涟漪圆元素（同时最多一个）。
+    ripple: Option<AnyElement>,
     /// 状态层圆角（与容器形状一致）。
     corner_radius: Pixels,
 }
@@ -329,7 +333,7 @@ impl InteractiveOverlay {
                     .bg(color),
             );
         }
-        for ripple in self.ripples {
+        if let Some(ripple) = self.ripple {
             container = container.child(ripple);
         }
         container
@@ -355,16 +359,20 @@ fn ripple_element(
         |_, _, _| {},
         move |bounds, _, window, _| {
             // 闭包内的 origin 为容器本地坐标，先换算到窗口坐标
-            let circle = circle_polygon(bounds.origin + origin, radius);
-            let points = if unclipped {
-                circle
-            } else {
-                let clip = rounded_rect_polygon(bounds, corner_radius);
-                let Some(points) = clip_convex(&circle, &clip) else {
-                    return;
+            let center = bounds.origin + origin;
+            let circle = circle_polygon(center, radius);
+            // 无界模式或圆完全落在容器形状内时直接画整圆，
+            // 跳过圆角多边形构造与裁剪（涟漪扩张前半段均属此情形）
+            let points =
+                if unclipped || circle_inside_rounded_rect(bounds, corner_radius, center, radius) {
+                    circle
+                } else {
+                    let clip = rounded_rect_polygon(bounds, corner_radius);
+                    let Some(points) = clip_convex(&circle, &clip) else {
+                        return;
+                    };
+                    points
                 };
-                points
-            };
             let mut builder = PathBuilder::fill();
             builder.add_polygon(&points, true);
             if let Ok(path) = builder.build() {
@@ -377,9 +385,44 @@ fn ripple_element(
     .into_any_element()
 }
 
+/// 判断半径为 `radius` 的圆是否完整落在容器圆角矩形内部。
+///
+/// 判据：圆心到四边的距离均 ≥ 半径，且圆心到四个圆角圆心的距离
+/// ≤ 角半径 − 半径（后者保证不越出角部弧线）。
+fn circle_inside_rounded_rect(
+    bounds: Bounds<Pixels>,
+    corner_radius: Pixels,
+    center: Point<Pixels>,
+    radius: f32,
+) -> bool {
+    let w = f32::from(bounds.size.width);
+    let h = f32::from(bounds.size.height);
+    let r = f32::from(corner_radius).clamp(0.0, w.min(h) / 2.0);
+    let (x0, y0) = (f32::from(bounds.origin.x), f32::from(bounds.origin.y));
+    let (x1, y1) = (x0 + w, y0 + h);
+    let (cx, cy) = (f32::from(center.x), f32::from(center.y));
+
+    // 先看四条边
+    if cx - radius < x0 || cx + radius > x1 || cy - radius < y0 || cy + radius > y1 {
+        return false;
+    }
+    // 再看四个角部弧线：仅当圆心落在角部方块内才需要判断
+    let corner_ok = |ccx: f32, ccy: f32, outside_x: bool, outside_y: bool| {
+        if !(outside_x && outside_y) {
+            return true;
+        }
+        let (dx, dy) = (cx - ccx, cy - ccy);
+        (dx * dx + dy * dy).sqrt() + radius <= r
+    };
+    corner_ok(x0 + r, y0 + r, cx < x0 + r, cy < y0 + r)
+        && corner_ok(x1 - r, y0 + r, cx > x1 - r, cy < y0 + r)
+        && corner_ok(x0 + r, y1 - r, cx < x0 + r, cy > y1 - r)
+        && corner_ok(x1 - r, y1 - r, cx > x1 - r, cy > y1 - r)
+}
+
 /// 圆的正多边形近似顶点（顶点序与 [`rounded_rect_polygon`] 同为顺时针）。
 fn circle_polygon(center: Point<Pixels>, radius: f32) -> Vec<Point<Pixels>> {
-    const CIRCLE_SEGMENTS: usize = 96;
+    const CIRCLE_SEGMENTS: usize = 32;
     (0..CIRCLE_SEGMENTS)
         .map(|i| {
             let angle = std::f32::consts::TAU * i as f32 / CIRCLE_SEGMENTS as f32;
@@ -393,7 +436,7 @@ fn circle_polygon(center: Point<Pixels>, radius: f32) -> Vec<Point<Pixels>> {
 
 /// 圆角矩形的凸多边形近似（顺时针，四角圆弧各 [`ARC_SEGMENTS`] 段）。
 fn rounded_rect_polygon(bounds: Bounds<Pixels>, corner_radius: Pixels) -> Vec<Point<Pixels>> {
-    const ARC_SEGMENTS: usize = 12;
+    const ARC_SEGMENTS: usize = 6;
     let w = f32::from(bounds.size.width);
     let h = f32::from(bounds.size.height);
     // 圆角钳制到短边一半（shapes.full = 999px 依赖此钳制得到胶囊形）
@@ -425,30 +468,56 @@ fn edge_cross(a: Point<Pixels>, b: Point<Pixels>, p: Point<Pixels>) -> f32 {
 
 /// Sutherland–Hodgman 多边形裁剪：返回 `subject ∩ clip`。
 /// `clip` 必须为凸多边形；交集退化（不足三个顶点）时返回 `None`。
+///
+/// 两个缓冲区轮换复用，整个裁剪过程只分配两次（每条裁剪边不再新建
+/// 中间 `Vec`）。
 fn clip_convex(subject: &[Point<Pixels>], clip: &[Point<Pixels>]) -> Option<Vec<Point<Pixels>>> {
     let mut output: Vec<Point<Pixels>> = subject.to_vec();
+    let mut scratch: Vec<Point<Pixels>> = Vec::with_capacity(subject.len() + clip.len());
     for i in 0..clip.len() {
         if output.is_empty() {
             return None;
         }
         let a = clip[i];
         let b = clip[(i + 1) % clip.len()];
-        let input = std::mem::take(&mut output);
-        for j in 0..input.len() {
-            let (p, q) = (input[j], input[(j + 1) % input.len()]);
+        scratch.clear();
+        for j in 0..output.len() {
+            let (p, q) = (output[j], output[(j + 1) % output.len()]);
             let (dp, dq) = (edge_cross(a, b, p), edge_cross(a, b, q));
             let (p_in, q_in) = (dp >= 0.0, dq >= 0.0);
             if p_in != q_in {
                 // 线段 p→q 与裁剪边所在直线的交点（dp、dq 异号，t ∈ [0,1]）
                 let t = dp / (dp - dq);
-                output.push(point(p.x + (q.x - p.x) * t, p.y + (q.y - p.y) * t));
+                scratch.push(point(p.x + (q.x - p.x) * t, p.y + (q.y - p.y) * t));
             }
             if q_in {
-                output.push(q);
+                scratch.push(q);
             }
         }
+        std::mem::swap(&mut output, &mut scratch);
     }
     (output.len() >= 3).then_some(output)
+}
+
+/// 一次性完成交互接线:事件绑定、覆盖层(状态层/涟漪)挂载与边界捕获。
+/// button/chip/fab/icon_button/checkbox/radio 六组件共用此入口;
+/// 需要无界涟漪的 Switch 走 [`InteractiveSurface::overlay_unclipped`]。
+#[allow(clippy::too_many_arguments)]
+pub fn wire<T: 'static>(
+    surface: &InteractiveSurface,
+    el: Stateful<Div>,
+    entity: &Entity<T>,
+    motion: &MotionScheme,
+    access: impl Fn(&mut T) -> &mut InteractiveSurface + Copy + 'static,
+    state_layer_color: Hsla,
+    pressed_opacity: f32,
+    corner_radius: Pixels,
+) -> Stateful<Div> {
+    let el = wire_events(el, entity, motion, access);
+    let el = surface
+        .overlay(state_layer_color, pressed_opacity, corner_radius)
+        .apply(el);
+    el.child(surface.bounds.capture_element())
 }
 
 /// 把 hover / press / release / cancel 事件接到内嵌
@@ -466,10 +535,10 @@ pub fn wire_events<T: 'static>(
     let press_entity = entity.clone();
     let release_entity = entity.clone();
     let cancel_entity = entity.clone();
-    let motion_hover = motion.clone();
-    let motion_press = motion.clone();
-    let motion_release = motion.clone();
-    let motion_cancel = motion.clone();
+    let motion_hover = *motion;
+    let motion_press = *motion;
+    let motion_release = *motion;
+    let motion_cancel = *motion;
     el.on_hover(move |hovered, _window, cx| {
         hover_entity.update(cx, |state, cx| {
             let now = Instant::now();

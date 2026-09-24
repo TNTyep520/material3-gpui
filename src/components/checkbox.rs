@@ -23,7 +23,7 @@ use gpui::{
 };
 
 use crate::icon::{Icon, IconName};
-use crate::interaction::{InteractiveSurface, wire_events};
+use crate::interaction::InteractiveSurface;
 use crate::motion::{Animatable, AnimatedComponent, AnimationDriver, MotionRole, lerp_color};
 use crate::theme::ActiveTheme;
 
@@ -174,16 +174,12 @@ impl Render for CheckboxState {
         let (box_bg, box_border, mark_color) = if disabled {
             if self.checked {
                 (
-                    Some(colors.on_surface.opacity(state_layer.disabled_content)),
+                    Some(colors.disabled_content(&state_layer)),
                     None,
                     Some(colors.surface),
                 )
             } else {
-                (
-                    None,
-                    Some(colors.on_surface.opacity(state_layer.disabled_content)),
-                    None,
-                )
+                (None, Some(colors.disabled_content(&state_layer)), None)
             }
         } else {
             let bg = lerp_color(gpui::Hsla::transparent_black(), accent, p);
@@ -206,18 +202,22 @@ impl Render for CheckboxState {
         let base = if disabled {
             base
         } else {
-            let base = wire_events(base, &entity, theme.motion(), |s: &mut Self| &mut s.surface);
-            let base = self
-                .surface
-                .overlay(layer, state_layer.pressed, gpui::px(999.))
-                .apply(base);
-            base.child(self.surface.bounds.capture_element())
+            crate::interaction::wire(
+                &self.surface,
+                base,
+                &entity,
+                theme.motion(),
+                |s: &mut Self| &mut s.surface,
+                layer,
+                state_layer.pressed,
+                gpui::px(999.),
+            )
         };
 
         let base = if disabled {
             base
         } else {
-            let toggle_entity = entity.clone();
+            let toggle_entity = entity;
             base.on_click(move |_event, window, cx| {
                 toggle_entity.update(cx, |state, cx| {
                     let next = !state.checked;

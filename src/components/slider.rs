@@ -180,7 +180,7 @@ impl Render for SliderState {
             colors.primary
         };
         let inactive_color = if disabled {
-            colors.on_surface.opacity(state_layer.disabled_container)
+            colors.disabled_container(&state_layer)
         } else {
             colors.secondary_container
         };
@@ -234,7 +234,7 @@ impl Render for SliderState {
             )
             // 捕获轨道 bounds，用于把鼠标 x 坐标映射为数值
             .child({
-                let entity = entity.clone();
+                let entity = entity;
                 canvas(
                     move |bounds, _window, cx| {
                         entity.update(cx, |this, _| this.bounds = bounds);

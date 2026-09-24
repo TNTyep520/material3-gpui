@@ -12,7 +12,7 @@ pub fn hex(value: u32) -> Hsla {
 }
 
 /// MD3 颜色角色全集（对应 material-web 的 `--md-sys-color-*` 令牌）
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct ColorScheme {
     // Primary
     pub primary: Hsla,
@@ -157,5 +157,15 @@ impl ColorScheme {
             background: hex(0x141218),
             on_background: hex(0xE6E0E9),
         }
+    }
+
+    /// 禁用态内容色(on_surface × 禁用内容不透明度 38%)。
+    pub fn disabled_content(&self, state: &crate::theme::state::StateLayerTokens) -> Hsla {
+        self.on_surface.opacity(state.disabled_content)
+    }
+
+    /// 禁用态容器色(on_surface × 禁用容器不透明度 12%)。
+    pub fn disabled_container(&self, state: &crate::theme::state::StateLayerTokens) -> Hsla {
+        self.on_surface.opacity(state.disabled_container)
     }
 }

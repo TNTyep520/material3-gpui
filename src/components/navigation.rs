@@ -466,7 +466,6 @@ impl Render for NavigationRailState {
         let theme = cx.theme();
         let rail = NavigationRailStyle::resolve(theme.token_set());
         let item = NavigationItemStyle::resolve(theme.token_set());
-        let _ = self.indicator.value();
         let selected = self.selected;
         let header = self.header.clone();
         let entity = cx.entity();

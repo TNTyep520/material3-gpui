@@ -176,7 +176,10 @@ impl AnimatedComponent for OverlayHostState {
 
 impl Render for OverlayHostState {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        if self.step(Instant::now()) {
+        // render 只读状态:动画推进统一由帧回调里的 step 负责
+        // （与其他组件一致，避免进度依赖 render 频率）
+        self.snacks.retain(|snack| !snack.removed);
+        if self.snacks.iter().any(SnackState::is_animating) {
             self.schedule_next(window, cx);
         }
 
@@ -195,7 +198,7 @@ impl Render for OverlayHostState {
             let snack_id = snack.id;
             let action_click = action_handler.clone();
             div()
-                .id(SharedString::from(format!("snack-{snack_id}")))
+                .id(("snack", snack_id))
                 .absolute()
                 .bottom(bottom)
                 .left(relative(0.5))
@@ -221,7 +224,7 @@ impl Render for OverlayHostState {
                 .when_some(action_label.filter(|_| p > 0.9), move |el, label| {
                     el.child(
                         div()
-                            .id(SharedString::from(format!("snack-action-{snack_id}")))
+                            .id(("snack-action", snack_id))
                             .cursor_pointer()
                             .px(px(8.))
                             .py(px(4.))
@@ -447,12 +450,12 @@ impl Render for MenuState {
                 div()
                     .flex()
                     .flex_col()
-                    .children(self.items.iter().map(|item| {
+                    .children(self.items.iter().enumerate().map(|(ix, item)| {
                         let label = item.label.clone();
                         let icon = item.icon;
                         let handler = item.on_click.clone();
                         div()
-                            .id(SharedString::from(format!("menu-item-{}", label)))
+                            .id(("menu-item", ix))
                             .h(px(tokens.item_height))
                             .flex()
                             .items_center()

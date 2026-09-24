@@ -29,7 +29,7 @@ use gpui::{
 };
 
 use crate::icon::{Icon, IconName};
-use crate::interaction::{InteractiveSurface, wire_events};
+use crate::interaction::InteractiveSurface;
 use crate::motion::{AnimatedComponent, AnimationDriver};
 use crate::styles::button::ButtonStyle;
 use crate::theme::{ActiveTheme, Elevation};
@@ -264,18 +264,16 @@ impl Render for ButtonState {
         let base = if self.disabled {
             base
         } else {
-            let base = wire_events(base, &entity, cx.theme().motion(), |s: &mut Self| {
-                &mut s.surface
-            });
-            let base = self
-                .surface
-                .overlay(
-                    style.state_layer_color,
-                    style.state_layer_opacity,
-                    style.corner_radius,
-                )
-                .apply(base);
-            base.child(self.surface.bounds.capture_element())
+            crate::interaction::wire(
+                &self.surface,
+                base,
+                &entity,
+                cx.theme().motion(),
+                |s: &mut Self| &mut s.surface,
+                style.state_layer_color,
+                style.state_layer_opacity,
+                style.corner_radius,
+            )
         };
 
         let base = if self.disabled {

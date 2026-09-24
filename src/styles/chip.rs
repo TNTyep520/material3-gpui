@@ -68,8 +68,8 @@ impl ChipStyle {
         let (container, content, icon) = if disabled {
             (
                 None,
-                colors.on_surface.opacity(state.disabled_content),
-                colors.on_surface.opacity(state.disabled_content),
+                colors.disabled_content(state),
+                colors.disabled_content(state),
             )
         } else if selected {
             (
@@ -93,7 +93,7 @@ impl ChipStyle {
             icon_color: icon,
             outline_color: if container.is_none() && !elevated {
                 Some(if disabled {
-                    colors.on_surface.opacity(state.disabled_content)
+                    colors.disabled_content(state)
                 } else {
                     colors.outline_variant
                 })

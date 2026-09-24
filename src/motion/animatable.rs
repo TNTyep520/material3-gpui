@@ -287,6 +287,7 @@ impl AnimationDriver {
                 if still_running {
                     component.schedule_next(window, cx);
                 }
+                // 动画推进与落地帧都需要一次 notify 重绘终值
                 cx.notify();
             });
         });

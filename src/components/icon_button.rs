@@ -23,7 +23,7 @@ use gpui::{
 };
 
 use crate::icon::{Icon, IconName};
-use crate::interaction::{InteractiveSurface, wire_events};
+use crate::interaction::InteractiveSurface;
 use crate::motion::{AnimatedComponent, AnimationDriver};
 use crate::theme::ActiveTheme;
 
@@ -190,12 +190,12 @@ impl Render for IconButtonState {
         };
 
         let fg = if disabled {
-            colors.on_surface.opacity(state_layer.disabled_content)
+            colors.disabled_content(&state_layer)
         } else {
             fg
         };
         let bg = if disabled {
-            bg.map(|_| colors.on_surface.opacity(state_layer.disabled_container))
+            bg.map(|_| colors.disabled_container(&state_layer))
         } else {
             bg
         };
@@ -212,7 +212,7 @@ impl Render for IconButtonState {
             .when_some(bg, |el, bg_color| el.bg(bg_color))
             .when(outlined, |el| {
                 el.border_1().border_color(if disabled {
-                    colors.on_surface.opacity(state_layer.disabled_content)
+                    colors.disabled_content(&state_layer)
                 } else {
                     colors.outline
                 })
@@ -223,12 +223,16 @@ impl Render for IconButtonState {
         let base = if disabled {
             base
         } else {
-            let base = wire_events(base, &entity, theme.motion(), |s: &mut Self| &mut s.surface);
-            let base = self
-                .surface
-                .overlay(fg, state_layer.pressed, gpui::px(999.))
-                .apply(base);
-            base.child(self.surface.bounds.capture_element())
+            crate::interaction::wire(
+                &self.surface,
+                base,
+                &entity,
+                theme.motion(),
+                |s: &mut Self| &mut s.surface,
+                fg,
+                state_layer.pressed,
+                gpui::px(999.),
+            )
         };
 
         let base = if disabled {

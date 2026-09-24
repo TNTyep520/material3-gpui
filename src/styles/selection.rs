@@ -2,7 +2,7 @@
 
 use gpui::{Hsla, Pixels, px};
 
-use crate::theme::{ColorScheme, TokenSet};
+use crate::theme::TokenSet;
 
 /// MD3 Switch 样式（端点颜色 + 几何；进度插值在组件内完成）。
 #[derive(Clone, Copy, Debug)]
@@ -42,11 +42,11 @@ impl SwitchStyle {
                 track_off: colors
                     .surface_container_highest
                     .opacity(state.disabled_container),
-                track_on: colors.on_surface.opacity(state.disabled_container),
-                handle_off: colors.on_surface.opacity(state.disabled_content),
+                track_on: colors.disabled_container(state),
+                handle_off: colors.disabled_content(state),
                 // m3fx:禁用选中拇指 = surface(不透明),图标用 on_surface@38%
                 handle_on: colors.surface,
-                border_off: Some(colors.on_surface.opacity(state.disabled_container)),
+                border_off: Some(colors.disabled_container(state)),
                 track_size: (px(switch.track_width), px(switch.track_height)),
                 thumb_on: px(switch.thumb_size),
                 thumb_off: px(switch.unselected_thumb_size),
@@ -121,7 +121,7 @@ impl CheckboxStyle {
             state_layer_color: accent,
             state_layer_opacity: state.pressed,
             disabled_content: if disabled {
-                colors.on_surface.opacity(state.disabled_content)
+                colors.disabled_content(state)
             } else {
                 colors.on_surface
             },
@@ -161,17 +161,17 @@ impl RadioStyle {
         let state = &tokens.state_layer;
         Self {
             ring_off: if disabled {
-                colors.on_surface.opacity(state.disabled_content)
+                colors.disabled_content(state)
             } else {
                 colors.on_surface_variant
             },
             ring_on: if disabled {
-                colors.on_surface.opacity(state.disabled_content)
+                colors.disabled_content(state)
             } else {
                 colors.primary
             },
             dot: if disabled {
-                colors.on_surface.opacity(state.disabled_content)
+                colors.disabled_content(state)
             } else {
                 colors.primary
             },
@@ -181,7 +181,7 @@ impl RadioStyle {
             touch_target: px(40.),
             state_layer_color: colors.primary,
             state_layer_opacity: state.pressed,
-            disabled_content: colors.on_surface.opacity(state.disabled_content),
+            disabled_content: colors.disabled_content(state),
         }
     }
 }
@@ -211,17 +211,17 @@ impl SliderStyle {
         let slider = &tokens.component.slider;
         Self {
             active_track: if disabled {
-                colors.on_surface.opacity(state.disabled_content)
+                colors.disabled_content(state)
             } else {
                 colors.primary
             },
             inactive_track: if disabled {
-                colors.on_surface.opacity(state.disabled_container)
+                colors.disabled_container(state)
             } else {
                 colors.secondary_container
             },
             handle: if disabled {
-                colors.on_surface.opacity(state.disabled_content)
+                colors.disabled_content(state)
             } else {
                 colors.primary
             },
@@ -231,7 +231,3 @@ impl SliderStyle {
         }
     }
 }
-
-// ColorScheme 在 resolve 内经 tokens.colors 使用；显式引用避免文档遗漏
-#[allow(dead_code)]
-type _ColorSchemeRef = ColorScheme;

@@ -272,7 +272,7 @@ impl Render for TextFieldState {
 
         // 边框：未聚焦 1dp outline；聚焦时叠加 2dp accent 描边（透明度随进度）
         let border_color = if self.disabled {
-            colors.on_surface.opacity(state_layer.disabled_container)
+            colors.disabled_container(&state_layer)
         } else if has_error {
             lerp_color(colors.outline, colors.error, p)
         } else {
@@ -293,7 +293,7 @@ impl Render for TextFieldState {
         let min_h = px(tokens.min_height);
 
         let entity = cx.entity();
-        let key_entity = entity.clone();
+        let key_entity = entity;
 
         let container = div()
             .id(self.id.clone())

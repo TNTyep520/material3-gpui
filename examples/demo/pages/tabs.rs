@@ -28,7 +28,7 @@ impl TabsPage {
 impl Render for TabsPage {
     fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
         let theme = cx.theme();
-        let colors = theme.colors().clone();
+        let colors = *theme.colors();
         let typography = *theme.typography();
         let selected_tab = self.tabbar.read(cx).selected();
 

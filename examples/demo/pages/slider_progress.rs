@@ -27,7 +27,7 @@ impl SliderProgressPage {
 impl Render for SliderProgressPage {
     fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
         let theme = cx.theme();
-        let colors = theme.colors().clone();
+        let colors = *theme.colors();
         let typography = *theme.typography();
         let slider_value = self.slider.read(cx).value();
 

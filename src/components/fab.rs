@@ -24,7 +24,7 @@ use gpui::{
 };
 
 use crate::icon::{Icon, IconName};
-use crate::interaction::{InteractiveSurface, wire_events};
+use crate::interaction::InteractiveSurface;
 use crate::motion::{AnimatedComponent, AnimationDriver};
 use crate::theme::{ActiveTheme, Elevation};
 
@@ -212,12 +212,16 @@ impl Render for FabState {
 
         let entity = cx.entity();
         let base = {
-            let base = wire_events(base, &entity, theme.motion(), |s: &mut Self| &mut s.surface);
-            let base = self
-                .surface
-                .overlay(fg, state_layer.pressed, radius)
-                .apply(base);
-            base.child(self.surface.bounds.capture_element())
+            crate::interaction::wire(
+                &self.surface,
+                base,
+                &entity,
+                theme.motion(),
+                |s: &mut Self| &mut s.surface,
+                fg,
+                state_layer.pressed,
+                radius,
+            )
         };
 
         let base = if let Some(handler) = self.on_click.clone() {

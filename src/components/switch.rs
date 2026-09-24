@@ -197,7 +197,7 @@ impl SwitchState {
             return;
         }
         let now = Instant::now();
-        let motion = cx.theme().motion().clone();
+        let motion = *cx.theme().motion();
         self.surface.on_press(event.position, &motion, now);
 
         let bounds = self.surface.bounds.get();
@@ -224,17 +224,27 @@ impl SwitchState {
             self.progress.stop();
         }
         let bounds = self.surface.bounds.get();
-        // 指针拖回控件内时 re-arm(m3fx:离开 disarm、回来 re-arm)
-        if bounds.contains(&position) && !self.surface.pressed {
+        // 指针拖回控件内时 re-arm(m3fx:离开 disarm、回来 re-arm);
+        // 状态变化与位置变化合并为末尾一次 notify
+        let re_armed = if bounds.contains(&position) && !self.surface.pressed {
             self.surface.pressed = true;
-            cx.notify();
-        }
+            true
+        } else {
+            false
+        };
         let local_x = position.x - bounds.origin.x;
         let handle_center = local_x - self.grab_offset;
         let pos = f32::from(handle_center - px(TRACK_HEIGHT_LOCAL))
             / f32::from(px(TRACK_WIDTH_LOCAL - TRACK_HEIGHT_LOCAL));
-        self.progress.snap_to(f64::from(pos.clamp(0.0, 1.0)));
-        cx.notify();
+        let next = f64::from(pos.clamp(0.0, 1.0));
+        // 位置变化不足半像素(20dp 行程上约 0.025)时不重绘
+        let moved = (next - self.progress.value()).abs() >= 0.025 / 20.0;
+        if moved {
+            self.progress.snap_to(next);
+        }
+        if moved || re_armed {
+            cx.notify();
+        }
     }
 
     /// 主键释放:提交拖动或处理点击(m3fx releasedInside 语义)。
@@ -244,7 +254,7 @@ impl SwitchState {
         }
         self.pressed = false;
         let now = Instant::now();
-        let motion = cx.theme().motion().clone();
+        let motion = *cx.theme().motion();
         self.surface.on_release(&motion, now);
 
         let inside = self.surface.bounds.get().contains(&position);
@@ -363,7 +373,7 @@ impl Render for SwitchState {
             (
                 IconName::Check,
                 if disabled {
-                    colors.on_surface.opacity(state_layer.disabled_content)
+                    colors.disabled_content(&state_layer)
                 } else {
                     colors.primary
                 },
@@ -398,18 +408,13 @@ impl Render for SwitchState {
             .when(!disabled, |el| el.cursor_pointer());
 
         if !disabled {
-            let motion = theme.motion().clone();
+            let motion = *theme.motion();
             let hover_entity = entity.clone();
             root = root
-                .on_hover(move |hovered, window, cx| {
+                // hover 变化只改状态并重绘;下一帧调度由 render 统一负责
+                .on_hover(move |hovered, _window, cx| {
                     hover_entity.update(cx, |state, cx| {
                         state.surface.set_hovered(*hovered, &motion, Instant::now());
-                        if state.surface.is_animating()
-                            || state.progress.is_running()
-                            || state.press_progress.is_running()
-                        {
-                            state.schedule_next(window, cx);
-                        }
                         cx.notify();
                     });
                 })
@@ -418,16 +423,18 @@ impl Render for SwitchState {
                 .on_mouse_up_out(MouseButton::Left, cx.listener(Self::on_mouse_up));
         }
 
-        // 状态圆(最底层,中心跟随拇指)
-        root = root.child(
-            div()
-                .absolute()
-                .left(center_x - px(STATE_LAYER_SIZE / 2.))
-                .top((px(TOUCH_TARGET_HEIGHT) - px(STATE_LAYER_SIZE)) / 2.)
-                .size(px(STATE_LAYER_SIZE))
-                .rounded_full()
-                .bg(state_color.opacity(state_opacity)),
-        );
+        // 状态圆(最底层,中心跟随拇指);全透明时不生成元素
+        if state_opacity > 0.0 {
+            root = root.child(
+                div()
+                    .absolute()
+                    .left(center_x - px(STATE_LAYER_SIZE / 2.))
+                    .top((px(TOUCH_TARGET_HEIGHT) - px(STATE_LAYER_SIZE)) / 2.)
+                    .size(px(STATE_LAYER_SIZE))
+                    .rounded_full()
+                    .bg(state_color.opacity(state_opacity)),
+            );
+        }
 
         // 轨道(垂直居中于触摸目标)+ 描边层
         let track = div()
@@ -462,7 +469,7 @@ impl Render for SwitchState {
 
         // 拖拽会话中注册窗口级监听(paint 阶段):指针元素外仍持续跟踪
         if !disabled && self.pressed {
-            let entity = entity.clone();
+            let entity = entity;
             root = root.child(
                 canvas(
                     |_, _, _| {},

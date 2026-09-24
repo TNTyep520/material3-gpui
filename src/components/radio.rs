@@ -22,7 +22,7 @@ use gpui::{
     prelude::FluentBuilder as _, px,
 };
 
-use crate::interaction::{InteractiveSurface, wire_events};
+use crate::interaction::InteractiveSurface;
 use crate::motion::{Animatable, AnimatedComponent, AnimationDriver, MotionRole, lerp_color};
 use crate::theme::ActiveTheme;
 
@@ -137,14 +137,14 @@ impl Render for RadioState {
         let p = self.progress.value() as f32;
 
         let ring_color = if disabled {
-            colors.on_surface.opacity(state_layer.disabled_content)
+            colors.disabled_content(&state_layer)
         } else if self.selected {
             colors.primary
         } else {
             colors.on_surface_variant
         };
         let dot_color = if disabled {
-            colors.on_surface.opacity(state_layer.disabled_content)
+            colors.disabled_content(&state_layer)
         } else {
             colors.primary
         };
@@ -168,18 +168,22 @@ impl Render for RadioState {
         let base = if disabled {
             base
         } else {
-            let base = wire_events(base, &entity, theme.motion(), |s: &mut Self| &mut s.surface);
-            let base = self
-                .surface
-                .overlay(layer, state_layer.pressed, gpui::px(999.))
-                .apply(base);
-            base.child(self.surface.bounds.capture_element())
+            crate::interaction::wire(
+                &self.surface,
+                base,
+                &entity,
+                theme.motion(),
+                |s: &mut Self| &mut s.surface,
+                layer,
+                state_layer.pressed,
+                gpui::px(999.),
+            )
         };
 
         let base = if disabled {
             base
         } else {
-            let select_entity = entity.clone();
+            let select_entity = entity;
             base.on_click(move |_event, window, cx| {
                 select_entity.update(cx, |state, cx| {
                     // 可取消勾选：点击已选中的项切换为未选中

@@ -26,7 +26,7 @@ use gpui::{
 };
 
 use crate::icon::{Icon, IconName};
-use crate::interaction::{InteractiveSurface, wire_events};
+use crate::interaction::InteractiveSurface;
 use crate::motion::{AnimatedComponent, AnimationDriver};
 use crate::theme::ActiveTheme;
 
@@ -198,7 +198,7 @@ impl Render for ChipState {
         let selected = self.selected;
 
         let fg = if disabled {
-            colors.on_surface.opacity(state_layer.disabled_content)
+            colors.disabled_content(&state_layer)
         } else if selected {
             colors.on_secondary_container
         } else {
@@ -231,7 +231,7 @@ impl Render for ChipState {
         let has_trailing = self.on_remove.is_some();
         let label_style = theme.typography().label_large;
         let outline_color = if disabled {
-            colors.on_surface.opacity(state_layer.disabled_content)
+            colors.disabled_content(&state_layer)
         } else {
             colors.outline_variant
         };
@@ -259,12 +259,16 @@ impl Render for ChipState {
         let base = if disabled {
             base
         } else {
-            let base = wire_events(base, &entity, theme.motion(), |s: &mut Self| &mut s.surface);
-            let base = self
-                .surface
-                .overlay(fg, state_layer.pressed, shapes.small)
-                .apply(base);
-            base.child(self.surface.bounds.capture_element())
+            crate::interaction::wire(
+                &self.surface,
+                base,
+                &entity,
+                theme.motion(),
+                |s: &mut Self| &mut s.surface,
+                fg,
+                state_layer.pressed,
+                shapes.small,
+            )
         };
 
         let base = if disabled {
@@ -286,7 +290,8 @@ impl Render for ChipState {
             |el, handler| {
                 el.child(
                     div()
-                        .id(SharedString::from(format!("{}-remove", self.id)))
+                        // NamedChild:由父 id 组合子 id,不分配字符串
+                        .id((self.id.clone(), "remove"))
                         .size(px(18.))
                         .flex()
                         .flex_none()

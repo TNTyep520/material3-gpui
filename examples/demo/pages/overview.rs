@@ -26,7 +26,7 @@ impl OverviewPage {
 impl Render for OverviewPage {
     fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
         let theme = cx.theme();
-        let colors = theme.colors().clone();
+        let colors = *theme.colors();
         let on_navigate = self.on_navigate.clone();
 
         gallery([showcase_group(

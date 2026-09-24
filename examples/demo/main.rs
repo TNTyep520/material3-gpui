@@ -246,7 +246,7 @@ impl Demo {
                 });
             });
         });
-        let handle = this.clone();
+        let handle = this;
         dialogs_page.update(cx, |page, cx| {
             page.dlg_ok.update(cx, |button, _| {
                 button.set_on_click(move |_, _window, cx| {
@@ -265,7 +265,7 @@ impl Render for Demo {
         self.wire(cx);
 
         let this = cx.entity();
-        let colors = cx.theme().colors().clone();
+        let colors = *cx.theme().colors();
         let typography = *cx.theme().typography();
         let font_family = cx.theme().font_family().clone();
         let page = self.page;
@@ -292,7 +292,6 @@ impl Render for Demo {
             PageId::Lists => self.pages.lists.clone().into(),
             PageId::Dialogs => self.pages.dialogs.clone().into(),
         };
-        let page_view: AnyView = page_view;
         let meta = &PAGES[PAGES.iter().position(|p| p.id == page).unwrap_or(0)];
 
         // 侧栏导航

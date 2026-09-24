@@ -63,7 +63,7 @@ impl TextFieldStyle {
                 colors.surface
             },
             border_color: if disabled {
-                colors.on_surface.opacity(state.disabled_container)
+                colors.disabled_container(state)
             } else if error {
                 colors.error
             } else {

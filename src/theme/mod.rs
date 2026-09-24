@@ -22,6 +22,7 @@
 mod color;
 mod component_tokens;
 mod density;
+#[cfg(feature = "dynamic-color")]
 mod dynamic_color;
 mod elevation;
 mod profile;
@@ -36,6 +37,7 @@ pub use component_tokens::{
     TextFieldTokens, TooltipTokens,
 };
 pub use density::Density;
+#[cfg(feature = "dynamic-color")]
 pub use dynamic_color::color_scheme_from_seed;
 pub use elevation::{Elevation, ElevationTokens};
 pub use profile::Profile;
@@ -83,15 +85,19 @@ impl Theme {
         Self::from_seed(0x6750A4, ThemeMode::Dark, Profile::Baseline2021)
     }
 
-    /// 由种子色生成主题（动态色）。
+    /// 由种子色生成主题。
     ///
-    /// `seed` 为 ARGB 种子色；`profile` 决定动态色规格与令牌家族。
-    /// 基线种子色 `0x6750A4` + `Baseline2021` 时直接使用 material-web /
+    /// 基线种子色 `0x6750A4` + `Baseline2021` 直接使用 material-web /
     /// MD3 官方的精确 baseline 亮/暗常量表（与动态色推导存在 ±1~3/255
-    /// 的 HCT 舍入差异，为保证 switch 手柄等角色与规范一致，此处精确对齐）；
-    /// 其余种子色经 material-color-utilities 动态生成。
+    /// 的 HCT 舍入差异，为保证 switch 手柄等角色与规范一致，此处精确对齐）。
+    ///
+    /// 其余种子色需启用 `dynamic-color` feature 经
+    /// material-color-utilities 动态生成；未启用时回退到基线色表
+    /// （仅亮/暗模式生效）。
     pub fn from_seed(seed: u32, mode: ThemeMode, profile: Profile) -> Self {
         let is_dark = mode == ThemeMode::Dark;
+
+        #[cfg(feature = "dynamic-color")]
         let colors = if seed == 0x6750A4 && profile == Profile::Baseline2021 {
             if is_dark {
                 ColorScheme::dark()
@@ -101,6 +107,15 @@ impl Theme {
         } else {
             color_scheme_from_seed(seed, is_dark, profile)
         };
+
+        #[cfg(not(feature = "dynamic-color"))]
+        let colors = if is_dark {
+            ColorScheme::dark()
+        } else {
+            ColorScheme::light()
+        };
+        let _ = (seed, profile); // feature 关闭时参数仅由模式决定
+
         Self::from_token_set(TokenSet::new(profile, colors), mode, DEFAULT_FONT_FAMILY)
     }
 
