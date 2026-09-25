@@ -26,13 +26,12 @@ gpui_platform = { git = "https://github.com/zed-industries/zed", features = [
     "runtime_shaders",
 ] }
 
+# Windows:exe 图标资源嵌入(build.rs;必须位于 [[example]] 之前)
+[target.'cfg(target_os = "windows")'.build-dependencies]
+winresource = "0.1"
+
 [[example]]
 name = "demo"
-
-# Windows:SVG→PNG 渲染与 exe 图标资源嵌入(build.rs)
-[target.'cfg(target_os = "windows")'.build-dependencies]
-resvg = "0.46"
-embed-resource = "3"
 
 [lints.clippy]
 redundant_clone = "warn"
