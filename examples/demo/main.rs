@@ -11,6 +11,7 @@
 //! 运行：`cargo run --example demo`
 
 mod pages;
+mod titlebar;
 
 use gpui::{
     AnyView, App, Bounds, Context, Entity, IntoElement, Render, TitlebarOptions, Window,
@@ -422,11 +423,21 @@ impl Render for Demo {
             .relative()
             .size_full()
             .flex()
+            .flex_col()
             .bg(colors.surface)
             .font_family(font_family)
             .text_color(colors.on_surface)
-            .child(sidebar)
-            .child(content)
+            // 自定义标题栏(隐藏系统标题栏后的窗体框架)
+            .child(titlebar::CustomTitleBar)
+            .child(
+                div()
+                    .flex_1()
+                    .min_h_0()
+                    .flex()
+                    .overflow_hidden()
+                    .child(sidebar)
+                    .child(content),
+            )
             // 窗口级弹层宿主：Snackbar / Menu / Tooltip
             .child(host(window, cx))
             .when(dialog_open, |el| {
@@ -458,14 +469,20 @@ impl Render for Demo {
 fn main() {
     application().with_assets(Md3Assets).run(|cx: &mut App| {
         material3_gpui::init(cx);
-        let bounds = Bounds::centered(None, size(px(1200.), px(860.)), cx);
+        // 竖屏窗体:初始与最小尺寸一致(456×700,宽度对齐 BakaXL)
+        let initial = size(px(456.), px(700.));
+        let min_size = size(px(456.), px(700.));
+        let bounds = Bounds::centered(None, initial, cx);
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 titlebar: Some(TitlebarOptions {
                     title: Some("material3-gpui".into()),
+                    // 隐藏系统标题栏,由 demo 自绘(Windows;macOS 红绿灯仍在)
+                    appears_transparent: true,
                     ..Default::default()
                 }),
+                window_min_size: Some(min_size),
                 ..Default::default()
             },
             |_, cx| cx.new(Demo::new),

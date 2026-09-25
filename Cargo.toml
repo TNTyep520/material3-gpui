@@ -29,6 +29,11 @@ gpui_platform = { git = "https://github.com/zed-industries/zed", features = [
 [[example]]
 name = "demo"
 
+# Windows:SVG→PNG 渲染与 exe 图标资源嵌入(build.rs)
+[target.'cfg(target_os = "windows")'.build-dependencies]
+resvg = "0.46"
+embed-resource = "3"
+
 [lints.clippy]
 redundant_clone = "warn"
 

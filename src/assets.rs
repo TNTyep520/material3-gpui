@@ -16,11 +16,21 @@ use std::borrow::Cow;
 /// `CircularProgress` 旋转弧 SVG 的资源路径。
 pub const PROGRESS_ARC_SVG_PATH: &str = "md3-icons/progress_arc.svg";
 
+/// Material 站点图标(蓝色圆角方块 + 白圆盘 + M 徽标)的资源路径,
+/// 供自定义标题栏/关于页等以 `img()` 渲染。
+pub const MATERIAL3_FAVICON_SVG_PATH: &str = "md3-icons/material3-favicon.svg";
+
 /// (asset_path, bytes)：仅保留内部需要的资源。
-static RESOURCES: &[(&str, &[u8])] = &[(
-    "md3-icons/progress_arc.svg",
-    include_bytes!("assets/progress_arc.svg").as_slice(),
-)];
+static RESOURCES: &[(&str, &[u8])] = &[
+    (
+        "md3-icons/progress_arc.svg",
+        include_bytes!("assets/progress_arc.svg").as_slice(),
+    ),
+    (
+        "md3-icons/material3-favicon.svg",
+        include_bytes!("assets/material3-favicon.svg").as_slice(),
+    ),
+];
 
 /// material3-gpui 的内嵌资源源
 pub struct Md3Assets;
