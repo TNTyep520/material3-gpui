@@ -26,8 +26,9 @@ gpui_platform = { git = "https://github.com/zed-industries/zed", features = [
     "runtime_shaders",
 ] }
 
-# Windows:exe 图标资源嵌入(build.rs;必须位于 [[example]] 之前)
-[target.'cfg(target_os = "windows")'.build-dependencies]
+# Windows 目标的 exe 图标嵌入(build.rs 内按 CARGO_CFG_TARGET_OS 守卫;
+# crate 本体跨平台,无条件声明——build 脚本按宿主平台编译,不能按目标门控)
+[build-dependencies]
 winresource = "0.1"
 
 [[example]]
