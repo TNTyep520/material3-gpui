@@ -15,7 +15,7 @@ mod titlebar;
 
 use gpui::{
     AnyView, App, Bounds, Context, Entity, IntoElement, Render, TitlebarOptions, Window,
-    WindowBounds, WindowOptions, div, prelude::*, px, size,
+    WindowBounds, WindowOptions, div, point, prelude::*, px, size,
 };
 use gpui_platform::application;
 use material3_gpui::overlay::host;
@@ -264,6 +264,8 @@ impl Demo {
 impl Render for Demo {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.wire(cx);
+        #[cfg(target_os = "macos")]
+        hide_maximize_buttons();
 
         let this = cx.entity();
         let colors = *cx.theme().colors();
@@ -480,7 +482,9 @@ fn main() {
                     title: Some("material3-gpui".into()),
                     // 隐藏系统标题栏,由 demo 自绘(Windows;macOS 红绿灯仍在)
                     appears_transparent: true,
-                    ..Default::default()
+                    // macOS 红绿灯显式定位:系统默认按 28dp 标题栏摆放,
+                    // 在自绘 40dp 栏里会偏上;按钮高 16,12 使其在 40dp 内垂直居中
+                    traffic_light_position: Some(point(px(9.), px(12.))),
                 }),
                 window_min_size: Some(min_size),
                 ..Default::default()
@@ -490,4 +494,25 @@ fn main() {
         .unwrap();
         cx.activate(true);
     });
+}
+
+/// 隐藏 macOS 红绿灯中的绿色最大化按钮(仅保留关闭与最小化)。
+///
+/// gpui 公开 API 只能整体定位红绿灯(`traffic_light_position`),不提供
+/// 单个灯的显隐;此处经 AppKit 遍历本应用全部窗口,把 zoom 标准按钮隐藏。
+/// AppKit 在窗口样式变化时可能重建标准按钮(如进出全屏),故随每帧重设。
+/// objc2 绑定均为安全方法,主线程约束由 `MainThreadMarker` 保证。
+#[cfg(target_os = "macos")]
+fn hide_maximize_buttons() {
+    use objc2::MainThreadMarker;
+    use objc2_app_kit::{NSApplication, NSWindowButton};
+
+    if let Some(mtm) = MainThreadMarker::new() {
+        let app = NSApplication::sharedApplication(mtm);
+        for window in app.windows().iter() {
+            if let Some(zoom) = window.standardWindowButton(NSWindowButton::ZoomButton) {
+                zoom.setHidden(true);
+            }
+        }
+    }
 }

@@ -39,8 +39,8 @@ const CLOSE_HOVER_RED: Rgba = Rgba {
     b: 32.0 / 255.0,
     a: 1.0,
 };
-/// macOS 红绿灯避让内边距。
-const MAC_TRAFFIC_LIGHT_INSET: f32 = 78.0;
+/// macOS 红绿灯避让内边距(关闭+最小化两灯止于约 45dp,另留 12dp 间距)。
+const MAC_TRAFFIC_LIGHT_INSET: f32 = 48.0;
 
 /// 自定义标题栏。
 #[derive(IntoElement)]
