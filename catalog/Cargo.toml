@@ -25,8 +25,9 @@ objc2-foundation = { version = "0.3", default-features = false, features = [
     "NSEnumerator",
 ] }
 
-# Windows:exe 图标资源嵌入(build.rs 内按 CARGO_CFG_TARGET_OS 守卫)
-[target.'cfg(target_os = "windows")'.build-dependencies]
+# Windows:exe 图标资源嵌入(build.rs 内按 CARGO_CFG_TARGET_OS 守卫)。
+# build 脚本按宿主平台编译,winresource 本体跨平台,不能按目标门控
+[build-dependencies]
 winresource = "0.1"
 
 [lints.clippy]
