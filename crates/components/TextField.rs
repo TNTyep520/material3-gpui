@@ -316,7 +316,7 @@ impl Render for TextFieldState {
             // 点击聚焦
             .on_mouse_down(gpui::MouseButton::Left, {
                 let focus = self.focus.clone();
-                move |_event, window, cx| window.focus(&focus, cx)
+                move |_event, window, _cx| window.focus(&focus)
             })
             // 键盘录入
             .on_key_down(move |event, window, cx| {
@@ -460,7 +460,10 @@ impl TextFieldState {
         }
         let font = gpui::Font {
             family: theme.font_family().clone(),
-            ..gpui::Font::default()
+            fallbacks: None,
+            features: gpui::FontFeatures::default(),
+            weight: gpui::FontWeight::NORMAL,
+            style: gpui::FontStyle::Normal,
         };
         let font_size = theme.typography().body_large.size;
         let run = gpui::TextRun {

@@ -2,3 +2,5 @@
 .idea
 Cargo.lock
 .zcode
+# cc crate 链接器探测产物
+.intentionally-empty-file.o

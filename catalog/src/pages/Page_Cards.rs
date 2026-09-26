@@ -3,7 +3,7 @@
 use gpui::{App, Entity, IntoElement, Render, Window, prelude::*};
 use material3_gpui::prelude::*;
 
-use super::{demo_card, gallery, showcase_group};
+use super::{catalog_card, gallery, showcase_group};
 
 /// Cards 页视图。
 pub struct CardsPage;
@@ -20,9 +20,9 @@ impl Render for CardsPage {
             cx,
             "Cards",
             [
-                demo_card(cx, Card::new().elevated(), "Elevated card").into_any_element(),
-                demo_card(cx, Card::new().filled(), "Filled card").into_any_element(),
-                demo_card(cx, Card::new().outlined(), "Outlined card").into_any_element(),
+                catalog_card(cx, Card::new().elevated(), "Elevated card").into_any_element(),
+                catalog_card(cx, Card::new().filled(), "Filled card").into_any_element(),
+                catalog_card(cx, Card::new().outlined(), "Outlined card").into_any_element(),
             ],
         )])
     }

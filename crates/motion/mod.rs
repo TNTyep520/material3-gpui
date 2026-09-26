@@ -28,10 +28,15 @@
 //! }
 //! ```
 
+#[path = "Animatable.rs"]
 pub mod animatable;
+#[path = "Duration.rs"]
 pub mod duration;
+#[path = "Easing.rs"]
 pub mod easing;
+#[path = "Scheme.rs"]
 pub mod scheme;
+#[path = "Spring.rs"]
 pub mod spring;
 
 pub use animatable::{Animatable, AnimatedComponent, AnimationDriver, lerp_color};

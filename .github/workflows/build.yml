@@ -10,7 +10,7 @@ env:
 
 jobs:
   build:
-    name: demo (${{ matrix.target }})
+    name: catalog (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental || false }}
     strategy:
@@ -64,16 +64,26 @@ jobs:
         with:
           key: ${{ matrix.target }}
 
-      - name: Build demo
+      # pathfinder_simd 0.5.6 的 ARM 路径使用了近期 nightly 已移除的
+      # simd_minimum/maximum_number_nsz intrinsic,上游未发修复版,
+      # 就地替换为等价的新名 simd_fmin/simd_fmax
+      - name: Patch pathfinder_simd for recent nightly
+        shell: bash
+        run: |
+          cargo fetch --target ${{ matrix.target }}
+          sed -i.bak 's/simd_maximum_number_nsz/simd_fmax/g; s/simd_minimum_number_nsz/simd_fmin/g' \
+            "$HOME/.cargo/registry/src/"*/pathfinder_simd-0.5.6/src/arm/mod.rs
+
+      - name: Build catalog
         shell: bash
         run: >
-          cargo +nightly build --release --target ${{ matrix.target }} --example demo
+          cargo +nightly build --release --target ${{ matrix.target }} -p catalog
           -Z build-std=std,core
           -Z build-std-features=default,optimize_for_size
 
-      - name: Upload demo artifact
+      - name: Upload catalog artifact
         uses: actions/upload-artifact@v4
         with:
-          name: demo-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/examples/demo*
+          name: catalog-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/catalog*
           if-no-files-found: error

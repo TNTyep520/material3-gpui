@@ -1,21 +1,24 @@
-//! demo 页面模块：每个组件页面一个独立 Entity 视图。
+//! catalog 页面模块：每个组件页面一个独立 Entity 视图。
 //!
 //! 页面视图只在自身状态变化时重渲染自己（Slider 拖动、Progress 动画
 //! 等不再触发整棵应用树重绘——掉帧修复的核心）。
 
-pub mod buttons;
-pub mod cards;
-pub mod chips;
-pub mod dialogs;
-pub mod icon_buttons_fab;
-pub mod lists;
-pub mod navigation;
-pub mod overlays;
-pub mod overview;
-pub mod selection;
-pub mod slider_progress;
-pub mod tabs;
-pub mod text_fields;
+// 页面文件按 `Page_<Name>` 命名(多词用驼峰式),非 snake_case
+#![allow(non_snake_case)]
+
+pub mod Page_Buttons;
+pub mod Page_Cards;
+pub mod Page_Chips;
+pub mod Page_Dialogs;
+pub mod Page_IconButtonsFab;
+pub mod Page_Lists;
+pub mod Page_Navigation;
+pub mod Page_Overlays;
+pub mod Page_Overview;
+pub mod Page_Selection;
+pub mod Page_SliderProgress;
+pub mod Page_Tabs;
+pub mod Page_TextFields;
 
 use gpui::{AnyElement, App, Entity, FontWeight, IntoElement, Styled, div, prelude::*, px};
 
@@ -27,38 +30,38 @@ use material3_gpui::prelude::*;
 /// 页面集合：根视图持有并按导航切换。
 #[derive(Clone)]
 pub struct Pages {
-    pub overview: Entity<overview::OverviewPage>,
-    pub buttons: Entity<buttons::ButtonsPage>,
-    pub icon_buttons_fab: Entity<icon_buttons_fab::IconButtonsFabPage>,
-    pub selection: Entity<selection::SelectionPage>,
-    pub chips: Entity<chips::ChipsPage>,
-    pub slider_progress: Entity<slider_progress::SliderProgressPage>,
-    pub tabs: Entity<tabs::TabsPage>,
-    pub text_fields: Entity<text_fields::TextFieldsPage>,
-    pub overlays: Entity<overlays::OverlaysPage>,
-    pub navigation: Entity<navigation::NavigationPage>,
-    pub cards: Entity<cards::CardsPage>,
-    pub lists: Entity<lists::ListsPage>,
-    pub dialogs: Entity<dialogs::DialogsPage>,
+    pub overview: Entity<Page_Overview::OverviewPage>,
+    pub buttons: Entity<Page_Buttons::ButtonsPage>,
+    pub icon_buttons_fab: Entity<Page_IconButtonsFab::IconButtonsFabPage>,
+    pub selection: Entity<Page_Selection::SelectionPage>,
+    pub chips: Entity<Page_Chips::ChipsPage>,
+    pub slider_progress: Entity<Page_SliderProgress::SliderProgressPage>,
+    pub tabs: Entity<Page_Tabs::TabsPage>,
+    pub text_fields: Entity<Page_TextFields::TextFieldsPage>,
+    pub overlays: Entity<Page_Overlays::OverlaysPage>,
+    pub navigation: Entity<Page_Navigation::NavigationPage>,
+    pub cards: Entity<Page_Cards::CardsPage>,
+    pub lists: Entity<Page_Lists::ListsPage>,
+    pub dialogs: Entity<Page_Dialogs::DialogsPage>,
 }
 
 impl Pages {
     /// 创建全部页面视图（组件实体在各页面构造函数中只创建一次）。
     pub fn new(cx: &mut App) -> Self {
         Self {
-            overview: overview::OverviewPage::new(cx),
-            buttons: buttons::ButtonsPage::new(cx),
-            icon_buttons_fab: icon_buttons_fab::IconButtonsFabPage::new(cx),
-            selection: selection::SelectionPage::new(cx),
-            chips: chips::ChipsPage::new(cx),
-            slider_progress: slider_progress::SliderProgressPage::new(cx),
-            tabs: tabs::TabsPage::new(cx),
-            text_fields: text_fields::TextFieldsPage::new(cx),
-            overlays: overlays::OverlaysPage::new(cx),
-            navigation: navigation::NavigationPage::new(cx),
-            cards: cards::CardsPage::new(cx),
-            lists: lists::ListsPage::new(cx),
-            dialogs: dialogs::DialogsPage::new(cx),
+            overview: Page_Overview::OverviewPage::new(cx),
+            buttons: Page_Buttons::ButtonsPage::new(cx),
+            icon_buttons_fab: Page_IconButtonsFab::IconButtonsFabPage::new(cx),
+            selection: Page_Selection::SelectionPage::new(cx),
+            chips: Page_Chips::ChipsPage::new(cx),
+            slider_progress: Page_SliderProgress::SliderProgressPage::new(cx),
+            tabs: Page_Tabs::TabsPage::new(cx),
+            text_fields: Page_TextFields::TextFieldsPage::new(cx),
+            overlays: Page_Overlays::OverlaysPage::new(cx),
+            navigation: Page_Navigation::NavigationPage::new(cx),
+            cards: Page_Cards::CardsPage::new(cx),
+            lists: Page_Lists::ListsPage::new(cx),
+            dialogs: Page_Dialogs::DialogsPage::new(cx),
         }
     }
 }
@@ -103,7 +106,7 @@ pub(crate) fn showcase_group(
 }
 
 /// 演示卡片。
-pub(crate) fn demo_card(cx: &App, card: Card, title: &'static str) -> impl IntoElement {
+pub(crate) fn catalog_card(cx: &App, card: Card, title: &'static str) -> impl IntoElement {
     let theme = cx.theme();
     card.w(px(220.))
         .p(px(16.))

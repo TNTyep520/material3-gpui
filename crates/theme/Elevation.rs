@@ -71,14 +71,12 @@ impl Elevation {
             offset: point(px(0.), px(y)),
             blur_radius: px(blur),
             spread_radius: px(spread),
-            inset: false,
         };
         let ambient = |y: f32, blur: f32, spread: f32| BoxShadow {
             color: shadow_color.opacity(0.15),
             offset: point(px(0.), px(y)),
             blur_radius: px(blur),
             spread_radius: px(spread),
-            inset: false,
         };
         match self {
             Elevation::Level0 => vec![],

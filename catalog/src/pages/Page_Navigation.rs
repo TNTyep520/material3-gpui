@@ -109,7 +109,6 @@ impl Render for NavigationPage {
                 "Navigation Rail & Drawer",
                 [div()
                     .flex()
-                    .items_stretch()
                     .gap(px(16.))
                     .h(px(320.))
                     .child(self.nav_rail.clone())

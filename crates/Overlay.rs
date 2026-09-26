@@ -79,7 +79,8 @@ pub fn show_snackbar(
     let timer_host = host_entity.clone();
     cx.spawn(async move |cx| {
         cx.background_executor().timer(duration).await;
-        timer_host.update(cx, |host, cx| {
+        // 宿主可能已随窗口关闭而释放,更新失败可安全忽略
+        let _ = timer_host.update(cx, |host, cx| {
             host.dismiss_snack_top(cx);
         });
     })

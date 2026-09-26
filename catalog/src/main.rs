@@ -4,20 +4,22 @@
 //! material3-gpui 组件演示（入口）。
 //!
 //! 结构：
-//! - `Demo`：根视图——主题状态、页面导航、侧栏与头部开关、对话框与弹层宿主；
+//! - `Catalog`：根视图——主题状态、页面导航、侧栏与头部开关、对话框与弹层宿主；
 //! - `pages`：每个组件页面一个独立 Entity 视图（页面只在自身状态变化时
 //!   重渲染自己，Slider 拖动 / Progress 动画不再触发整树重绘）。
 //!
-//! 运行：`cargo run --example demo`
+//! 运行：`cargo run -p catalog`
 
+// 模块名跟随文件名的驼峰式约定,非 snake_case
+#[allow(non_snake_case)]
+mod Titlebar;
 mod pages;
-mod titlebar;
 
 use gpui::{
     AnyView, App, Bounds, Context, Entity, IntoElement, Render, TitlebarOptions, Window,
     WindowBounds, WindowOptions, div, point, prelude::*, px, size,
 };
-use gpui_platform::application;
+
 use material3_gpui::overlay::host;
 use material3_gpui::prelude::*;
 use pages::Pages;
@@ -131,8 +133,8 @@ const PAGES: [PageMeta; 13] = [
     },
 ];
 
-/// demo 根视图。
-struct Demo {
+/// catalog 根视图。
+struct Catalog {
     dark: bool,
     seed: u32,
     page: PageId,
@@ -142,7 +144,7 @@ struct Demo {
     pages: Pages,
 }
 
-impl Demo {
+impl Catalog {
     fn new(cx: &mut Context<Self>) -> Self {
         Self {
             dark: false,
@@ -261,7 +263,7 @@ impl Demo {
     }
 }
 
-impl Render for Demo {
+impl Render for Catalog {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.wire(cx);
         #[cfg(target_os = "macos")]
@@ -412,7 +414,7 @@ impl Render for Demo {
             )
             .child(
                 div()
-                    .id("demo-content")
+                    .id("catalog-content")
                     .flex_1()
                     .overflow_y_scroll()
                     .px(px(32.))
@@ -421,7 +423,7 @@ impl Render for Demo {
             );
 
         div()
-            .id("demo-root")
+            .id("catalog-root")
             .relative()
             .size_full()
             .flex()
@@ -430,7 +432,7 @@ impl Render for Demo {
             .font_family(font_family)
             .text_color(colors.on_surface)
             // 自定义标题栏(隐藏系统标题栏后的窗体框架)
-            .child(titlebar::CustomTitleBar)
+            .child(Titlebar::CustomTitleBar)
             .child(
                 div()
                     .flex_1()
@@ -453,7 +455,7 @@ impl Render for Demo {
                     }
                 };
                 el.child(
-                    Dialog::new("demo-dialog")
+                    Dialog::new("catalog-dialog")
                         .icon(IconName::Delete)
                         .title("Permanently delete?")
                         .child(
@@ -469,31 +471,33 @@ impl Render for Demo {
 }
 
 fn main() {
-    application().with_assets(Md3Assets).run(|cx: &mut App| {
-        material3_gpui::init(cx);
-        // 竖屏窗体:初始与最小尺寸一致(456×700,宽度对齐 BakaXL)
-        let initial = size(px(456.), px(700.));
-        let min_size = size(px(456.), px(700.));
-        let bounds = Bounds::centered(None, initial, cx);
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(bounds)),
-                titlebar: Some(TitlebarOptions {
-                    title: Some("material3-gpui".into()),
-                    // 隐藏系统标题栏,由 demo 自绘(Windows;macOS 红绿灯仍在)
-                    appears_transparent: true,
-                    // macOS 红绿灯显式定位:系统默认按 28dp 标题栏摆放,
-                    // 在自绘 40dp 栏里会偏上;按钮高 16,12 使其在 40dp 内垂直居中
-                    traffic_light_position: Some(point(px(9.), px(12.))),
-                }),
-                window_min_size: Some(min_size),
-                ..Default::default()
-            },
-            |_, cx| cx.new(Demo::new),
-        )
-        .unwrap();
-        cx.activate(true);
-    });
+    gpui::Application::new()
+        .with_assets(Md3Assets)
+        .run(|cx: &mut App| {
+            material3_gpui::init(cx);
+            // 竖屏窗体:初始与最小尺寸一致(456×700,宽度对齐 BakaXL)
+            let initial = size(px(456.), px(700.));
+            let min_size = size(px(456.), px(700.));
+            let bounds = Bounds::centered(None, initial, cx);
+            cx.open_window(
+                WindowOptions {
+                    window_bounds: Some(WindowBounds::Windowed(bounds)),
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("material3-gpui".into()),
+                        // 隐藏系统标题栏,由 catalog 自绘(Windows;macOS 红绿灯仍在)
+                        appears_transparent: true,
+                        // macOS 红绿灯显式定位:系统默认按 28dp 标题栏摆放,
+                        // 在自绘 40dp 栏里会偏上;按钮高 16,12 使其在 40dp 内垂直居中
+                        traffic_light_position: Some(point(px(9.), px(12.))),
+                    }),
+                    window_min_size: Some(min_size),
+                    ..Default::default()
+                },
+                |_, cx| cx.new(Catalog::new),
+            )
+            .unwrap();
+            cx.activate(true);
+        });
 }
 
 /// 隐藏 macOS 红绿灯中的绿色最大化按钮(仅保留关闭与最小化)。

@@ -175,7 +175,7 @@ fn window_button(
             on_click(event, window, cx)
         })
     };
-    // 关闭按钮用 ligature(已在 demo 各处验证);最小化用码点直取
+    // 关闭按钮用 ligature(已在 catalog 各处验证);最小化用码点直取
     let icon = if icon_name == "close-button" {
         Icon::new(IconName::Close).size(px(16.))
     } else {

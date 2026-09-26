@@ -1,0 +1,33 @@
+[package]
+name = "catalog"
+version = "0.1.1"
+edition = "2024"
+publish = false
+description = "material3-gpui component showcase (not published)"
+
+[dependencies]
+gpui = "0.2.2"
+material3-gpui = { path = ".." }
+
+# macOS:catalog 经 AppKit 隐藏绿色最大化红绿灯(gpui 未暴露单灯显隐;
+# objc2 绑定为安全方法,实现见 src/main.rs)
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", default-features = false, features = [
+    "NSApplication",
+    "NSButton",
+    "NSControl",
+    "NSResponder",
+    "NSView",
+    "NSWindow",
+] }
+objc2-foundation = { version = "0.3", default-features = false, features = [
+    "NSEnumerator",
+] }
+
+# Windows:exe 图标资源嵌入(build.rs 内按 CARGO_CFG_TARGET_OS 守卫)
+[target.'cfg(target_os = "windows")'.build-dependencies]
+winresource = "0.1"
+
+[lints.clippy]
+redundant_clone = "warn"

@@ -36,12 +36,17 @@
 //! }
 //! ```
 
+#[path = "Assets.rs"]
 pub mod assets;
 pub mod components;
+#[path = "Fonts.rs"]
 pub mod fonts;
+#[path = "Icon.rs"]
 pub mod icon;
+#[path = "Interaction.rs"]
 pub mod interaction;
 pub mod motion;
+#[path = "Overlay.rs"]
 pub mod overlay;
 pub mod styles;
 pub mod theme;
