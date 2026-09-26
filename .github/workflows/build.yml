@@ -64,16 +64,6 @@ jobs:
         with:
           key: ${{ matrix.target }}
 
-      # pathfinder_simd 0.5.6 的 ARM 路径使用了近期 nightly 已移除的
-      # simd_minimum/maximum_number_nsz intrinsic,上游未发修复版,
-      # 就地替换为等价的新名 simd_fmin/simd_fmax
-      - name: Patch pathfinder_simd for recent nightly
-        shell: bash
-        run: |
-          cargo fetch --target ${{ matrix.target }}
-          sed -i.bak 's/simd_maximum_number_nsz/simd_fmax/g; s/simd_minimum_number_nsz/simd_fmin/g' \
-            "$HOME/.cargo/registry/src/"*/pathfinder_simd-0.5.6/src/arm/mod.rs
-
       - name: Build catalog
         shell: bash
         run: >
