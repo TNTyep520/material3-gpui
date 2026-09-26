@@ -19,26 +19,26 @@
 //! div().bg(theme.colors().surface)
 //! ```
 
-#[path = "Color.rs"]
+#[path = "theme/Color.rs"]
 mod color;
-#[path = "ComponentTokens.rs"]
+#[path = "theme/ComponentTokens.rs"]
 mod component_tokens;
-#[path = "Density.rs"]
+#[path = "theme/Density.rs"]
 mod density;
 #[cfg(feature = "dynamic-color")]
-#[path = "DynamicColor.rs"]
+#[path = "theme/DynamicColor.rs"]
 mod dynamic_color;
-#[path = "Elevation.rs"]
+#[path = "theme/Elevation.rs"]
 mod elevation;
-#[path = "Profile.rs"]
+#[path = "theme/Profile.rs"]
 mod profile;
-#[path = "Shape.rs"]
+#[path = "theme/Shape.rs"]
 mod shape;
-#[path = "State.rs"]
+#[path = "theme/State.rs"]
 mod state;
-#[path = "TokenSet.rs"]
+#[path = "theme/TokenSet.rs"]
 mod token_set;
-#[path = "Typography.rs"]
+#[path = "theme/Typography.rs"]
 mod typography;
 
 pub use color::{ColorScheme, hex};

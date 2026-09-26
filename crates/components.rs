@@ -1,36 +1,36 @@
 //! MD3 组件集合
 
-#[path = "Button.rs"]
+#[path = "components/Button.rs"]
 mod button;
-#[path = "Card.rs"]
+#[path = "components/Card.rs"]
 mod card;
-#[path = "Checkbox.rs"]
+#[path = "components/Checkbox.rs"]
 mod checkbox;
-#[path = "Chip.rs"]
+#[path = "components/Chip.rs"]
 mod chip;
-#[path = "Dialog.rs"]
+#[path = "components/Dialog.rs"]
 mod dialog;
-#[path = "Divider.rs"]
+#[path = "components/Divider.rs"]
 mod divider;
-#[path = "Fab.rs"]
+#[path = "components/Fab.rs"]
 mod fab;
-#[path = "IconButton.rs"]
+#[path = "components/IconButton.rs"]
 mod icon_button;
-#[path = "List.rs"]
+#[path = "components/List.rs"]
 mod list;
-#[path = "Navigation.rs"]
+#[path = "components/Navigation.rs"]
 mod navigation;
-#[path = "Progress.rs"]
+#[path = "components/Progress.rs"]
 mod progress;
-#[path = "Radio.rs"]
+#[path = "components/Radio.rs"]
 mod radio;
-#[path = "Slider.rs"]
+#[path = "components/Slider.rs"]
 mod slider;
-#[path = "Switch.rs"]
+#[path = "components/Switch.rs"]
 mod switch;
-#[path = "Tabs.rs"]
+#[path = "components/Tabs.rs"]
 mod tabs;
-#[path = "TextField.rs"]
+#[path = "components/TextField.rs"]
 mod text_field;
 
 pub use button::{Button, ButtonState, ButtonVariant};

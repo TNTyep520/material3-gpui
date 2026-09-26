@@ -79,12 +79,11 @@ pub fn show_snackbar(
     let timer_host = host_entity.clone();
     cx.spawn(async move |cx| {
         cx.background_executor().timer(duration).await;
-        // 宿主可能已随窗口关闭而释放,更新失败可安全忽略
-        let _ = timer_host.update(cx, |host, cx| {
+        timer_host.update(cx, |host, cx| {
             host.dismiss_snack_top(cx);
-        });
+        })
     })
-    .detach();
+    .detach_and_log_err(cx);
 }
 
 /// 在锚点下方显示菜单。

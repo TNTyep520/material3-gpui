@@ -14,7 +14,7 @@ exclude = ["catalog"]
 
 # 源码目录由 src 命名为 crates
 [lib]
-path = "crates/lib.rs"
+path = "crates/material3_gpui.rs"
 
 [features]
 dynamic-color = ["dep:mcu-hct", "dep:mcu-palettes", "dep:mcu-dynamiccolor"]

@@ -15,25 +15,25 @@
 //!     .build(cx)
 //! ```
 
-#[path = "Button.rs"]
+#[path = "styles/Button.rs"]
 pub mod button;
-#[path = "Chip.rs"]
+#[path = "styles/Chip.rs"]
 pub mod chip;
-#[path = "Container.rs"]
+#[path = "styles/Container.rs"]
 pub mod container;
-#[path = "Fab.rs"]
+#[path = "styles/Fab.rs"]
 pub mod fab;
-#[path = "Input.rs"]
+#[path = "styles/Input.rs"]
 pub mod input;
-#[path = "Navigation.rs"]
+#[path = "styles/Navigation.rs"]
 pub mod navigation;
-#[path = "Overlay.rs"]
+#[path = "styles/Overlay.rs"]
 pub mod overlay;
-#[path = "Progress.rs"]
+#[path = "styles/Progress.rs"]
 pub mod progress;
-#[path = "Selection.rs"]
+#[path = "styles/Selection.rs"]
 pub mod selection;
-#[path = "Tabs.rs"]
+#[path = "styles/Tabs.rs"]
 pub mod tabs;
 
 pub use button::{ButtonStyle, IconButtonStyle};
