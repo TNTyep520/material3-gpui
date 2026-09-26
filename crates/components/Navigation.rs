@@ -19,15 +19,14 @@ use std::time::Instant;
 
 use gpui::{
     App, AppContext as _, Context, ElementId, Entity, InteractiveElement as _, IntoElement,
-    ParentElement as _, Render, RenderOnce, SharedString, StatefulInteractiveElement as _, Styled,
-    Window, div, prelude::FluentBuilder as _, px, relative,
+    ParentElement as _, Render, SharedString, StatefulInteractiveElement as _, Styled, Window, div,
+    prelude::FluentBuilder as _, px, relative,
 };
 
 use crate::icon::{Icon, IconName};
 use crate::motion::{Animatable, AnimatedComponent, AnimationDriver, MotionRole};
 use crate::styles::navigation::{
     NavigationBarStyle, NavigationDrawerStyle, NavigationItemStyle, NavigationRailStyle,
-    TopAppBarStyle,
 };
 use crate::theme::ActiveTheme;
 
@@ -686,69 +685,5 @@ impl Render for NavigationDrawerState {
             }
         }
         column
-    }
-}
-
-/// MD3 顶部应用栏（small 型）。
-#[derive(IntoElement)]
-pub struct TopAppBar {
-    title: SharedString,
-    leading: Option<IconName>,
-    actions: Vec<Entity<IconButtonState>>,
-}
-
-use crate::components::icon_button::IconButtonState;
-
-impl TopAppBar {
-    /// 创建顶部应用栏。
-    pub fn new(title: impl Into<SharedString>) -> Self {
-        Self {
-            title: title.into(),
-            leading: None,
-            actions: Vec::new(),
-        }
-    }
-
-    /// 前导图标（如菜单按钮）。
-    pub fn leading(mut self, icon: IconName) -> Self {
-        self.leading = Some(icon);
-        self
-    }
-
-    /// 动作区图标按钮。
-    pub fn action(mut self, action: Entity<IconButtonState>) -> Self {
-        self.actions.push(action);
-        self
-    }
-}
-
-impl RenderOnce for TopAppBar {
-    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let style = TopAppBarStyle::resolve(cx.theme().token_set());
-        div()
-            .h(style.height)
-            .w_full()
-            .flex_none()
-            .flex()
-            .items_center()
-            .gap(style.gap)
-            .px(style.horizontal_padding)
-            .bg(style.container_color)
-            .when_some(self.leading, |el, icon| {
-                el.child(
-                    Icon::new(icon)
-                        .size(style.title.size * 1.2)
-                        .color(style.icon_color),
-                )
-            })
-            .child(
-                style
-                    .title
-                    .apply(div())
-                    .flex_1()
-                    .text_color(style.title_color)
-                    .child(self.title),
-            )
-            .children(self.actions)
     }
 }

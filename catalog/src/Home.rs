@@ -16,6 +16,7 @@ const GROUPS: &[(&str, &[usize])] = &[
     ("Selection", &[2, 3]),
     ("Input", &[6, 4]),
     ("Navigation", &[5, 8]),
+    ("App shell", &[12, 13]),
     ("Containers", &[9, 10]),
     ("Feedback", &[7, 11]),
 ];

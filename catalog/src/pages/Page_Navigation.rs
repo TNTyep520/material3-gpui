@@ -93,7 +93,13 @@ impl Render for NavigationPage {
                 "Top App Bar",
                 [div()
                     .w_full()
-                    .child(material3_gpui::TopAppBar::new("Navigation").leading(IconName::Menu))
+                    .child(
+                        material3_gpui::TopAppBar::new("Navigation").leading(
+                            material3_gpui::Icon::new(IconName::Menu)
+                                .size(px(24.))
+                                .color(cx.theme().colors().on_surface),
+                        ),
+                    )
                     .into_any_element()],
             ),
             showcase_group(

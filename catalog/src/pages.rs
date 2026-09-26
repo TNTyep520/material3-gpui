@@ -6,6 +6,7 @@
 // 页面文件按 `Page_<Name>` 命名(多词用驼峰式),非 snake_case
 #![allow(non_snake_case)]
 
+pub mod Page_AppBars;
 pub mod Page_Buttons;
 pub mod Page_Cards;
 pub mod Page_Chips;
@@ -15,6 +16,7 @@ pub mod Page_Lists;
 pub mod Page_Navigation;
 pub mod Page_Overlays;
 pub mod Page_Selection;
+pub mod Page_Sheets;
 pub mod Page_SliderProgress;
 pub mod Page_Tabs;
 pub mod Page_TextFields;
@@ -41,6 +43,8 @@ pub struct Pages {
     pub cards: Entity<Page_Cards::CardsPage>,
     pub lists: Entity<Page_Lists::ListsPage>,
     pub dialogs: Entity<Page_Dialogs::DialogsPage>,
+    pub app_bars: Entity<Page_AppBars::AppBarsPage>,
+    pub sheets: Entity<Page_Sheets::SheetsPage>,
 }
 
 impl Pages {
@@ -59,6 +63,8 @@ impl Pages {
             cards: Page_Cards::CardsPage::new(cx),
             lists: Page_Lists::ListsPage::new(cx),
             dialogs: Page_Dialogs::DialogsPage::new(cx),
+            app_bars: Page_AppBars::AppBarsPage::new(cx),
+            sheets: Page_Sheets::SheetsPage::new(cx),
         }
     }
 }

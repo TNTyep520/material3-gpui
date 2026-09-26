@@ -28,6 +28,23 @@ use pages::Pages;
 
 const DEFAULT_SEED: u32 = 0x6750A4;
 
+/// 实体更新失败的兜底(窗口/页面已释放等场景):输出到 stderr 后放行。
+pub(crate) trait LogErr<T> {
+    fn log_err(self) -> Option<T>;
+}
+
+impl<T, E: std::fmt::Display> LogErr<T> for Result<T, E> {
+    fn log_err(self) -> Option<T> {
+        match self {
+            Ok(value) => Some(value),
+            Err(err) => {
+                eprintln!("catalog: {err}");
+                None
+            }
+        }
+    }
+}
+
 /// 页面标识。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum PageId {
@@ -43,6 +60,8 @@ enum PageId {
     Cards,
     Lists,
     Dialogs,
+    AppBars,
+    Sheets,
 }
 
 /// 页面元信息：(标题, 副标题, 图标)。
@@ -53,7 +72,7 @@ pub(crate) struct PageMeta {
     pub(crate) icon: IconName,
 }
 
-pub(crate) const PAGES: [PageMeta; 12] = [
+pub(crate) const PAGES: [PageMeta; 14] = [
     PageMeta {
         id: PageId::Buttons,
         title: "Buttons",
@@ -126,6 +145,18 @@ pub(crate) const PAGES: [PageMeta; 12] = [
         subtitle: "Modal dialog with scrim, hero icon and actions",
         icon: IconName::Delete,
     },
+    PageMeta {
+        id: PageId::AppBars,
+        title: "App bars & Scaffold",
+        subtitle: "Top app bar variants, badges and the scaffold layout",
+        icon: IconName::Home,
+    },
+    PageMeta {
+        id: PageId::Sheets,
+        title: "Bottom sheet",
+        subtitle: "Modal bottom sheet with drag handle",
+        icon: IconName::Menu,
+    },
 ];
 
 /// catalog 根视图。
@@ -180,6 +211,32 @@ impl Catalog {
                     d.dark = checked;
                     d.apply_theme(cx);
                 })
+            });
+        });
+
+        // Bottom sheet 页:打开按钮与 scrim 关闭回调
+        let open_button = self.pages.sheets.read(cx).open_button.clone();
+        let sheets_weak = self.pages.sheets.downgrade();
+        open_button.update(cx, |button, _| {
+            button.set_on_click(move |_, _, cx| {
+                sheets_weak
+                    .update(cx, |page, cx| {
+                        page.sheet_open = true;
+                        cx.notify();
+                    })
+                    .log_err();
+            });
+        });
+
+        let sheets_weak = self.pages.sheets.downgrade();
+        self.pages.sheets.update(cx, |page, _| {
+            page.set_on_dismiss(move |cx| {
+                sheets_weak
+                    .update(cx, |page, cx| {
+                        page.sheet_open = false;
+                        cx.notify();
+                    })
+                    .log_err();
             });
         });
 
@@ -278,6 +335,8 @@ impl Render for Catalog {
             PageId::Cards => self.pages.cards.clone().into(),
             PageId::Lists => self.pages.lists.clone().into(),
             PageId::Dialogs => self.pages.dialogs.clone().into(),
+            PageId::AppBars => self.pages.app_bars.clone().into(),
+            PageId::Sheets => self.pages.sheets.clone().into(),
         };
         let meta = &PAGES[PAGES.iter().position(|p| p.id == page).unwrap_or(0)];
         let selected_ix = PAGES.iter().position(|p| p.id == page);
