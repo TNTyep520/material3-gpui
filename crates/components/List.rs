@@ -146,7 +146,7 @@ impl RenderOnce for ListItem {
 
         div()
             .id(self.id)
-            .h(height)
+            .min_h(height)
             .w_full()
             .flex()
             .flex_none()

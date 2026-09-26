@@ -12,6 +12,8 @@
 
 // 模块名跟随文件名的驼峰式约定,非 snake_case
 #[allow(non_snake_case)]
+mod Home;
+#[allow(non_snake_case)]
 mod Titlebar;
 mod pages;
 
@@ -29,7 +31,6 @@ const DEFAULT_SEED: u32 = 0x6750A4;
 /// 页面标识。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum PageId {
-    Overview,
     Buttons,
     IconButtonsFab,
     Selection,
@@ -45,20 +46,14 @@ enum PageId {
 }
 
 /// 页面元信息：(标题, 副标题, 图标)。
-struct PageMeta {
-    id: PageId,
-    title: &'static str,
-    subtitle: &'static str,
-    icon: IconName,
+pub(crate) struct PageMeta {
+    pub(crate) id: PageId,
+    pub(crate) title: &'static str,
+    pub(crate) subtitle: &'static str,
+    pub(crate) icon: IconName,
 }
 
-const PAGES: [PageMeta; 13] = [
-    PageMeta {
-        id: PageId::Overview,
-        title: "Components overview",
-        subtitle: "Browse every implemented Material Design 3 component in material3-gpui",
-        icon: IconName::Home,
-    },
+pub(crate) const PAGES: [PageMeta; 12] = [
     PageMeta {
         id: PageId::Buttons,
         title: "Buttons",
@@ -138,6 +133,8 @@ struct Catalog {
     dark: bool,
     seed: u32,
     page: PageId,
+    /// 竖屏下是否显示主页列表(false = 详情页)。
+    home_visible: bool,
     dialog_open: bool,
     wired: bool,
     dark_switch: Entity<SwitchState>,
@@ -149,7 +146,8 @@ impl Catalog {
         Self {
             dark: false,
             seed: DEFAULT_SEED,
-            page: PageId::Overview,
+            page: PageId::Buttons,
+            home_visible: true,
             dialog_open: false,
             wired: false,
             dark_switch: Switch::new("theme-switch").build(cx),
@@ -183,21 +181,6 @@ impl Catalog {
                     d.apply_theme(cx);
                 })
             });
-        });
-
-        // Overview 页导航
-        let this = cx.entity();
-        self.pages.overview.update(cx, |page, _| {
-            page.set_on_navigate(std::rc::Rc::new(move |ix, cx| {
-                let page_id = PAGES
-                    .get(ix)
-                    .map(|meta| meta.id)
-                    .unwrap_or(PageId::Overview);
-                this.update(cx, |d, cx| {
-                    d.page = page_id;
-                    cx.notify();
-                });
-            }));
         });
 
         // 种子色实时应用动态色
@@ -283,7 +266,6 @@ impl Render for Catalog {
 
         // 当前页面视图（页面只在自身状态变化时重渲染）
         let page_view: AnyView = match self.page {
-            PageId::Overview => self.pages.overview.clone().into(),
             PageId::Buttons => self.pages.buttons.clone().into(),
             PageId::IconButtonsFab => self.pages.icon_buttons_fab.clone().into(),
             PageId::Selection => self.pages.selection.clone().into(),
@@ -298,71 +280,60 @@ impl Render for Catalog {
             PageId::Dialogs => self.pages.dialogs.clone().into(),
         };
         let meta = &PAGES[PAGES.iter().position(|p| p.id == page).unwrap_or(0)];
+        let selected_ix = PAGES.iter().position(|p| p.id == page);
+        // 横屏阈值:窗口拖宽到 840dp 及以上切换为左列表右详情双栏
+        let landscape = window.viewport_size().width >= px(840.);
 
-        // 侧栏导航
-        let sidebar = div()
-            .w(px(280.))
-            .h_full()
+        // 主页面板(BakaXL 设置页风格;横屏为左栏,竖屏铺满)
+        let home_pane = Home::pane(cx, selected_ix, {
+            let this = this.clone();
+            std::rc::Rc::new(move |ix: usize, cx: &mut App| {
+                this.update(cx, |d, cx| {
+                    d.page = PAGES[ix].id;
+                    d.home_visible = false;
+                    cx.notify();
+                })
+            })
+        });
+
+        // 详情页头(竖屏详情加返回按钮)
+        let back_button = div()
+            .id("detail-back")
+            .size(px(40.))
             .flex_none()
+            .rounded_full()
             .flex()
-            .flex_col()
-            .p(px(12.))
-            .gap(px(4.))
-            .bg(colors.surface)
+            .items_center()
+            .justify_center()
+            .cursor_pointer()
+            .hover(|s| s.bg(colors.on_surface.opacity(0.08)))
             .child(
-                div().h(px(56.)).px(px(16.)).flex().items_center().child(
-                    typography
-                        .title_large
-                        .apply(div())
-                        .text_color(colors.on_surface)
-                        .child("material3-gpui"),
-                ),
+                Icon::new(IconName::ArrowBack)
+                    .size(px(24.))
+                    .color(colors.on_surface),
             )
-            .children(PAGES.iter().map(|meta| {
-                let selected = meta.id == page;
-                let ix = PAGES.iter().position(|p| p.id == meta.id).unwrap();
-                let (item_bg, item_fg) = if selected {
-                    (
-                        Some(colors.secondary_container),
-                        colors.on_secondary_container,
-                    )
-                } else {
-                    (None, colors.on_surface_variant)
-                };
-                let layer = colors.on_surface;
-                let item = div()
-                    .id(("nav", ix))
-                    .h(px(48.))
-                    .px(px(16.))
-                    .flex()
-                    .flex_none()
-                    .items_center()
-                    .rounded_full()
-                    .cursor_pointer()
-                    .text_color(item_fg)
-                    .when_some(item_bg, |el, bg| el.bg(bg))
-                    .when(!selected, |el| el.hover(move |s| s.bg(layer.opacity(0.08))))
-                    .on_click({
-                        let this = this.clone();
-                        move |_, _w, cx| {
-                            this.update(cx, |d, cx| {
-                                d.page = PAGES[ix].id;
-                                cx.notify();
-                            })
-                        }
-                    });
-                let item = item.child(meta.title);
-                typography.label_large.apply(item)
-            }));
+            .on_click({
+                let this = this.clone();
+                move |_, _w, cx| {
+                    this.update(cx, |d, cx| {
+                        d.home_visible = true;
+                        cx.notify();
+                    })
+                }
+            });
 
         // 页头
         let content_header = div()
             .flex()
+            .flex_wrap()
             .items_start()
             .justify_between()
             .gap(px(16.))
+            .when(!landscape, |el| el.child(back_button))
             .child(
                 div()
+                    .flex_1()
+                    .min_w(px(180.))
                     .flex()
                     .flex_col()
                     .gap(px(8.))
@@ -399,17 +370,16 @@ impl Render for Catalog {
 
         let content = div()
             .flex_1()
+            .min_w_0()
             .h_full()
             .flex()
             .flex_col()
-            .bg(colors.surface_container_lowest)
-            .border_l_1()
-            .border_color(colors.outline_variant)
+            .bg(colors.surface)
             .child(
                 div()
-                    .px(px(32.))
-                    .pt(px(32.))
-                    .pb(px(16.))
+                    .px(px(12.))
+                    .pt(px(20.))
+                    .pb(px(12.))
                     .child(content_header),
             )
             .child(
@@ -417,8 +387,8 @@ impl Render for Catalog {
                     .id("catalog-content")
                     .flex_1()
                     .overflow_y_scroll()
-                    .px(px(32.))
-                    .pb(px(32.))
+                    .px(px(12.))
+                    .pb(px(24.))
                     .child(page_view),
             );
 
@@ -433,15 +403,46 @@ impl Render for Catalog {
             .text_color(colors.on_surface)
             // 自定义标题栏(隐藏系统标题栏后的窗体框架)
             .child(Titlebar::CustomTitleBar)
-            .child(
+            .child(if landscape {
+                // 横屏双栏:左主页面板 + 右详情
                 div()
                     .flex_1()
                     .min_h_0()
                     .flex()
                     .overflow_hidden()
-                    .child(sidebar)
-                    .child(content),
-            )
+                    .child(
+                        div()
+                            .w(px(440.))
+                            .h_full()
+                            .flex_none()
+                            .flex()
+                            .flex_col()
+                            .bg(colors.surface)
+                            .border_r_1()
+                            .border_color(colors.outline_variant)
+                            .child(home_pane),
+                    )
+                    .child(content)
+            } else if self.home_visible {
+                // 竖屏:主页列表铺满
+                div()
+                    .flex_1()
+                    .min_h_0()
+                    .flex()
+                    .flex_col()
+                    .overflow_hidden()
+                    .bg(colors.surface)
+                    .child(home_pane)
+            } else {
+                // 竖屏:详情页铺满
+                div()
+                    .flex_1()
+                    .min_h_0()
+                    .flex()
+                    .flex_col()
+                    .overflow_hidden()
+                    .child(content)
+            })
             // 窗口级弹层宿主：Snackbar / Menu / Tooltip
             .child(host(window, cx))
             .when(dialog_open, |el| {
@@ -488,7 +489,7 @@ fn main() {
                         appears_transparent: true,
                         // macOS 红绿灯显式定位:系统默认按 28dp 标题栏摆放,
                         // 在自绘 40dp 栏里会偏上;按钮高 16,12 使其在 40dp 内垂直居中
-                        traffic_light_position: Some(point(px(9.), px(12.))),
+                        traffic_light_position: Some(point(px(9.), px(24.))),
                     }),
                     window_min_size: Some(min_size),
                     ..Default::default()

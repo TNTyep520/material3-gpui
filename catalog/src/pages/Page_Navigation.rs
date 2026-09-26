@@ -109,14 +109,16 @@ impl Render for NavigationPage {
                 "Navigation Rail & Drawer",
                 [div()
                     .flex()
+                    .flex_wrap()
                     .gap(px(16.))
-                    .h(px(320.))
+                    .min_h(px(320.))
                     .child(self.nav_rail.clone())
                     .child(
                         material3_gpui::Card::new()
                             .outlined()
                             .overflow_hidden()
                             .w(px(360.))
+                            .max_w_full()
                             .child(self.nav_drawer.clone()),
                     )
                     .into_any_element()],

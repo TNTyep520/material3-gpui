@@ -14,7 +14,6 @@ pub mod Page_IconButtonsFab;
 pub mod Page_Lists;
 pub mod Page_Navigation;
 pub mod Page_Overlays;
-pub mod Page_Overview;
 pub mod Page_Selection;
 pub mod Page_SliderProgress;
 pub mod Page_Tabs;
@@ -30,7 +29,6 @@ use material3_gpui::prelude::*;
 /// 页面集合：根视图持有并按导航切换。
 #[derive(Clone)]
 pub struct Pages {
-    pub overview: Entity<Page_Overview::OverviewPage>,
     pub buttons: Entity<Page_Buttons::ButtonsPage>,
     pub icon_buttons_fab: Entity<Page_IconButtonsFab::IconButtonsFabPage>,
     pub selection: Entity<Page_Selection::SelectionPage>,
@@ -49,7 +47,6 @@ impl Pages {
     /// 创建全部页面视图（组件实体在各页面构造函数中只创建一次）。
     pub fn new(cx: &mut App) -> Self {
         Self {
-            overview: Page_Overview::OverviewPage::new(cx),
             buttons: Page_Buttons::ButtonsPage::new(cx),
             icon_buttons_fab: Page_IconButtonsFab::IconButtonsFabPage::new(cx),
             selection: Page_Selection::SelectionPage::new(cx),
@@ -97,7 +94,7 @@ pub(crate) fn showcase_group(
                 .flex_wrap()
                 .items_center()
                 .gap(px(16.))
-                .p(px(18.))
+                .p(px(12.))
                 .rounded(px(12.))
                 .bg(theme.colors().surface_container_low)
                 .children(items),
@@ -109,6 +106,7 @@ pub(crate) fn showcase_group(
 pub(crate) fn catalog_card(cx: &App, card: Card, title: &'static str) -> impl IntoElement {
     let theme = cx.theme();
     card.w(px(220.))
+        .max_w_full()
         .p(px(16.))
         .flex()
         .flex_col()
