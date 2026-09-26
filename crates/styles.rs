@@ -31,6 +31,8 @@ pub mod navigation;
 pub mod overlay;
 #[path = "styles/Progress.rs"]
 pub mod progress;
+#[path = "styles/SegmentedButton.rs"]
+pub mod segmented_button;
 #[path = "styles/Selection.rs"]
 pub mod selection;
 #[path = "styles/Tabs.rs"]
@@ -47,5 +49,6 @@ pub use navigation::{
 };
 pub use overlay::{MenuStyle, SnackbarStyle, TooltipStyle};
 pub use progress::{CircularProgressStyle, LinearProgressStyle};
+pub use segmented_button::SegmentedButtonStyle;
 pub use selection::{CheckboxStyle, RadioStyle, SliderStyle, SwitchStyle};
 pub use tabs::TabBarStyle;

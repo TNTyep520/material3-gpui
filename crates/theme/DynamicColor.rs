@@ -70,6 +70,24 @@ pub fn color_scheme_from_seed(seed: u32, is_dark: bool, profile: Profile) -> Col
     }
 
     ColorScheme {
+        on_primary_fixed: role(&scheme, MaterialDynamicColors::on_primary_fixed()),
+        on_primary_fixed_variant: role(&scheme, MaterialDynamicColors::on_primary_fixed_variant()),
+        on_secondary_fixed: role(&scheme, MaterialDynamicColors::on_secondary_fixed()),
+        on_secondary_fixed_variant: role(
+            &scheme,
+            MaterialDynamicColors::on_secondary_fixed_variant(),
+        ),
+        on_tertiary_fixed: role(&scheme, MaterialDynamicColors::on_tertiary_fixed()),
+        on_tertiary_fixed_variant: role(
+            &scheme,
+            MaterialDynamicColors::on_tertiary_fixed_variant(),
+        ),
+        primary_fixed: role(&scheme, MaterialDynamicColors::primary_fixed()),
+        primary_fixed_dim: role(&scheme, MaterialDynamicColors::primary_fixed_dim()),
+        secondary_fixed: role(&scheme, MaterialDynamicColors::secondary_fixed()),
+        secondary_fixed_dim: role(&scheme, MaterialDynamicColors::secondary_fixed_dim()),
+        tertiary_fixed: role(&scheme, MaterialDynamicColors::tertiary_fixed()),
+        tertiary_fixed_dim: role(&scheme, MaterialDynamicColors::tertiary_fixed_dim()),
         primary: role(&scheme, MaterialDynamicColors::primary()),
         on_primary: role(&scheme, MaterialDynamicColors::on_primary()),
         primary_container: role(&scheme, MaterialDynamicColors::primary_container()),

@@ -10,12 +10,13 @@
 //!   指针移出组件时取消按压态并淡出涟漪。
 
 use std::cell::RefCell;
+use std::f32::consts::{FRAC_PI_2, PI};
 use std::rc::Rc;
 use std::time::Instant;
 
 use gpui::{
-    AnyElement, Bounds, Canvas, Div, Entity, Hsla, InteractiveElement as _, IntoElement as _,
-    MouseButton, ParentElement as _, PathBuilder, Pixels, Point, Stateful,
+    AnyElement, Bounds, Canvas, Corners, Div, Entity, Hsla, InteractiveElement as _,
+    IntoElement as _, MouseButton, ParentElement as _, PathBuilder, Pixels, Point, Stateful,
     StatefulInteractiveElement as _, Styled, canvas, div, point, px,
 };
 
@@ -252,6 +253,15 @@ impl InteractiveSurface {
         pressed_opacity: f32,
         corner_radius: Pixels,
     ) -> InteractiveOverlay {
+        self.overlay_with_corners(base_color, pressed_opacity, Corners::all(corner_radius))
+    }
+
+    pub fn overlay_with_corners(
+        &self,
+        base_color: Hsla,
+        pressed_opacity: f32,
+        corner_radius: Corners<Pixels>,
+    ) -> InteractiveOverlay {
         let layer_alpha = f32::clamp(
             self.state_layer_opacity.value() as f32 * pressed_opacity,
             0.0,
@@ -279,8 +289,8 @@ impl InteractiveSurface {
     pub fn overlay_unclipped(&self, base_color: Hsla, ripple_opacity: f32) -> InteractiveOverlay {
         InteractiveOverlay {
             state_layer_color: None,
-            ripple: self.ripple_elements(base_color, ripple_opacity, px(0.), true),
-            corner_radius: px(0.),
+            ripple: self.ripple_elements(base_color, ripple_opacity, Corners::all(px(0.)), true),
+            corner_radius: Corners::all(px(0.)),
         }
     }
 
@@ -289,7 +299,7 @@ impl InteractiveSurface {
         &self,
         base_color: Hsla,
         ripple_opacity: f32,
-        corner_radius: Pixels,
+        corner_radius: Corners<Pixels>,
         unclipped: bool,
     ) -> Option<AnyElement> {
         let ripple = self.ripple.as_ref()?;
@@ -316,7 +326,7 @@ pub struct InteractiveOverlay {
     /// 涟漪圆元素（同时最多一个）。
     ripple: Option<AnyElement>,
     /// 状态层圆角（与容器形状一致）。
-    corner_radius: Pixels,
+    corner_radius: Corners<Pixels>,
 }
 
 impl InteractiveOverlay {
@@ -329,7 +339,10 @@ impl InteractiveOverlay {
                 div()
                     .absolute()
                     .inset_0()
-                    .rounded(self.corner_radius)
+                    .rounded_tl(self.corner_radius.top_left)
+                    .rounded_tr(self.corner_radius.top_right)
+                    .rounded_bl(self.corner_radius.bottom_left)
+                    .rounded_br(self.corner_radius.bottom_right)
                     .bg(color),
             );
         }
@@ -352,7 +365,7 @@ fn ripple_element(
     origin: Point<Pixels>,
     radius: f32,
     color: Hsla,
-    corner_radius: Pixels,
+    corner_radius: Corners<Pixels>,
     unclipped: bool,
 ) -> AnyElement {
     canvas(
@@ -363,16 +376,18 @@ fn ripple_element(
             let circle = circle_polygon(center, radius);
             // 无界模式或圆完全落在容器形状内时直接画整圆，
             // 跳过圆角多边形构造与裁剪（涟漪扩张前半段均属此情形）
-            let points =
-                if unclipped || circle_inside_rounded_rect(bounds, corner_radius, center, radius) {
-                    circle
-                } else {
-                    let clip = rounded_rect_polygon(bounds, corner_radius);
-                    let Some(points) = clip_convex(&circle, &clip) else {
-                        return;
-                    };
-                    points
+            let points = if unclipped
+                || (corner_radius == Corners::all(corner_radius.top_left)
+                    && circle_inside_rounded_rect(bounds, corner_radius.top_left, center, radius))
+            {
+                circle
+            } else {
+                let clip = rounded_rect_polygon(bounds, corner_radius);
+                let Some(points) = clip_convex(&circle, &clip) else {
+                    return;
                 };
+                points
+            };
             let mut builder = PathBuilder::fill();
             builder.add_polygon(&points, true);
             if let Ok(path) = builder.build() {
@@ -435,25 +450,57 @@ fn circle_polygon(center: Point<Pixels>, radius: f32) -> Vec<Point<Pixels>> {
 }
 
 /// 圆角矩形的凸多边形近似（顺时针，四角圆弧各 [`ARC_SEGMENTS`] 段）。
-fn rounded_rect_polygon(bounds: Bounds<Pixels>, corner_radius: Pixels) -> Vec<Point<Pixels>> {
+fn rounded_rect_polygon(
+    bounds: Bounds<Pixels>,
+    corner_radius: impl Into<Corners<Pixels>>,
+) -> Vec<Point<Pixels>> {
     const ARC_SEGMENTS: usize = 6;
     let w = f32::from(bounds.size.width);
     let h = f32::from(bounds.size.height);
     // 圆角钳制到短边一半（shapes.full = 999px 依赖此钳制得到胶囊形）
-    let r = f32::from(corner_radius).clamp(0.0, w.min(h) / 2.0);
+    let corners = corner_radius
+        .into()
+        .map(|radius| f32::from(*radius).clamp(0.0, w.min(h) / 2.0));
     let (x0, y0) = (f32::from(bounds.origin.x), f32::from(bounds.origin.y));
     let (x1, y1) = (x0 + w, y0 + h);
     let mut points = Vec::with_capacity(4 * (ARC_SEGMENTS + 1));
     // 从右上角起顺时针遍历，每角给出圆心与起始角、沿外弧扫过 90°
-    for (cx, cy, start) in [
-        (x1 - r, y0 + r, -std::f32::consts::FRAC_PI_2),
-        (x1 - r, y1 - r, 0.0),
-        (x0 + r, y1 - r, std::f32::consts::FRAC_PI_2),
-        (x0 + r, y0 + r, std::f32::consts::PI),
+    for (center_x, center_y, radius, start) in [
+        (
+            x1 - corners.top_right,
+            y0 + corners.top_right,
+            corners.top_right,
+            -FRAC_PI_2,
+        ),
+        (
+            x1 - corners.bottom_right,
+            y1 - corners.bottom_right,
+            corners.bottom_right,
+            0.0,
+        ),
+        (
+            x0 + corners.bottom_left,
+            y1 - corners.bottom_left,
+            corners.bottom_left,
+            FRAC_PI_2,
+        ),
+        (
+            x0 + corners.top_left,
+            y0 + corners.top_left,
+            corners.top_left,
+            PI,
+        ),
     ] {
-        for i in 0..=ARC_SEGMENTS {
-            let angle = start + std::f32::consts::FRAC_PI_2 * i as f32 / ARC_SEGMENTS as f32;
-            points.push(point(px(cx + r * angle.cos()), px(cy + r * angle.sin())));
+        if radius == 0.0 {
+            points.push(point(px(center_x), px(center_y)));
+            continue;
+        }
+        for step in 0..=ARC_SEGMENTS {
+            let angle = start + FRAC_PI_2 * step as f32 / ARC_SEGMENTS as f32;
+            points.push(point(
+                px(center_x + radius * angle.cos()),
+                px(center_y + radius * angle.sin()),
+            ));
         }
     }
     points
@@ -640,5 +687,46 @@ mod tests {
         let clip = rounded_rect_polygon(bounds, px(20.));
         let circle = circle_polygon(point(px(300.), px(20.)), 10.0);
         assert!(clip_convex(&circle, &clip).is_none());
+    }
+
+    #[test]
+    fn segmented_ripple_preserves_square_edges_and_clips_rounded_ends() {
+        let bounds = Bounds {
+            origin: point(px(0.), px(0.)),
+            size: size(px(120.), px(40.)),
+        };
+        for (left, right) in [(999., 0.), (0., 999.), (0., 0.), (999., 999.)] {
+            let corners = Corners {
+                top_left: px(left),
+                bottom_left: px(left),
+                top_right: px(right),
+                bottom_right: px(right),
+            };
+            let clip = rounded_rect_polygon(bounds, corners);
+            if left == 0. {
+                assert!(clip.contains(&point(px(0.), px(0.))));
+                assert!(clip.contains(&point(px(0.), px(40.))));
+            } else {
+                assert!(!clip.contains(&point(px(0.), px(0.))));
+            }
+            if right == 0. {
+                assert!(clip.contains(&point(px(120.), px(0.))));
+                assert!(clip.contains(&point(px(120.), px(40.))));
+            } else {
+                assert!(!clip.contains(&point(px(120.), px(0.))));
+            }
+            for center in [point(px(1.), px(1.)), point(px(119.), px(1.))] {
+                let circle = circle_polygon(center, 60.);
+                let intersection = clip_convex(&circle, &clip);
+                assert!(intersection.is_some());
+                if let Some(points) = intersection {
+                    for point in points {
+                        for (start, end) in clip.iter().zip(clip.iter().cycle().skip(1)) {
+                            assert!(edge_cross(*start, *end, point) >= -0.01);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

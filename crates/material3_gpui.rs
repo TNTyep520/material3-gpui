@@ -50,6 +50,7 @@ pub mod motion;
 pub mod overlay;
 pub mod styles;
 pub mod theme;
+pub mod tokens;
 
 pub use assets::Md3Assets;
 pub use components::*;

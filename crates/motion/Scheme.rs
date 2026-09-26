@@ -5,6 +5,7 @@
 //! 按语义角色分组运动规格：effects 角色用于非空间过渡（透明度、颜色），
 //! spatial 角色用于位置/尺寸/形状变化；每族各有 fast / default / slow 三档。
 
+use crate::tokens::{ExpressiveMotionTokens, StandardMotionTokens};
 use std::time::Duration;
 
 use super::duration as dur;
@@ -64,43 +65,131 @@ pub struct MotionScheme {
 }
 
 impl MotionScheme {
+    pub fn expressive() -> Self {
+        let standard = Self::standard();
+        standard
+            .rebuild()
+            .role(
+                MotionRole::FastEffects,
+                MotionSpec {
+                    spring: SpringParameters::new(
+                        f64::from(ExpressiveMotionTokens::SPRING_FAST_EFFECTS_DAMPING),
+                        f64::from(ExpressiveMotionTokens::SPRING_FAST_EFFECTS_STIFFNESS),
+                    ),
+                    ..*standard.spec(MotionRole::FastEffects)
+                },
+            )
+            .role(
+                MotionRole::DefaultEffects,
+                MotionSpec {
+                    spring: SpringParameters::new(
+                        f64::from(ExpressiveMotionTokens::SPRING_DEFAULT_EFFECTS_DAMPING),
+                        f64::from(ExpressiveMotionTokens::SPRING_DEFAULT_EFFECTS_STIFFNESS),
+                    ),
+                    ..*standard.spec(MotionRole::DefaultEffects)
+                },
+            )
+            .role(
+                MotionRole::SlowEffects,
+                MotionSpec {
+                    spring: SpringParameters::new(
+                        f64::from(ExpressiveMotionTokens::SPRING_SLOW_EFFECTS_DAMPING),
+                        f64::from(ExpressiveMotionTokens::SPRING_SLOW_EFFECTS_STIFFNESS),
+                    ),
+                    ..*standard.spec(MotionRole::SlowEffects)
+                },
+            )
+            .role(
+                MotionRole::FastSpatial,
+                MotionSpec {
+                    spring: SpringParameters::new(
+                        f64::from(ExpressiveMotionTokens::SPRING_FAST_SPATIAL_DAMPING),
+                        f64::from(ExpressiveMotionTokens::SPRING_FAST_SPATIAL_STIFFNESS),
+                    ),
+                    fallback_easing: easing::EXPRESSIVE_FAST_SPATIAL,
+                    ..*standard.spec(MotionRole::FastSpatial)
+                },
+            )
+            .role(
+                MotionRole::DefaultSpatial,
+                MotionSpec {
+                    spring: SpringParameters::new(
+                        f64::from(ExpressiveMotionTokens::SPRING_DEFAULT_SPATIAL_DAMPING),
+                        f64::from(ExpressiveMotionTokens::SPRING_DEFAULT_SPATIAL_STIFFNESS),
+                    ),
+                    fallback_easing: easing::EXPRESSIVE_DEFAULT_SPATIAL,
+                    ..*standard.spec(MotionRole::DefaultSpatial)
+                },
+            )
+            .role(
+                MotionRole::SlowSpatial,
+                MotionSpec {
+                    spring: SpringParameters::new(
+                        f64::from(ExpressiveMotionTokens::SPRING_SLOW_SPATIAL_DAMPING),
+                        f64::from(ExpressiveMotionTokens::SPRING_SLOW_SPATIAL_STIFFNESS),
+                    ),
+                    fallback_easing: easing::EXPRESSIVE_SLOW_SPATIAL,
+                    ..*standard.spec(MotionRole::SlowSpatial)
+                },
+            )
+            .build()
+    }
+
     /// 标准（baseline）运动方案。
     pub fn standard() -> Self {
         Self {
             specs: [
                 // fastEffects
                 MotionSpec::spring(
-                    SpringParameters::new(1.0, 3800.0),
+                    SpringParameters::new(
+                        f64::from(StandardMotionTokens::SPRING_FAST_EFFECTS_DAMPING),
+                        f64::from(StandardMotionTokens::SPRING_FAST_EFFECTS_STIFFNESS),
+                    ),
                     dur::SHORT3,
                     easing::FAST_EFFECTS,
                 ),
                 // defaultEffects
                 MotionSpec::spring(
-                    SpringParameters::new(1.0, 1600.0),
+                    SpringParameters::new(
+                        f64::from(StandardMotionTokens::SPRING_DEFAULT_EFFECTS_DAMPING),
+                        f64::from(StandardMotionTokens::SPRING_DEFAULT_EFFECTS_STIFFNESS),
+                    ),
                     dur::SHORT4,
                     easing::DEFAULT_EFFECTS,
                 ),
                 // slowEffects
                 MotionSpec::spring(
-                    SpringParameters::new(1.0, 800.0),
+                    SpringParameters::new(
+                        f64::from(StandardMotionTokens::SPRING_SLOW_EFFECTS_DAMPING),
+                        f64::from(StandardMotionTokens::SPRING_SLOW_EFFECTS_STIFFNESS),
+                    ),
                     dur::MEDIUM2,
                     easing::SLOW_EFFECTS,
                 ),
                 // fastSpatial
                 MotionSpec::spring(
-                    SpringParameters::new(0.9, 1400.0),
+                    SpringParameters::new(
+                        f64::from(StandardMotionTokens::SPRING_FAST_SPATIAL_DAMPING),
+                        f64::from(StandardMotionTokens::SPRING_FAST_SPATIAL_STIFFNESS),
+                    ),
                     dur::MEDIUM3,
                     easing::STANDARD_SPATIAL,
                 ),
                 // defaultSpatial
                 MotionSpec::spring(
-                    SpringParameters::new(0.9, 700.0),
+                    SpringParameters::new(
+                        f64::from(StandardMotionTokens::SPRING_DEFAULT_SPATIAL_DAMPING),
+                        f64::from(StandardMotionTokens::SPRING_DEFAULT_SPATIAL_STIFFNESS),
+                    ),
                     dur::LONG2,
                     easing::STANDARD_SPATIAL,
                 ),
                 // slowSpatial
                 MotionSpec::spring(
-                    SpringParameters::new(0.9, 300.0),
+                    SpringParameters::new(
+                        f64::from(StandardMotionTokens::SPRING_SLOW_SPATIAL_DAMPING),
+                        f64::from(StandardMotionTokens::SPRING_SLOW_SPATIAL_STIFFNESS),
+                    ),
                     Duration::from_millis(750),
                     easing::STANDARD_SPATIAL,
                 ),
@@ -175,7 +264,8 @@ mod tests {
         assert_eq!(fast.spring, SpringParameters::new(1.0, 3800.0));
         assert_eq!(fast.fallback_duration, dur::SHORT3);
         let slow_spatial = scheme.spec(MotionRole::SlowSpatial);
-        assert_eq!(slow_spatial.spring, SpringParameters::new(0.9, 300.0));
+        assert_eq!(slow_spatial.spring.stiffness, 300.0);
+        assert!((slow_spatial.spring.damping_ratio - 0.9).abs() < 0.000001);
         assert_eq!(slow_spatial.fallback_duration, Duration::from_millis(750));
     }
 

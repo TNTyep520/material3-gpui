@@ -8,6 +8,8 @@
 
 use std::time::Duration;
 
+use crate::tokens::MotionTokens;
+
 /// 缓动曲线。
 ///
 /// `CubicBezier` 覆盖 MD3 的全部标准曲线；`Emphasized` 是
@@ -147,40 +149,15 @@ fn segment_y(
 /// 线性曲线常量。
 pub const LINEAR: Easing = Easing::Linear;
 /// 标准（standard）曲线：`cubic-bezier(0.2, 0, 0, 1)`。
-pub const STANDARD: Easing = Easing::CubicBezier {
-    x1: 0.2,
-    y1: 0.0,
-    x2: 0.0,
-    y2: 1.0,
-};
+pub const STANDARD: Easing = MotionTokens::EASING_STANDARD_CUBIC_BEZIER;
 /// 标准加速曲线：`cubic-bezier(0.3, 0, 1, 1)`。
-pub const STANDARD_ACCELERATE: Easing = Easing::CubicBezier {
-    x1: 0.3,
-    y1: 0.0,
-    x2: 1.0,
-    y2: 1.0,
-};
+pub const STANDARD_ACCELERATE: Easing = MotionTokens::EASING_STANDARD_ACCELERATE_CUBIC_BEZIER;
 /// 标准减速曲线：`cubic-bezier(0, 0, 0, 1)`。
-pub const STANDARD_DECELERATE: Easing = Easing::CubicBezier {
-    x1: 0.0,
-    y1: 0.0,
-    x2: 0.0,
-    y2: 1.0,
-};
+pub const STANDARD_DECELERATE: Easing = MotionTokens::EASING_STANDARD_DECELERATE_CUBIC_BEZIER;
 /// 强调加速曲线：`cubic-bezier(0.3, 0, 0.8, 0.15)`。
-pub const EMPHASIZED_ACCELERATE: Easing = Easing::CubicBezier {
-    x1: 0.3,
-    y1: 0.0,
-    x2: 0.8,
-    y2: 0.15,
-};
+pub const EMPHASIZED_ACCELERATE: Easing = MotionTokens::EASING_EMPHASIZED_ACCELERATE_CUBIC_BEZIER;
 /// 强调减速曲线：`cubic-bezier(0.05, 0.7, 0.1, 1)`。
-pub const EMPHASIZED_DECELERATE: Easing = Easing::CubicBezier {
-    x1: 0.05,
-    y1: 0.7,
-    x2: 0.1,
-    y2: 1.0,
-};
+pub const EMPHASIZED_DECELERATE: Easing = MotionTokens::EASING_EMPHASIZED_DECELERATE_CUBIC_BEZIER;
 /// 标准空间曲线（spring 的有限回退近似）：`cubic-bezier(0.27, 1.06, 0.18, 1)`。
 pub const STANDARD_SPATIAL: Easing = Easing::CubicBezier {
     x1: 0.27,

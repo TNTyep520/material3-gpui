@@ -6,43 +6,45 @@
 
 use std::time::Duration;
 
+use crate::tokens::MotionTokens;
+
 /// 以毫秒构造运动时长。
 pub const fn ms(millis: u64) -> Duration {
     Duration::from_millis(millis)
 }
 
 /// SHORT1：50ms。
-pub const SHORT1: Duration = ms(50);
+pub const SHORT1: Duration = MotionTokens::SHORT1;
 /// SHORT2：100ms。
-pub const SHORT2: Duration = ms(100);
+pub const SHORT2: Duration = MotionTokens::SHORT2;
 /// SHORT3：150ms。
-pub const SHORT3: Duration = ms(150);
+pub const SHORT3: Duration = MotionTokens::SHORT3;
 /// SHORT4：200ms。
-pub const SHORT4: Duration = ms(200);
+pub const SHORT4: Duration = MotionTokens::SHORT4;
 /// MEDIUM1：250ms。
-pub const MEDIUM1: Duration = ms(250);
+pub const MEDIUM1: Duration = MotionTokens::MEDIUM1;
 /// MEDIUM2：300ms。
-pub const MEDIUM2: Duration = ms(300);
+pub const MEDIUM2: Duration = MotionTokens::MEDIUM2;
 /// MEDIUM3：350ms。
-pub const MEDIUM3: Duration = ms(350);
+pub const MEDIUM3: Duration = MotionTokens::MEDIUM3;
 /// MEDIUM4：400ms。
-pub const MEDIUM4: Duration = ms(400);
+pub const MEDIUM4: Duration = MotionTokens::MEDIUM4;
 /// LONG1：450ms。
-pub const LONG1: Duration = ms(450);
+pub const LONG1: Duration = MotionTokens::LONG1;
 /// LONG2：500ms。
-pub const LONG2: Duration = ms(500);
+pub const LONG2: Duration = MotionTokens::LONG2;
 /// LONG3：550ms。
-pub const LONG3: Duration = ms(550);
+pub const LONG3: Duration = MotionTokens::LONG3;
 /// LONG4：600ms。
-pub const LONG4: Duration = ms(600);
+pub const LONG4: Duration = MotionTokens::LONG4;
 /// EXTRA_LONG1：700ms。
-pub const EXTRA_LONG1: Duration = ms(700);
+pub const EXTRA_LONG1: Duration = MotionTokens::EXTRA_LONG1;
 /// EXTRA_LONG2：800ms。
-pub const EXTRA_LONG2: Duration = ms(800);
+pub const EXTRA_LONG2: Duration = MotionTokens::EXTRA_LONG2;
 /// EXTRA_LONG3：900ms。
-pub const EXTRA_LONG3: Duration = ms(900);
+pub const EXTRA_LONG3: Duration = MotionTokens::EXTRA_LONG3;
 /// EXTRA_LONG4：1000ms。
-pub const EXTRA_LONG4: Duration = ms(1000);
+pub const EXTRA_LONG4: Duration = MotionTokens::EXTRA_LONG4;
 
 #[cfg(test)]
 mod tests {

@@ -6,6 +6,7 @@
 
 use gpui::SharedString;
 
+use super::ThemeMode;
 use crate::motion::MotionScheme;
 
 use super::color::ColorScheme;
@@ -41,6 +42,17 @@ pub struct TokenSet {
 }
 
 impl TokenSet {
+    pub fn androidx(mode: ThemeMode) -> Self {
+        let colors = match mode {
+            ThemeMode::Light => ColorScheme::androidx_light(),
+            ThemeMode::Dark => ColorScheme::androidx_dark(),
+        };
+        Self::builder(Profile::Baseline2021, colors)
+            .with_typography(TypeScale::androidx())
+            .with_component(ComponentTokens::androidx())
+            .build()
+    }
+
     /// 以 Profile 默认值 + 指定颜色方案构建。
     pub fn new(profile: Profile, colors: ColorScheme) -> Self {
         Self::builder(profile, colors).build()

@@ -4,6 +4,7 @@
 //! 基线（baseline）取值与 material-web 的 `md-sys-color` 令牌一致。
 //! 参考: <https://m3.material.io/styles/color/roles>
 
+use crate::tokens::ColorLightTokens;
 use gpui::{Hsla, rgb};
 
 /// 十六进制 -> Hsla 便捷函数
@@ -14,6 +15,18 @@ pub fn hex(value: u32) -> Hsla {
 /// MD3 颜色角色全集（对应 material-web 的 `--md-sys-color-*` 令牌）
 #[derive(Clone, Copy, Debug)]
 pub struct ColorScheme {
+    pub on_primary_fixed: Hsla,
+    pub on_primary_fixed_variant: Hsla,
+    pub on_secondary_fixed: Hsla,
+    pub on_secondary_fixed_variant: Hsla,
+    pub on_tertiary_fixed: Hsla,
+    pub on_tertiary_fixed_variant: Hsla,
+    pub primary_fixed: Hsla,
+    pub primary_fixed_dim: Hsla,
+    pub secondary_fixed: Hsla,
+    pub secondary_fixed_dim: Hsla,
+    pub tertiary_fixed: Hsla,
+    pub tertiary_fixed_dim: Hsla,
     // Primary
     pub primary: Hsla,
     pub on_primary: Hsla,
@@ -64,6 +77,18 @@ impl ColorScheme {
     /// MD3 基线亮色方案（material-web baseline light）
     pub fn light() -> Self {
         Self {
+            on_primary_fixed: ColorLightTokens::ON_PRIMARY_FIXED.resolve(),
+            on_primary_fixed_variant: ColorLightTokens::ON_PRIMARY_FIXED_VARIANT.resolve(),
+            on_secondary_fixed: ColorLightTokens::ON_SECONDARY_FIXED.resolve(),
+            on_secondary_fixed_variant: ColorLightTokens::ON_SECONDARY_FIXED_VARIANT.resolve(),
+            on_tertiary_fixed: ColorLightTokens::ON_TERTIARY_FIXED.resolve(),
+            on_tertiary_fixed_variant: ColorLightTokens::ON_TERTIARY_FIXED_VARIANT.resolve(),
+            primary_fixed: ColorLightTokens::PRIMARY_FIXED.resolve(),
+            primary_fixed_dim: ColorLightTokens::PRIMARY_FIXED_DIM.resolve(),
+            secondary_fixed: ColorLightTokens::SECONDARY_FIXED.resolve(),
+            secondary_fixed_dim: ColorLightTokens::SECONDARY_FIXED_DIM.resolve(),
+            tertiary_fixed: ColorLightTokens::TERTIARY_FIXED.resolve(),
+            tertiary_fixed_dim: ColorLightTokens::TERTIARY_FIXED_DIM.resolve(),
             primary: hex(0x6750A4),
             on_primary: hex(0xFFFFFF),
             primary_container: hex(0xEADDFF),
@@ -113,6 +138,18 @@ impl ColorScheme {
     /// MD3 基线暗色方案（material-web baseline dark）
     pub fn dark() -> Self {
         Self {
+            on_primary_fixed: ColorLightTokens::ON_PRIMARY_FIXED.resolve(),
+            on_primary_fixed_variant: ColorLightTokens::ON_PRIMARY_FIXED_VARIANT.resolve(),
+            on_secondary_fixed: ColorLightTokens::ON_SECONDARY_FIXED.resolve(),
+            on_secondary_fixed_variant: ColorLightTokens::ON_SECONDARY_FIXED_VARIANT.resolve(),
+            on_tertiary_fixed: ColorLightTokens::ON_TERTIARY_FIXED.resolve(),
+            on_tertiary_fixed_variant: ColorLightTokens::ON_TERTIARY_FIXED_VARIANT.resolve(),
+            primary_fixed: ColorLightTokens::PRIMARY_FIXED.resolve(),
+            primary_fixed_dim: ColorLightTokens::PRIMARY_FIXED_DIM.resolve(),
+            secondary_fixed: ColorLightTokens::SECONDARY_FIXED.resolve(),
+            secondary_fixed_dim: ColorLightTokens::SECONDARY_FIXED_DIM.resolve(),
+            tertiary_fixed: ColorLightTokens::TERTIARY_FIXED.resolve(),
+            tertiary_fixed_dim: ColorLightTokens::TERTIARY_FIXED_DIM.resolve(),
             primary: hex(0xD0BCFF),
             on_primary: hex(0x381E72),
             primary_container: hex(0x4F378B),

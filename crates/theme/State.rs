@@ -5,16 +5,17 @@
 //! hover 8%、focus/pressed 10%、dragged 16%。
 //! 参考: <https://m3.material.io/foundations/interaction/states>
 
+use crate::tokens::StateTokens;
 use gpui::{Hsla, Pixels, Rgba, px};
 
 /// hover 状态层不透明度（8%）。
-pub const HOVER_OPACITY: f32 = 0.08;
+pub const HOVER_OPACITY: f32 = StateTokens::HOVER_STATE_LAYER_OPACITY;
 /// focus 状态层不透明度（10%）。
-pub const FOCUS_OPACITY: f32 = 0.10;
+pub const FOCUS_OPACITY: f32 = StateTokens::FOCUS_STATE_LAYER_OPACITY;
 /// pressed 状态层不透明度（10%）。
-pub const PRESSED_OPACITY: f32 = 0.10;
+pub const PRESSED_OPACITY: f32 = StateTokens::PRESSED_STATE_LAYER_OPACITY;
 /// dragged 状态层不透明度（16%）。
-pub const DRAGGED_OPACITY: f32 = 0.16;
+pub const DRAGGED_OPACITY: f32 = StateTokens::DRAGGED_STATE_LAYER_OPACITY;
 /// 禁用态容器不透明度（12%）。
 pub const DISABLED_CONTAINER_OPACITY: f32 = 0.12;
 /// 禁用态内容（文字/图标）不透明度（38%）。

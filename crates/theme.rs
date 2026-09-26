@@ -85,6 +85,10 @@ pub struct Theme {
 impl Global for Theme {}
 
 impl Theme {
+    pub fn androidx(mode: ThemeMode) -> Self {
+        Self::from_token_set(TokenSet::androidx(mode), mode, DEFAULT_FONT_FAMILY)
+    }
+
     /// MD3 基线亮色主题（种子色 `#6750A4`，Baseline2021 profile）。
     pub fn light() -> Self {
         Self::from_seed(0x6750A4, ThemeMode::Light, Profile::Baseline2021)

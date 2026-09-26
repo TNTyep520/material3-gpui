@@ -5,6 +5,7 @@
 //! shape token 一致；同时兼容 material-web 的 `md-sys-shape`。
 //! 参考: <https://m3.material.io/styles/shape/shape-scale-tokens>
 
+use crate::tokens::ShapeTokens;
 use gpui::{Pixels, px};
 
 /// MD3 圆角刻度（10 档）。
@@ -44,15 +45,15 @@ impl Shapes {
     /// 基线（2021）圆角刻度。
     pub fn baseline() -> Self {
         Self {
-            none: px(0.),
-            extra_small: px(4.),
-            small: px(8.),
-            medium: px(12.),
-            large: px(16.),
-            large_increased: px(20.),
-            extra_large: px(28.),
-            extra_large_increased: px(32.),
-            extra_extra_large: px(48.),
+            none: ShapeTokens::CORNER_VALUE_NONE.pixels(),
+            extra_small: ShapeTokens::CORNER_VALUE_EXTRA_SMALL.pixels(),
+            small: ShapeTokens::CORNER_VALUE_SMALL.pixels(),
+            medium: ShapeTokens::CORNER_VALUE_MEDIUM.pixels(),
+            large: ShapeTokens::CORNER_VALUE_LARGE.pixels(),
+            large_increased: ShapeTokens::CORNER_VALUE_LARGE_INCREASED.pixels(),
+            extra_large: ShapeTokens::CORNER_VALUE_EXTRA_LARGE.pixels(),
+            extra_large_increased: ShapeTokens::CORNER_VALUE_EXTRA_LARGE_INCREASED.pixels(),
+            extra_extra_large: ShapeTokens::CORNER_VALUE_EXTRA_EXTRA_LARGE.pixels(),
             full: px(999.),
         }
     }

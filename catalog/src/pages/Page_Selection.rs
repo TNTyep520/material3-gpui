@@ -7,6 +7,9 @@ use super::{gallery, showcase_group};
 
 /// Selection controls 页视图。
 pub struct SelectionPage {
+    segmented_single: Entity<SegmentedButtonRowState>,
+    segmented_multiple: Entity<SegmentedButtonRowState>,
+    segmented_disabled: Entity<SegmentedButtonRowState>,
     pub cb_a: Entity<CheckboxState>,
     pub cb_b: Entity<CheckboxState>,
     pub cb_disabled: Entity<CheckboxState>,
@@ -61,7 +64,37 @@ impl SelectionPage {
             .disabled(true)
             .build(cx);
 
+        let segmented_single = SegmentedButtonRow::new("segmented-single")
+            .buttons([
+                SegmentedButton::new("Day").selected(true),
+                SegmentedButton::new("Week"),
+                SegmentedButton::new("Month"),
+            ])
+            .build(cx);
+        let segmented_multiple = SegmentedButtonRow::new("segmented-multiple")
+            .selection_mode(SegmentedButtonSelectionMode::Multiple)
+            .buttons([
+                SegmentedButton::new("Walk")
+                    .icon(IconName::Custom("directions_walk"))
+                    .selected(true),
+                SegmentedButton::new("Bike").icon(IconName::Custom("directions_bike")),
+                SegmentedButton::new("Drive")
+                    .icon(IconName::Custom("directions_car"))
+                    .selected(true),
+            ])
+            .build(cx);
+        let segmented_disabled = SegmentedButtonRow::new("segmented-disabled")
+            .disabled(true)
+            .buttons([
+                SegmentedButton::new("Day").selected(true),
+                SegmentedButton::new("Week"),
+                SegmentedButton::new("Month"),
+            ])
+            .build(cx);
         cx.new(|_| Self {
+            segmented_single,
+            segmented_multiple,
+            segmented_disabled,
             cb_a,
             cb_b,
             cb_disabled,
@@ -100,6 +133,15 @@ impl Render for SelectionPage {
         let label_disabled = on_surface.opacity(0.38);
 
         gallery([
+            showcase_group(
+                cx,
+                "Segmented buttons",
+                [
+                    self.segmented_single.clone().into_any_element(),
+                    self.segmented_multiple.clone().into_any_element(),
+                    self.segmented_disabled.clone().into_any_element(),
+                ],
+            ),
             showcase_group(
                 cx,
                 "Interactive States",

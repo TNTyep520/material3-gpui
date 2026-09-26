@@ -5,6 +5,7 @@
 //! 同时兼容 material-web 的 `md-sys-typescale` 令牌命名。
 //! 参考: <https://m3.material.io/styles/typography/type-scale-tokens>
 
+use crate::tokens::TypographyTokens;
 use gpui::{FontWeight, Pixels, Styled, px};
 
 /// 单个字体样式令牌。
@@ -59,6 +60,21 @@ impl TypeStyle {
 /// MD3 完整 Type Scale（display / headline / title / body / label × large / medium / small）。
 #[derive(Clone, Copy, Debug)]
 pub struct TypeScale {
+    pub body_large_emphasized: TypeStyle,
+    pub body_medium_emphasized: TypeStyle,
+    pub body_small_emphasized: TypeStyle,
+    pub display_large_emphasized: TypeStyle,
+    pub display_medium_emphasized: TypeStyle,
+    pub display_small_emphasized: TypeStyle,
+    pub headline_large_emphasized: TypeStyle,
+    pub headline_medium_emphasized: TypeStyle,
+    pub headline_small_emphasized: TypeStyle,
+    pub label_large_emphasized: TypeStyle,
+    pub label_medium_emphasized: TypeStyle,
+    pub label_small_emphasized: TypeStyle,
+    pub title_large_emphasized: TypeStyle,
+    pub title_medium_emphasized: TypeStyle,
+    pub title_small_emphasized: TypeStyle,
     /// display-large。
     pub display_large: TypeStyle,
     /// display-medium。
@@ -102,6 +118,22 @@ impl TypeScale {
     /// 基线（2021）字型比例。
     pub fn baseline() -> Self {
         Self {
+            body_large_emphasized: TypographyTokens::BODY_LARGE_EMPHASIZED.type_style(1.0),
+            body_medium_emphasized: TypographyTokens::BODY_MEDIUM_EMPHASIZED.type_style(1.0),
+            body_small_emphasized: TypographyTokens::BODY_SMALL_EMPHASIZED.type_style(1.0),
+            display_large_emphasized: TypographyTokens::DISPLAY_LARGE_EMPHASIZED.type_style(1.0),
+            display_medium_emphasized: TypographyTokens::DISPLAY_MEDIUM_EMPHASIZED.type_style(1.0),
+            display_small_emphasized: TypographyTokens::DISPLAY_SMALL_EMPHASIZED.type_style(1.0),
+            headline_large_emphasized: TypographyTokens::HEADLINE_LARGE_EMPHASIZED.type_style(1.0),
+            headline_medium_emphasized: TypographyTokens::HEADLINE_MEDIUM_EMPHASIZED
+                .type_style(1.0),
+            headline_small_emphasized: TypographyTokens::HEADLINE_SMALL_EMPHASIZED.type_style(1.0),
+            label_large_emphasized: TypographyTokens::LABEL_LARGE_EMPHASIZED.type_style(1.0),
+            label_medium_emphasized: TypographyTokens::LABEL_MEDIUM_EMPHASIZED.type_style(1.0),
+            label_small_emphasized: TypographyTokens::LABEL_SMALL_EMPHASIZED.type_style(1.0),
+            title_large_emphasized: TypographyTokens::TITLE_LARGE_EMPHASIZED.type_style(1.0),
+            title_medium_emphasized: TypographyTokens::TITLE_MEDIUM_EMPHASIZED.type_style(1.0),
+            title_small_emphasized: TypographyTokens::TITLE_SMALL_EMPHASIZED.type_style(1.0),
             display_large: TypeStyle::with_tracking(57., 64., FontWeight::NORMAL, -0.25),
             display_medium: TypeStyle::new(45., 52., FontWeight::NORMAL),
             display_small: TypeStyle::new(36., 44., FontWeight::NORMAL),

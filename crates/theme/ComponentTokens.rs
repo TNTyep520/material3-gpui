@@ -8,6 +8,12 @@
 //! 数值来源：material-web / m3fx 基线规格；Expressive profile 暂与
 //! 基线相同（Expressive 的差异主要通过 shape / motion 令牌传导）。
 
+use crate::tokens::{
+    BaselineButtonTokens, ButtonSmallTokens, FilledTextFieldTokens, ShapeTokens,
+    SliderTokens as AndroidxSliderTokens, SnackbarTokens as AndroidxSnackbarTokens,
+    SwitchTokens as AndroidxSwitchTokens,
+};
+
 /// 按钮组件令牌。
 #[derive(Clone, Copy, Debug)]
 pub struct ButtonTokens {
@@ -226,6 +232,49 @@ pub struct ComponentTokens {
     pub menu: MenuTokens,
     /// 工具提示令牌。
     pub tooltip: TooltipTokens,
+}
+
+impl ComponentTokens {
+    pub fn androidx() -> Self {
+        Self {
+            button: ButtonTokens {
+                height: BaselineButtonTokens::CONTAINER_HEIGHT.0,
+                icon_size: BaselineButtonTokens::ICON_SIZE.0,
+                icon_gap: BaselineButtonTokens::ICON_LABEL_SPACE.0,
+                horizontal_padding: BaselineButtonTokens::LEADING_SPACE.0,
+                horizontal_padding_with_icon: ButtonSmallTokens::LEADING_SPACE.0,
+                ..ButtonTokens::default()
+            },
+            text_field: TextFieldTokens {
+                indicator_height: FilledTextFieldTokens::ACTIVE_INDICATOR_HEIGHT.0,
+                focused_indicator_height: FilledTextFieldTokens::FOCUS_ACTIVE_INDICATOR_HEIGHT.0,
+                icon_size: FilledTextFieldTokens::LEADING_ICON_SIZE.0,
+                ..TextFieldTokens::default()
+            },
+            switch: SwitchTokens {
+                track_width: AndroidxSwitchTokens::TRACK_WIDTH.0,
+                track_height: AndroidxSwitchTokens::TRACK_HEIGHT.0,
+                thumb_size: AndroidxSwitchTokens::SELECTED_HANDLE_WIDTH.0,
+                unselected_thumb_size: AndroidxSwitchTokens::UNSELECTED_HANDLE_WIDTH.0,
+                icon_size: AndroidxSwitchTokens::SELECTED_ICON_SIZE.0,
+            },
+            slider: SliderTokens {
+                track_height: AndroidxSliderTokens::ACTIVE_TRACK_HEIGHT.0,
+                handle_width: AndroidxSliderTokens::HANDLE_WIDTH.0,
+                handle_height: AndroidxSliderTokens::HANDLE_HEIGHT.0,
+                tick_size: AndroidxSliderTokens::STOP_INDICATOR_SIZE.0,
+            },
+            snackbar: SnackbarTokens {
+                min_height: AndroidxSnackbarTokens::SINGLE_LINE_CONTAINER_HEIGHT.0,
+                ..SnackbarTokens::default()
+            },
+            menu: MenuTokens {
+                corner_radius: ShapeTokens::CORNER_VALUE_EXTRA_SMALL.0,
+                ..MenuTokens::default()
+            },
+            tooltip: TooltipTokens::default(),
+        }
+    }
 }
 
 #[cfg(test)]

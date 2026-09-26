@@ -5,6 +5,7 @@
 //! （level 0–5）。
 //! 参考: <https://m3.material.io/styles/elevation/tokens>
 
+use crate::tokens::ElevationTokens as AndroidxElevationTokens;
 use gpui::{BoxShadow, Hsla, Pixels, point, px};
 
 /// 高度等级的 dp 值令牌（对应 m3fx `M3ElevationTokens`）。
@@ -35,12 +36,12 @@ impl ElevationTokens {
     /// 基线（2021）高度刻度。
     pub fn baseline() -> Self {
         Self {
-            level0: px(0.),
-            level1: px(1.),
-            level2: px(3.),
-            level3: px(6.),
-            level4: px(8.),
-            level5: px(12.),
+            level0: AndroidxElevationTokens::LEVEL0.pixels(),
+            level1: AndroidxElevationTokens::LEVEL1.pixels(),
+            level2: AndroidxElevationTokens::LEVEL2.pixels(),
+            level3: AndroidxElevationTokens::LEVEL3.pixels(),
+            level4: AndroidxElevationTokens::LEVEL4.pixels(),
+            level5: AndroidxElevationTokens::LEVEL5.pixels(),
         }
     }
 }

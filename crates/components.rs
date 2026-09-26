@@ -30,6 +30,8 @@ mod progress;
 mod radio;
 #[path = "components/Scaffold.rs"]
 mod scaffold;
+#[path = "components/SegmentedButton.rs"]
+mod segmented_button;
 #[path = "components/Slider.rs"]
 mod slider;
 #[path = "components/Switch.rs"]
@@ -59,6 +61,9 @@ pub use navigation::{
 pub use progress::{CircularProgress, LinearProgress};
 pub use radio::{RadioButton, RadioState};
 pub use scaffold::Scaffold;
+pub use segmented_button::{
+    SegmentedButton, SegmentedButtonRow, SegmentedButtonRowState, SegmentedButtonSelectionMode,
+};
 pub use slider::{Slider, SliderState};
 pub use switch::{Switch, SwitchState};
 pub use tabs::{Tab, TabBar, TabBarState};
