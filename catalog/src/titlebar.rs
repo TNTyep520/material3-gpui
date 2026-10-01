@@ -1,15 +1,15 @@
-//! 组件展厅的紧凑标题栏，保留平台原生窗口操作。
-//!
-//! 标题文本位于左侧，窗口控制按钮位于右侧。
-//!
-//! 平台行为:
-//! - **Windows**:整条标题栏标 [`WindowControlArea::Drag`](拖动/双击最大化
-//!   由系统接管),两个按钮标 `Min`/`Close` 由系统原生执行,自身**不挂
-//!   `on_click`**(挂了会消费 NC 事件导致原生动作失效);
-//! - **Linux**:按钮挂 `on_click` 调 `minimize_window()`/`remove_window()`,
-//!   拖动用 `start_window_move()`(Wayland/X11 生效),双击标题栏切
-//!   `zoom_window()`;
-//! - **macOS**:不渲染自定义按钮(系统红绿灯仍在),仅留避让内边距。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -22,21 +22,19 @@ use material3_gpui::fonts::TEXT_FONT_FAMILY;
 use material3_gpui::icon::{Icon, IconName};
 use material3_gpui::prelude::ActiveTheme;
 
-/// 标题栏高度。
 const HEIGHT: f32 = 48.0;
-/// 窗口按钮的圆形热区边长。
+
 const BUTTON_SIZE: f32 = 44.0;
-/// 关闭按钮红色(BakaXL 惯例)。
+
 const CLOSE_RED: Rgba = Rgba {
     r: 232.0 / 255.0,
     g: 60.0 / 255.0,
     b: 60.0 / 255.0,
     a: 1.0,
 };
-/// macOS 红绿灯避让内边距(关闭+最小化两灯止于约 45dp,另留 12dp 间距)。
+
 const MAC_TRAFFIC_LIGHT_INSET: f32 = 48.0;
 
-/// 自定义标题栏。
 #[derive(IntoElement)]
 pub struct CustomTitleBar;
 
@@ -47,7 +45,6 @@ impl RenderOnce for CustomTitleBar {
         let is_mac = cfg!(target_os = "macos");
         let is_linux = !is_windows && !is_mac;
 
-        // Linux 拖动:按下置位、首次移动即交给 compositor(Zed 模式)
         let dragging = Rc::new(Cell::new(false));
 
         let title_bar = div()
@@ -83,7 +80,6 @@ impl RenderOnce for CustomTitleBar {
                     })
             });
 
-        // 左侧:标题文本(macOS 先避让红绿灯)
         let title_bar = title_bar.when(is_mac, |el| {
             el.child(div().flex_none().w(px(MAC_TRAFFIC_LIGHT_INSET)))
         });
@@ -95,10 +91,9 @@ impl RenderOnce for CustomTitleBar {
                 .text_color(colors.on_surface)
                 .child("Material 3 · Catalog"),
         );
-        // 弹性空白:窗口按钮推到右侧
+
         let title_bar = title_bar.child(div().flex_1());
 
-        // 右侧窗口按钮:仅 Windows/Linux;macOS 用系统红绿灯
         let controls = if is_mac {
             div()
         } else {
@@ -127,10 +122,6 @@ impl RenderOnce for CustomTitleBar {
     }
 }
 
-/// 窗口按钮:44dp 圆形热区,悬停显示圆形高亮加阴影(BakaXL 惯例)。
-///
-/// - Windows:标 [`WindowControlArea`] 即可,动作由系统 NC 路径执行;
-/// - Linux:挂 `on_click` 调用窗口 API(`window_control_area` 在 Linux 无效)。
 fn window_button(
     id: &'static str,
     area: WindowControlArea,

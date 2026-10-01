@@ -1,23 +1,17 @@
-//! MD3 Button（共享按钮，对应 material-web 的 `md-*-button`）。
-//!
-//! 五种变体：Filled / Outlined / Text / Elevated / FilledTonal。
-//! 视格与几何全部来自 [`ButtonStyle`](crate::styles::ButtonStyle)
-//! （默认值由主题令牌推导，对齐 m3fx `styles/controls/button.css`）。
-//!
-//! 交互行为移植自 [m3fx](https://github.com/Glavo/m3fx) 的
-//! `M3ButtonSkin` / `M3LabeledButtonSkinBase`（Apache-2.0，© 2026 Glavo）。
-//!
-//! ```ignore
-//! use material3_gpui::prelude::*;
-//!
-//! // 在视图的 render 中（cx 为 &mut Context<V>）：
-//! Button::new("save", "Save")
-//!     .variant(ButtonVariant::Filled)
-//!     .style(|s: &mut ButtonStyle| s.height = px(48.).into()) // 实例级样式覆盖
-//!     .leading_icon(IconName::Check)
-//!     .on_click(|_, _, _| println!("clicked"))
-//!     .build(cx)                      // -> Entity<ButtonState>
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3ButtonSkin.java
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3LabeledButtonSkinBase.java
 
 use std::rc::Rc;
 use std::time::Instant;
@@ -36,7 +30,6 @@ use crate::theme::{ActiveTheme, Elevation};
 type ClickHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
 type StyleOverride = Box<dyn Fn(&mut ButtonStyle)>;
 
-/// MD3 共享按钮构建器（`.build(cx)` 产出 [`ButtonState`]）。
 pub struct Button {
     id: ElementId,
     label: SharedString,
@@ -48,7 +41,6 @@ pub struct Button {
     style_override: Option<StyleOverride>,
 }
 
-/// 按钮的有状态部分：交互表面（状态层/涟漪）与动画。
 pub struct ButtonState {
     id: ElementId,
     label: SharedString,
@@ -62,7 +54,6 @@ pub struct ButtonState {
 }
 
 impl Button {
-    /// 创建按钮构建器。
     pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
         Self {
             id: id.into(),
@@ -76,61 +67,50 @@ impl Button {
         }
     }
 
-    /// 设置变体。
     pub fn variant(mut self, variant: ButtonVariant) -> Self {
         self.variant = variant;
         self
     }
 
-    /// Filled 变体。
     pub fn filled(self) -> Self {
         self.variant(ButtonVariant::Filled)
     }
 
-    /// Outlined 变体。
     pub fn outlined(self) -> Self {
         self.variant(ButtonVariant::Outlined)
     }
 
-    /// Text 变体。
     pub fn text(self) -> Self {
         self.variant(ButtonVariant::Text)
     }
 
-    /// Elevated 变体。
     pub fn elevated(self) -> Self {
         self.variant(ButtonVariant::Elevated)
     }
 
-    /// FilledTonal 变体。
     pub fn tonal(self) -> Self {
         self.variant(ButtonVariant::FilledTonal)
     }
 
-    /// 设置前导图标。
     pub fn leading_icon(mut self, icon: IconName) -> Self {
         self.leading_icon = Some(icon);
         self
     }
 
-    /// 设置尾随图标。
     pub fn trailing_icon(mut self, icon: IconName) -> Self {
         self.trailing_icon = Some(icon);
         self
     }
 
-    /// 设置禁用态。
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
 
-    /// 与 AndroidX 的 enabled 参数对应；禁用时阻止点击并使用禁用配色。
     pub fn enabled(self, enabled: bool) -> Self {
         self.disabled(!enabled)
     }
 
-    /// 设置点击回调。
     pub fn on_click(
         mut self,
         handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -139,13 +119,11 @@ impl Button {
         self
     }
 
-    /// 实例级样式覆盖（在令牌默认值之上应用）。
     pub fn style(mut self, override_fn: impl Fn(&mut ButtonStyle) + 'static) -> Self {
         self.style_override = Some(Box::new(override_fn));
         self
     }
 
-    /// 构建有状态组件实体。
     pub fn build(self, cx: &mut App) -> Entity<ButtonState> {
         cx.new(|_| ButtonState {
             id: self.id,
@@ -167,30 +145,25 @@ macro_rules! button_variant {
         pub struct $name(Button);
 
         impl $name {
-            /// 创建带文字内容的按钮。
             pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
                 Self(Button::new(id, label).variant(ButtonVariant::$variant))
             }
 
-            /// 设置启用状态。
             pub fn enabled(mut self, enabled: bool) -> Self {
                 self.0 = self.0.enabled(enabled);
                 self
             }
 
-            /// 设置内容前方的图标。
             pub fn leading_icon(mut self, icon: IconName) -> Self {
                 self.0 = self.0.leading_icon(icon);
                 self
             }
 
-            /// 设置内容后方的图标。
             pub fn trailing_icon(mut self, icon: IconName) -> Self {
                 self.0 = self.0.trailing_icon(icon);
                 self
             }
 
-            /// 设置点击回调。
             pub fn on_click(
                 mut self,
                 handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -199,13 +172,11 @@ macro_rules! button_variant {
                 self
             }
 
-            /// 覆盖当前变体的令牌样式。
             pub fn style(mut self, override_fn: impl Fn(&mut ButtonStyle) + 'static) -> Self {
                 self.0 = self.0.style(override_fn);
                 self
             }
 
-            /// 创建可渲染的按钮实体。
             pub fn build(self, cx: &mut App) -> Entity<ButtonState> {
                 self.0.build(cx)
             }
@@ -219,12 +190,10 @@ button_variant!(OutlinedButton, Outlined);
 button_variant!(TextButton, Text);
 
 impl ButtonState {
-    /// 组件最近的边界（窗口坐标），可用于菜单等弹层锚定。
     pub fn bounds(&self) -> gpui::Bounds<gpui::Pixels> {
         self.surface.bounds.get()
     }
 
-    /// 替换点击回调（用于构造后接线）。
     pub fn set_on_click(&mut self, handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static) {
         self.on_click = Some(Rc::new(handler));
     }
@@ -242,7 +211,6 @@ impl AnimatedComponent for ButtonState {
 
 impl Render for ButtonState {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        // 动画循环：仍有动画时调度下一帧
         if self.surface.is_animating() {
             self.schedule_next(window, cx);
         }
@@ -250,7 +218,6 @@ impl Render for ButtonState {
         let has_leading = self.leading_icon.is_some();
         let has_trailing = self.trailing_icon.is_some();
 
-        // 样式：令牌默认 + 实例覆盖（render 不再内置样式决策）
         let mut style = if self.disabled {
             ButtonStyle::resolve_disabled(
                 cx.theme().token_set(),
@@ -276,7 +243,6 @@ impl Render for ButtonState {
         let base = div()
             .id(self.id.clone())
             .h(style.height)
-            // Compose M3：MinWidth = 58dp
             .min_w(px(58.))
             .flex()
             .flex_none()
@@ -302,7 +268,6 @@ impl Render for ButtonState {
             base
         };
 
-        // Compose M3：hover 时 Filled 升为 1 级、Elevated 升为 2 级阴影
         let hovered = self.surface.hovered && !self.disabled;
         let elevation = if hovered {
             match self.variant {
@@ -358,60 +323,54 @@ pub use appearance::{ButtonStyle, ButtonVariant};
 mod appearance {
     use crate::theme::{Elevation, TokenSet};
     use gpui::{Hsla, Pixels, px};
-    /// 按钮变体（样式解析输入）。
+
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
     pub enum ButtonVariant {
-        /// 实心主色。
         #[default]
         Filled,
-        /// 描边。
+
         Outlined,
-        /// 纯文字。
+
         Text,
-        /// 带高度。
+
         Elevated,
-        /// 次级色调实心。
+
         FilledTonal,
     }
-    /// MD3 共享按钮样式。
+
     #[derive(Clone, Debug)]
     pub struct ButtonStyle {
-        /// 容器色（`None` 为透明容器）。
         pub container_color: Option<Hsla>,
-        /// 内容色（文字/图标/状态层基色）。
+
         pub content_color: Hsla,
-        /// 描边色（`Some` 启用 1dp 描边）。
+
         pub outline_color: Option<Hsla>,
-        /// 阴影等级。
+
         pub elevation: Elevation,
-        /// 阴影颜色。
+
         pub shadow_color: Hsla,
-        /// 禁用态容器色。
+
         pub disabled_container_color: Hsla,
-        /// 禁用态内容色。
+
         pub disabled_content_color: Hsla,
-        /// 状态层/涟漪基色。
+
         pub state_layer_color: Hsla,
-        /// 按压档状态层不透明度。
+
         pub state_layer_opacity: f32,
-        /// 容器高度。
+
         pub height: Pixels,
-        /// 圆角。
+
         pub corner_radius: Pixels,
-        /// 水平内边距（左, 右）。
+
         pub padding: (Pixels, Pixels),
-        /// 图标尺寸。
+
         pub icon_size: Pixels,
-        /// 图标与文字间距。
+
         pub icon_gap: Pixels,
-        /// 文字字型。
+
         pub label: crate::theme::TypeStyle,
     }
     impl ButtonStyle {
-        /// 由令牌推导默认样式。
-        ///
-        /// `leading_icon`/`trailing_icon` 影响内边距（对应 button.css 的
-        /// `:has(...)` 内边距规则）。
         pub fn resolve(
             tokens: &TokenSet,
             variant: ButtonVariant,
@@ -421,7 +380,6 @@ mod appearance {
             Self::resolve_inner(tokens, variant, leading_icon, trailing_icon, false)
         }
 
-        /// 禁用态样式。
         pub fn resolve_disabled(
             tokens: &TokenSet,
             variant: ButtonVariant,
@@ -442,7 +400,6 @@ mod appearance {
             let button = &tokens.component.button;
             let label = tokens.typography.label_large;
 
-            // (容器色, 内容色, 描边, elevation) —— 对齐 button.css 变体段落
             let (container, content, outline, elevation) = match variant {
                 ButtonVariant::Filled => (
                     Some(colors.primary),
@@ -471,7 +428,6 @@ mod appearance {
                 ButtonVariant::Text => (None, colors.primary, None, Elevation::Level0),
             };
 
-            // 内边距：Text 变体 12dp，带图标侧 16dp，其余 24dp
             let is_text = variant == ButtonVariant::Text;
             let with_icon = px(button.horizontal_padding_with_icon);
             let plain = px(button.horizontal_padding);

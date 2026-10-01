@@ -1,13 +1,16 @@
-//! 可动画值运行时：弹簧驱动的可重定向数值与组件逐帧驱动器。
-//!
-//! 对应 [m3fx](https://github.com/Glavo/m3fx) 的 `M3DoubleAnimatable`
-//! 与 `M3StateTransition`（Apache-2.0，© 2026 Glavo）。
-//!
-//! 语义与 m3fx 一致：
-//! - 中途改目标（retarget）保留当前速度，不产生速度突变；
-//! - 弹簧时长由可视阈值（visibility threshold）估算，只决定何时判定收敛，
-//!   不会对最终值做截断；
-//! - 弹簧估算失败时回退到 spec 的 fallback 时长/缓动。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/animation/M3DoubleAnimatable.java
 
 use std::time::{Duration, Instant};
 
@@ -17,19 +20,17 @@ use super::easing::Easing;
 use super::scheme::MotionSpec;
 use super::spring::{SpringParameters, estimate_duration_seconds, spring_value, spring_velocity};
 
-/// 单个弹簧/时长动画的运行状态。
 #[derive(Clone, Copy, Debug)]
 enum Run {
-    /// 弹簧运行：记录起点、初速度、开始时刻与预计收敛时长。
     Spring {
         start_value: f64,
         start_velocity: f64,
         started_at: Instant,
-        /// 估算收敛时长（秒）。
+
         duration_s: f64,
         params: SpringParameters,
     },
-    /// 时长动画：固定时长 + 缓动。
+
     Timed {
         start_value: f64,
         started_at: Instant,
@@ -53,10 +54,6 @@ impl Run {
     }
 }
 
-/// 可重定向的可动画标量值。
-///
-/// 组件把它作为字段持有，在交互时调用 [`Animatable::animate_to`]，
-/// 在 render 中通过 [`AnimationDriver`] 逐帧推进。
 #[derive(Clone, Copy, Debug)]
 pub struct Animatable {
     value: f64,
@@ -67,10 +64,6 @@ pub struct Animatable {
 }
 
 impl Animatable {
-    /// 创建静止在 `value` 上的可动画值。
-    ///
-    /// `visibility_threshold` 是弹簧判定"视觉上已收敛"的有限正值增量，
-    /// 用于估算弹簧时长（见 m3fx `M3DoubleAnimatable`）。
     pub fn new(value: f64, visibility_threshold: f64) -> Self {
         Self {
             value,
@@ -81,29 +74,22 @@ impl Animatable {
         }
     }
 
-    /// 当前值。
     pub fn value(&self) -> f64 {
         self.value
     }
 
-    /// 最近一次请求的目标值。
     pub fn target(&self) -> f64 {
         self.target
     }
 
-    /// 当前速度（值/秒），供连续 retarget 或测试使用。
     pub fn velocity(&self) -> f64 {
         self.velocity
     }
 
-    /// 是否仍在动画中。
     pub fn is_running(&self) -> bool {
         self.run.is_some()
     }
 
-    /// 以弹簧动画驶向 `target`（使用 `spec` 的弹簧参数与回退值）。
-    ///
-    /// 若正在动画中，则从当前值/速度继续（保留速度，无突变）。
     pub fn animate_to(&mut self, target: f64, spec: &MotionSpec, now: Instant) {
         self.animate_to_with_params(
             target,
@@ -114,7 +100,6 @@ impl Animatable {
         );
     }
 
-    /// 以自定义弹簧参数驶向 `target`；估算失败时用给定的回退时长/缓动。
     pub fn animate_to_with_params(
         &mut self,
         target: f64,
@@ -154,7 +139,6 @@ impl Animatable {
         }
     }
 
-    /// 以固定时长 + 缓动驶向 `target`。
     pub fn animate_to_timed(
         &mut self,
         target: f64,
@@ -167,7 +151,6 @@ impl Animatable {
         self.start_timed(target, duration, easing, now);
     }
 
-    /// 停止动画并直接落到 `value`（当前值与目标值同时被设置）。
     pub fn snap_to(&mut self, value: f64) {
         self.run = None;
         self.value = value;
@@ -175,25 +158,21 @@ impl Animatable {
         self.velocity = 0.0;
     }
 
-    /// 冻结在当前值（目标值保持不变）。
     pub fn stop(&mut self) {
         self.run = None;
     }
 
-    /// 立刻完成：跳到目标值并停止（幂等）。
     pub fn finish(&mut self) {
         self.value = self.target;
         self.velocity = 0.0;
         self.run = None;
     }
 
-    /// 推进到 `now`；返回推进后是否仍在动画中。
     pub fn tick(&mut self, now: Instant) -> bool {
         self.sync(now);
         self.run.is_some()
     }
 
-    /// 把内部状态推进到 `now` 时刻（若在动画中）。
     fn sync(&mut self, now: Instant) {
         let Some(run) = self.run else {
             return;
@@ -235,7 +214,7 @@ impl Animatable {
             } => {
                 let progress = easing.sample_duration(elapsed, duration);
                 self.value = start_value + (self.target - start_value) * progress;
-                // 数值微分估计当前速度，供后续弹簧 retarget 使用
+
                 let dt = 1.0e-3_f64;
                 let p1 = easing.sample_duration(elapsed + Duration::from_secs_f64(dt), duration);
                 self.velocity = (p1 - progress) * (self.target - start_value) / dt;
@@ -243,7 +222,6 @@ impl Animatable {
         }
     }
 
-    /// 启动时长动画（内部：假定 sync 已调用、target 已更新）。
     fn start_timed(&mut self, target: f64, duration: Duration, easing: Easing, now: Instant) {
         self.target = target;
         if duration.is_zero() {
@@ -261,15 +239,12 @@ impl Animatable {
     }
 }
 
-/// 组件内嵌的逐帧驱动器：防止同一帧重复调度。
 #[derive(Clone, Copy, Debug, Default)]
 pub struct AnimationDriver {
     scheduled: bool,
 }
 
 impl AnimationDriver {
-    /// 在组件的 `render` 中调用：若组件仍有动画在跑，
-    /// 安排在下一帧调用 [`AnimatedComponent::step`]。
     pub fn schedule<T: AnimatedComponent + 'static>(
         &mut self,
         entity: &Entity<T>,
@@ -287,32 +262,24 @@ impl AnimationDriver {
                 if still_running {
                     component.schedule_next(window, cx);
                 }
-                // 动画推进与落地帧都需要一次 notify 重绘终值
+
                 cx.notify();
             });
         });
     }
 }
 
-/// 支持逐帧动画的组件 trait。
-///
-/// 组件实现 [`AnimatedComponent::step`] 推进自身全部动画值；
-/// 在 `render` 里调用 [`AnimatedComponent::schedule_next`] 即可维持动画循环。
 pub trait AnimatedComponent: Render + Sized {
-    /// 推进所有动画值到 `now`；返回是否仍有动画在运行。
     fn step(&mut self, now: Instant) -> bool;
 
-    /// 返回内嵌的驱动器（用于维护调度标记）。
     fn driver_mut(&mut self) -> &mut AnimationDriver;
 
-    /// 安排下一帧步进（render 中每帧调用一次即可）。
     fn schedule_next(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let entity = cx.entity();
         self.driver_mut().schedule(&entity, window);
     }
 }
 
-/// 在 sRGB 空间线性插值两个颜色（与 JavaFX `Color.interpolate` 行为一致）。
 pub fn lerp_color(from: Hsla, to: Hsla, t: f32) -> Hsla {
     let from_rgba = Rgba::from(from);
     let to_rgba = Rgba::from(to);
@@ -370,7 +337,7 @@ mod tests {
         );
         let value_before = a.value();
         a.animate_to(2.0, &test_spec(), mid);
-        // retarget 后立即取值应与 retarget 前一致（无跳变）
+
         assert_eq!(a.value(), value_before);
         assert_eq!(a.target(), 2.0);
     }

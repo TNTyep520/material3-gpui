@@ -1,3 +1,17 @@
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ButtonGroup.kt
+
 use gpui::{
     AnyElement, App, ElementId, IntoElement, ParentElement, Pixels, RenderOnce, Window, div,
     prelude::*,
@@ -6,15 +20,12 @@ use gpui::{
 use crate::theme::{ActiveTheme, TokenSet};
 use crate::tokens::ButtonGroupSmallTokens;
 
-/// 按钮组样式(由令牌推导,可用 [`ButtonGroup::spacing`] 覆盖间距)。
 #[derive(Clone, Copy, Debug)]
 pub struct ButtonGroupStyle {
-    /// 按钮之间的间距。
     pub spacing: Pixels,
 }
 
 impl ButtonGroupStyle {
-    /// 由令牌推导默认样式(小尺寸按钮组,组间距 12dp)。
     pub fn resolve(_tokens: &TokenSet) -> Self {
         Self {
             spacing: ButtonGroupSmallTokens::BETWEEN_SPACE.pixels(),
@@ -22,7 +33,6 @@ impl ButtonGroupStyle {
     }
 }
 
-/// A horizontal Material button group with a shared touch target.
 #[derive(IntoElement)]
 pub struct ButtonGroup {
     id: ElementId,
@@ -33,31 +43,26 @@ pub struct ButtonGroup {
     overflow_indicator: Option<AnyElement>,
 }
 
-/// AndroidX ButtonGroupMenuState 对应的溢出菜单可见状态。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ButtonGroupMenuState {
     is_showing: bool,
 }
 
 impl ButtonGroupMenuState {
-    /// 创建初始显示或隐藏的菜单状态。
     pub fn new(initial_is_showing: bool) -> Self {
         Self {
             is_showing: initial_is_showing,
         }
     }
 
-    /// 返回菜单是否显示。
     pub fn is_showing(&self) -> bool {
         self.is_showing
     }
 
-    /// 显示溢出菜单。
     pub fn show(&mut self) {
         self.is_showing = true;
     }
 
-    /// 收起溢出菜单。
     pub fn dismiss(&mut self) {
         self.is_showing = false;
     }
@@ -80,19 +85,16 @@ impl ButtonGroup {
         self
     }
 
-    /// 覆盖组间距(默认取 [`ButtonGroupSmallTokens::BETWEEN_SPACE`])。
     pub fn spacing(mut self, spacing: Pixels) -> Self {
         self.spacing = Some(spacing);
         self
     }
 
-    /// 设置按钮间距相对默认值的展开比例。
     pub fn expanded_ratio(mut self, ratio: f32) -> Self {
         self.expanded_ratio = ratio.max(0.);
         self
     }
 
-    /// 添加溢出菜单触发控件；仅在调用者提供时显示。
     pub fn overflow_indicator(mut self, indicator: impl IntoElement) -> Self {
         self.overflow_indicator = Some(indicator.into_any_element());
         self

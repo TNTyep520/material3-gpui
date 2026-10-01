@@ -1,18 +1,16 @@
-//! MD3 FAB（对应 material-web 的 `md-fab`）。
-//!
-//! 尺寸：Small 40dp / Standard 56dp / Large 96dp；
-//! 颜色：Surface / Primary / Secondary / Tertiary；
-//! 支持 Extended FAB（带文字标签）。
-//!
-//! 交互行为移植自 [m3fx](https://github.com/Glavo/m3fx) 的
-//! `M3FloatingActionButtonSkin`（Apache-2.0，© 2026 Glavo）。
-//!
-//! ```ignore
-//! Fab::new("add", IconName::Add)
-//!     .label("New item")
-//!     .on_click(|_, _, _| {})
-//!     .build(cx)   // -> Entity<FabState>
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3FloatingActionButtonSkin.java
 
 use std::rc::Rc;
 use std::time::Instant;
@@ -30,35 +28,30 @@ use crate::theme::ActiveTheme;
 
 type ClickHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
 
-/// FAB 尺寸。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum FabSize {
-    /// 40dp。
     Small,
-    /// 56dp（默认）。
+
     #[default]
     Standard,
-    /// 80dp。
+
     Medium,
-    /// 96dp。
+
     Large,
 }
 
-/// FAB 配色。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum FabColor {
-    /// 表面配色。
     Surface,
-    /// 主色配色（默认）。
+
     #[default]
     Primary,
-    /// 次级配色。
+
     Secondary,
-    /// 第三配色。
+
     Tertiary,
 }
 
-/// MD3 悬浮操作按钮构建器（`.build(cx)` 产出 [`FabState`]）。
 pub struct Fab {
     id: ElementId,
     icon: IconName,
@@ -69,7 +62,6 @@ pub struct Fab {
     on_click: Option<ClickHandler>,
 }
 
-/// FAB 的有状态部分。
 pub struct FabState {
     id: ElementId,
     icon: IconName,
@@ -82,7 +74,6 @@ pub struct FabState {
 }
 
 impl Fab {
-    /// 创建 FAB 构建器。
     pub fn new(id: impl Into<ElementId>, icon: IconName) -> Self {
         Self {
             id: id.into(),
@@ -95,36 +86,30 @@ impl Fab {
         }
     }
 
-    /// 设置尺寸。
     pub fn size(mut self, size: FabSize) -> Self {
         self.size = size;
         self
     }
 
-    /// 设置配色。
     pub fn color(mut self, color: FabColor) -> Self {
         self.color = color;
         self
     }
 
-    /// Extended FAB：附带文字标签（固定高 56dp）。
     pub fn label(mut self, label: impl Into<SharedString>) -> Self {
         self.label = Some(label.into());
         self
     }
 
-    /// 设置扩展 FAB 的文字内容。
     pub fn text(self, text: impl Into<SharedString>) -> Self {
         self.label(text)
     }
 
-    /// 降低的 elevation（Level1 而非 Level3）。
     pub fn lowered(mut self, lowered: bool) -> Self {
         self.lowered = lowered;
         self
     }
 
-    /// 设置点击回调。
     pub fn on_click(
         mut self,
         handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -133,7 +118,6 @@ impl Fab {
         self
     }
 
-    /// 构建有状态组件实体。
     pub fn build(self, cx: &mut App) -> Entity<FabState> {
         cx.new(|_| FabState {
             id: self.id,
@@ -154,18 +138,15 @@ macro_rules! floating_action_button {
         pub struct $name(Fab);
 
         impl $name {
-            /// 创建指定尺寸的 FAB。
             pub fn new(id: impl Into<ElementId>, icon: IconName) -> Self {
                 Self(Fab::new(id, icon).size(FabSize::$size))
             }
 
-            /// 设置容器配色。
             pub fn color(mut self, color: FabColor) -> Self {
                 self.0 = self.0.color(color);
                 self
             }
 
-            /// 设置点击回调。
             pub fn on_click(
                 mut self,
                 handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -174,7 +155,6 @@ macro_rules! floating_action_button {
                 self
             }
 
-            /// 构建可渲染的 FAB 实体。
             pub fn build(self, cx: &mut App) -> Entity<FabState> {
                 self.0.build(cx)
             }
@@ -188,7 +168,6 @@ macro_rules! extended_floating_action_button {
         pub struct $name(Fab);
 
         impl $name {
-            /// 创建带文字内容的 FAB。
             pub fn new(
                 id: impl Into<ElementId>,
                 icon: IconName,
@@ -197,13 +176,11 @@ macro_rules! extended_floating_action_button {
                 Self(Fab::new(id, icon).size(FabSize::$size).text(text))
             }
 
-            /// 设置容器配色。
             pub fn color(mut self, color: FabColor) -> Self {
                 self.0 = self.0.color(color);
                 self
             }
 
-            /// 设置点击回调。
             pub fn on_click(
                 mut self,
                 handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -212,7 +189,6 @@ macro_rules! extended_floating_action_button {
                 self
             }
 
-            /// 构建可渲染的扩展 FAB 实体。
             pub fn build(self, cx: &mut App) -> Entity<FabState> {
                 self.0.build(cx)
             }
@@ -311,36 +287,34 @@ mod appearance {
     use super::FabSize;
     use crate::theme::{Elevation, TokenSet};
     use gpui::{Pixels, px};
-    /// MD3 FAB 样式。
+
     #[derive(Clone, Debug)]
     pub struct FabStyle {
-        /// 容器色。
         pub container_color: gpui::Hsla,
-        /// 内容色。
+
         pub content_color: gpui::Hsla,
-        /// 容器边长（extended 时为高度）。
+
         pub size: Pixels,
-        /// 圆角。
+
         pub corner_radius: Pixels,
-        /// 图标尺寸。
+
         pub icon_size: Pixels,
-        /// 图标与文字间距。
+
         pub icon_gap: Pixels,
-        /// 阴影等级。
+
         pub elevation: Elevation,
-        /// 阴影颜色。
+
         pub shadow_color: gpui::Hsla,
-        /// 状态层/涟漪基色。
+
         pub state_layer_color: gpui::Hsla,
-        /// 按压档状态层不透明度。
+
         pub state_layer_opacity: f32,
-        /// extended（带文字）时的水平内边距。
+
         pub extended_padding: (Pixels, Pixels),
-        /// 文字字型。
+
         pub label: crate::theme::TypeStyle,
     }
     impl FabStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet, size: FabSize, color: FabColor, lowered: bool) -> Self {
             let colors = &tokens.colors;
             let shapes = tokens.shapes;

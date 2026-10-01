@@ -1,18 +1,23 @@
-//! MD3 密度令牌。
-//!
-//! 对应 [m3fx](https://github.com/Glavo/m3fx) 的 `M3Density`
-//! （Apache-2.0，© 2026 Glavo）。密度影响布局敏感的组件令牌。
-//!
-//! 首期仅实现标准密度；其余档位为后续期预留。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/tokens/M3Density.java
 
-/// 组件密度档位。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum Density {
-    /// 标准密度（默认）。
     #[default]
     Standard,
-    /// 舒适密度（更大间距）。
+
     Comfortable,
-    /// 紧凑密度（更小间距）。
+
     Compact,
 }

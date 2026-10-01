@@ -1,20 +1,16 @@
-//! MD3 Chips（对应 material-web 的 `md-*-chip`）。
-//!
-//! 变体：Assist / Filter / Input / Suggestion。
-//! 规格：高 32dp、圆角 8dp、label-large 字体。
-//! Filter chip 选中时显示勾图标 + secondary-container 底色；
-//! Input chip 可带尾部移除按钮。
-//!
-//! 交互行为移植自 [m3fx](https://github.com/Glavo/m3fx) 的
-//! `M3ChipSkin`（Apache-2.0，© 2026 Glavo）。
-//!
-//! ```ignore
-//! Chip::new("tag", "Rust")
-//!     .variant(ChipVariant::Filter)
-//!     .selected(active)
-//!     .on_click(|_, _, _| {})
-//!     .build(cx)   // -> Entity<ChipState>
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3ChipSkin.java
 
 use std::rc::Rc;
 use std::time::Instant;
@@ -33,21 +29,18 @@ use crate::theme::ActiveTheme;
 type ClickHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
 type SelectionHandler = Rc<dyn Fn(bool, &mut Window, &mut App) + 'static>;
 
-/// 纸片变体。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ChipVariant {
-    /// 辅助纸片。
     #[default]
     Assist,
-    /// 过滤纸片（可选中）。
+
     Filter,
-    /// 输入纸片（可移除）。
+
     Input,
-    /// 建议纸片。
+
     Suggestion,
 }
 
-/// MD3 纸片构建器（`.build(cx)` 产出 [`ChipState`]）。
 pub struct Chip {
     id: ElementId,
     label: SharedString,
@@ -61,7 +54,6 @@ pub struct Chip {
     on_remove: Option<ClickHandler>,
 }
 
-/// 纸片的有状态部分。
 pub struct ChipState {
     id: ElementId,
     label: SharedString,
@@ -77,7 +69,6 @@ pub struct ChipState {
 }
 
 impl Chip {
-    /// 创建纸片构建器。
     pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
         Self {
             id: id.into(),
@@ -93,50 +84,41 @@ impl Chip {
         }
     }
 
-    /// 设置变体。
     pub fn variant(mut self, variant: ChipVariant) -> Self {
         self.variant = variant;
         self
     }
 
-    /// Assist 变体。
     pub fn assist(self) -> Self {
         self.variant(ChipVariant::Assist)
     }
 
-    /// Filter 变体。
     pub fn filter(self) -> Self {
         self.variant(ChipVariant::Filter)
     }
 
-    /// Input 变体。
     pub fn input(self) -> Self {
         self.variant(ChipVariant::Input)
     }
 
-    /// Suggestion 变体。
     pub fn suggestion(self) -> Self {
         self.variant(ChipVariant::Suggestion)
     }
 
-    /// 选中态（主要用于 Filter chip）。
     pub fn selected(mut self, selected: bool) -> Self {
         self.selected = selected;
         self
     }
 
-    /// 设置禁用态。
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
 
-    /// 设置启用状态；禁用时阻止点击与选择切换。
     pub fn enabled(self, enabled: bool) -> Self {
         self.disabled(!enabled)
     }
 
-    /// 设置 Filter chip 的选中回调，传递新的选中状态。
     pub fn on_selected_change(
         mut self,
         handler: impl Fn(bool, &mut Window, &mut App) + 'static,
@@ -145,19 +127,16 @@ impl Chip {
         self
     }
 
-    /// 悬浮样式（elevated，无描边 + 阴影）。
     pub fn elevated(mut self, elevated: bool) -> Self {
         self.elevated = elevated;
         self
     }
 
-    /// 设置前导图标。
     pub fn leading_icon(mut self, icon: IconName) -> Self {
         self.leading_icon = Some(icon);
         self
     }
 
-    /// 设置点击回调。
     pub fn on_click(
         mut self,
         handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -166,7 +145,6 @@ impl Chip {
         self
     }
 
-    /// Input chip 的尾部移除按钮回调（设置后显示 × 按钮）。
     pub fn on_remove(
         mut self,
         handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -175,7 +153,6 @@ impl Chip {
         self
     }
 
-    /// 构建有状态组件实体。
     pub fn build(self, cx: &mut App) -> Entity<ChipState> {
         cx.new(|_| ChipState {
             id: self.id,
@@ -194,12 +171,10 @@ impl Chip {
 }
 
 impl ChipState {
-    /// 返回当前选中状态。
     pub fn selected(&self) -> bool {
         self.selected
     }
 
-    /// 设置选中状态，不触发选择回调。
     pub fn set_selected(&mut self, selected: bool, cx: &mut Context<Self>) {
         if self.selected != selected {
             self.selected = selected;
@@ -214,7 +189,6 @@ macro_rules! chip_variant {
         pub struct $name(Chip);
 
         impl $name {
-            /// 创建带标签的 chip。
             pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
                 Self(
                     Chip::new(id, label)
@@ -223,25 +197,21 @@ macro_rules! chip_variant {
                 )
             }
 
-            /// 设置启用状态。
             pub fn enabled(mut self, enabled: bool) -> Self {
                 self.0 = self.0.enabled(enabled);
                 self
             }
 
-            /// 设置选中状态，供可选择的 chip 使用。
             pub fn selected(mut self, selected: bool) -> Self {
                 self.0 = self.0.selected(selected);
                 self
             }
 
-            /// 设置前导图标。
             pub fn leading_icon(mut self, icon: IconName) -> Self {
                 self.0 = self.0.leading_icon(icon);
                 self
             }
 
-            /// 设置点击回调。
             pub fn on_click(
                 mut self,
                 handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -250,7 +220,6 @@ macro_rules! chip_variant {
                 self
             }
 
-            /// 设置选中变化回调。
             pub fn on_selected_change(
                 mut self,
                 handler: impl Fn(bool, &mut Window, &mut App) + 'static,
@@ -259,7 +228,6 @@ macro_rules! chip_variant {
                 self
             }
 
-            /// 设置 Input chip 的移除操作。
             pub fn on_remove(
                 mut self,
                 handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -268,7 +236,6 @@ macro_rules! chip_variant {
                 self
             }
 
-            /// 创建可渲染的 chip 实体。
             pub fn build(self, cx: &mut App) -> Entity<ChipState> {
                 self.0.build(cx)
             }
@@ -316,7 +283,6 @@ impl Render for ChipState {
         let icon_color = style.icon_color;
         let bg = style.container_color;
 
-        // Filter chip 选中时自动带勾图标
         let leading = if self.variant == ChipVariant::Filter && selected {
             Some(IconName::Check)
         } else {
@@ -403,7 +369,6 @@ impl Render for ChipState {
             |el, handler| {
                 el.child(
                     div()
-                        // NamedChild:由父 id 组合子 id,不分配字符串
                         .id((self.id.clone(), "remove"))
                         .size(px(18.))
                         .flex()
@@ -430,40 +395,38 @@ mod appearance {
     use super::ChipVariant;
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// MD3 纸片样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct ChipStyle {
-        /// 容器色（`None` 为透明）。
         pub container_color: Option<Hsla>,
-        /// 内容色。
+
         pub content_color: Hsla,
-        /// 前导图标色。
+
         pub icon_color: Hsla,
-        /// 描边色（`Some` 启用 1dp 描边）。
+
         pub outline_color: Option<Hsla>,
-        /// 高度。
+
         pub height: Pixels,
-        /// 圆角。
+
         pub corner_radius: Pixels,
-        /// 带前导/尾随元素一侧的水平内边距。
+
         pub edge_padding: Pixels,
-        /// 无前导/尾随元素一侧的水平内边距。
+
         pub center_padding: Pixels,
-        /// 元素间距。
+
         pub gap: Pixels,
-        /// 前导图标尺寸。
+
         pub icon_size: Pixels,
-        /// 移除按钮尺寸。
+
         pub close_size: Pixels,
-        /// 状态层基色。
+
         pub state_layer_color: Hsla,
-        /// 按压档状态层不透明度。
+
         pub state_layer_opacity: f32,
-        /// 文字字型。
+
         pub label: crate::theme::TypeStyle,
     }
     impl ChipStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(
             tokens: &TokenSet,
             variant: ChipVariant,

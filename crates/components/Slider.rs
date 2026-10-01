@@ -1,15 +1,16 @@
-//! MD3 Slider（对应 material-web / M3 2024 样式的 `md-slider`）。
-//!
-//! 采用 M3 新版视觉：16dp 高的圆角轨道 + 4×44dp 竖条手柄。
-//! 有状态组件，构建器 + `.build(cx)` 产出 [`SliderState`]：
-//!
-//! ```ignore
-//! // 创建（在视图 render 中，cx 为 &mut Context<V>）：
-//! Slider::new(0.0, 100.0, 40.0)
-//!     .step(10.0)
-//!     .on_change(|value, _, _| println!("{value}"))
-//!     .build(cx)   // -> Entity<SliderState>
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Slider.kt
 
 use std::rc::Rc;
 
@@ -53,7 +54,6 @@ fn value_at_position(
     Some(value.clamp(min, max))
 }
 
-/// MD3 滑块构建器（`.build(cx)` 产出 [`SliderState`]）。
 pub struct Slider {
     min: f32,
     max: f32,
@@ -64,7 +64,6 @@ pub struct Slider {
     on_change: Option<ChangeHandler>,
 }
 
-/// 滑块的有状态部分：值与拖拽状态。
 pub struct SliderState {
     min: f32,
     max: f32,
@@ -78,7 +77,6 @@ pub struct SliderState {
 }
 
 impl Slider {
-    /// 创建滑块构建器。
     pub fn new(min: f32, max: f32, value: f32) -> Self {
         Self {
             min,
@@ -91,41 +89,34 @@ impl Slider {
         }
     }
 
-    /// 离散步长（如 10.0）。
     pub fn step(mut self, step: f32) -> Self {
         self.step = Some(step);
         self
     }
 
-    /// 设置禁用态。
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
 
-    /// 设置 AndroidX 对应的 enabled 状态。
     pub fn enabled(self, enabled: bool) -> Self {
         self.disabled(!enabled)
     }
 
-    /// 沿纵向布局轨道，顶部表示最大值。
     pub fn vertical(mut self) -> Self {
         self.vertical = true;
         self
     }
 
-    /// 值变化回调。
     pub fn on_change(mut self, handler: impl Fn(f32, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
     }
 
-    /// 设置数值变化回调；传递当前值域内的新值。
     pub fn on_value_change(self, handler: impl Fn(f32, &mut Window, &mut App) + 'static) -> Self {
         self.on_change(handler)
     }
 
-    /// 构建有状态组件实体。
     pub fn build(self, cx: &mut App) -> Entity<SliderState> {
         cx.new(|_| SliderState {
             min: self.min,
@@ -141,28 +132,23 @@ impl Slider {
     }
 }
 
-/// AndroidX VerticalSlider 对应的纵向滑块。
 pub struct VerticalSlider(Slider);
 
 impl VerticalSlider {
-    /// 创建顶部为最大值的纵向滑块。
     pub fn new(min: f32, max: f32, value: f32) -> Self {
         Self(Slider::new(min, max, value).vertical())
     }
 
-    /// 设置离散步长。
     pub fn step(mut self, step: f32) -> Self {
         self.0 = self.0.step(step);
         self
     }
 
-    /// 设置启用状态。
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.0 = self.0.enabled(enabled);
         self
     }
 
-    /// 设置数值变化回调。
     pub fn on_value_change(
         mut self,
         handler: impl Fn(f32, &mut Window, &mut App) + 'static,
@@ -171,19 +157,16 @@ impl VerticalSlider {
         self
     }
 
-    /// 构建可渲染的纵向滑块实体。
     pub fn build(self, cx: &mut App) -> Entity<SliderState> {
         self.0.build(cx)
     }
 }
 
 impl SliderState {
-    /// 当前值。
     pub fn value(&self) -> f32 {
         self.value
     }
 
-    /// 编程式设置值。
     pub fn set_value(&mut self, value: f32, cx: &mut Context<Self>) {
         self.value = value.clamp(self.min, self.max);
         cx.notify();
@@ -378,7 +361,6 @@ impl Render for SliderState {
             .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::on_mouse_up))
             .child(track_content)
-            // 捕获轨道 bounds，用于把鼠标 x 坐标映射为数值
             .child({
                 let entity = entity.clone();
                 canvas(
@@ -430,24 +412,22 @@ pub use appearance::SliderStyle;
 mod appearance {
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// MD3 Slider 样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct SliderStyle {
-        /// 活动轨道色。
         pub active_track: Hsla,
-        /// 非活动轨道色。
+
         pub inactive_track: Hsla,
-        /// 手柄色。
+
         pub handle: Hsla,
-        /// 轨道高度。
+
         pub track_height: Pixels,
-        /// 手柄宽/高。
+
         pub handle_size: (Pixels, Pixels),
-        /// 轨道容器高。
+
         pub container_height: Pixels,
     }
     impl SliderStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet, disabled: bool) -> Self {
             let colors = &tokens.colors;
             let state = &tokens.state_layer;

@@ -1,17 +1,16 @@
-//! MD3 Checkbox（对应 material-web 的 `md-checkbox`）。
-//!
-//! 规格：复选框 18×18dp、圆角 2dp、边框 2dp；40dp 圆形触摸目标 + 状态层。
-//!
-//! 交互动画移植自 [m3fx](https://github.com/Glavo/m3fx) 的
-//! `M3CheckBoxSkin`（Apache-2.0，© 2026 Glavo）：勾选填充与勾图标
-//! 由弹簧（defaultEffects）驱动；选择控件只有状态层、无涟漪。
-//!
-//! ```ignore
-//! Checkbox::new("agree")
-//!     .checked(true)
-//!     .on_change(|checked, _, _| {})
-//!     .build(cx)   // -> Entity<CheckboxState>
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3CheckBoxSkin.java
 
 use std::rc::Rc;
 use std::time::Instant;
@@ -29,19 +28,16 @@ use crate::theme::ActiveTheme;
 
 type ChangeHandler = Rc<dyn Fn(bool, &mut Window, &mut App) + 'static>;
 
-/// AndroidX ToggleableState 对应的三态复选框值。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ToggleableState {
-    /// 未选中。
     #[default]
     Off,
-    /// 已选中。
+
     On,
-    /// 部分选中。
+
     Indeterminate,
 }
 
-/// MD3 复选框构建器（`.build(cx)` 产出 [`CheckboxState`]）。
 pub struct Checkbox {
     id: ElementId,
     checked: bool,
@@ -51,7 +47,6 @@ pub struct Checkbox {
     on_change: Option<ChangeHandler>,
 }
 
-/// 复选框的有状态部分。
 pub struct CheckboxState {
     id: ElementId,
     checked: bool,
@@ -59,13 +54,12 @@ pub struct CheckboxState {
     disabled: bool,
     error: bool,
     on_change: Option<ChangeHandler>,
-    /// 0 = 未勾选，1 = 已勾选。
+
     progress: Animatable,
     surface: InteractiveSurface,
 }
 
 impl Checkbox {
-    /// 创建复选框构建器。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
@@ -77,44 +71,37 @@ impl Checkbox {
         }
     }
 
-    /// 初始勾选态。
     pub fn checked(mut self, checked: bool) -> Self {
         self.checked = checked;
         self.indeterminate = false;
         self
     }
 
-    /// 设置三态值；部分选中时显示横线。
     pub fn toggleable_state(mut self, state: ToggleableState) -> Self {
         self.checked = state == ToggleableState::On;
         self.indeterminate = state == ToggleableState::Indeterminate;
         self
     }
 
-    /// 设置禁用态。
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
 
-    /// 设置 AndroidX 对应的 enabled 状态。
     pub fn enabled(self, enabled: bool) -> Self {
         self.disabled(!enabled)
     }
 
-    /// 错误状态（使用 error 配色）。
     pub fn error(mut self, error: bool) -> Self {
         self.error = error;
         self
     }
 
-    /// 勾选状态变化回调，参数为新的 checked 值。
     pub fn on_change(mut self, handler: impl Fn(bool, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
     }
 
-    /// 设置勾选状态变化回调；传递新的 checked 值。
     pub fn on_checked_change(
         self,
         handler: impl Fn(bool, &mut Window, &mut App) + 'static,
@@ -122,7 +109,6 @@ impl Checkbox {
         self.on_change(handler)
     }
 
-    /// 构建有状态组件实体。
     pub fn build(self, cx: &mut App) -> Entity<CheckboxState> {
         let checked = self.checked;
         cx.new(|_| CheckboxState {
@@ -145,46 +131,38 @@ impl Checkbox {
     }
 }
 
-/// AndroidX TriStateCheckbox 对应的三态复选框构建器。
 pub struct TriStateCheckbox(Checkbox);
 
 impl TriStateCheckbox {
-    /// 创建初始未选中的三态复选框。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self(Checkbox::new(id))
     }
 
-    /// 设置 Off、On 或 Indeterminate 状态。
     pub fn state(mut self, state: ToggleableState) -> Self {
         self.0 = self.0.toggleable_state(state);
         self
     }
 
-    /// 设置启用状态。
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.0 = self.0.enabled(enabled);
         self
     }
 
-    /// 设置点击回调；调用者可以据此控制下一个三态值。
     pub fn on_click(mut self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
         self.0 = self.0.on_change(move |_, window, cx| handler(window, cx));
         self
     }
 
-    /// 构建可渲染的三态复选框实体。
     pub fn build(self, cx: &mut App) -> Entity<CheckboxState> {
         self.0.build(cx)
     }
 }
 
 impl CheckboxState {
-    /// 当前勾选态。
     pub fn checked(&self) -> bool {
         self.checked
     }
 
-    /// 返回当前三态值。
     pub fn toggleable_state(&self) -> ToggleableState {
         if self.indeterminate {
             ToggleableState::Indeterminate
@@ -195,7 +173,6 @@ impl CheckboxState {
         }
     }
 
-    /// 设置勾选态（带动画）。
     pub fn set_checked(&mut self, checked: bool, window: &mut Window, cx: &mut Context<Self>) {
         if self.checked == checked && !self.indeterminate {
             return;
@@ -253,14 +230,12 @@ impl Render for CheckboxState {
             colors.on_surface_variant
         };
 
-        // 状态层颜色（40dp 圆形触摸目标）
         let layer = if self.checked || self.indeterminate {
             accent
         } else {
             colors.on_surface
         };
 
-        // 勾选填充/边框/图标随进度插值
         let (box_bg, box_border, mark_color) = if disabled {
             if self.checked || self.indeterminate {
                 (
@@ -351,34 +326,32 @@ pub use appearance::CheckboxStyle;
 mod appearance {
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// MD3 Checkbox 样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct CheckboxStyle {
-        /// 勾选填充色（error 态为 error 色）。
         pub accent: Hsla,
-        /// 勾选图标准色。
+
         pub on_accent: Hsla,
-        /// 未选中边框色。
+
         pub outline: Hsla,
-        /// 方框边长。
+
         pub box_size: Pixels,
-        /// 方框圆角。
+
         pub corner_radius: Pixels,
-        /// 边框宽度。
+
         pub border_width: Pixels,
-        /// 勾图标尺寸。
+
         pub mark_size: Pixels,
-        /// 触摸目标边长。
+
         pub touch_target: Pixels,
-        /// 状态层基色。
+
         pub state_layer_color: Hsla,
-        /// 按压档状态层不透明度。
+
         pub state_layer_opacity: f32,
-        /// 禁用态内容不透明度对应的颜色。
+
         pub disabled_content: Hsla,
     }
     impl CheckboxStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet, error: bool, disabled: bool) -> Self {
             let colors = &tokens.colors;
             let state = &tokens.state_layer;

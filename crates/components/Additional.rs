@@ -1,3 +1,21 @@
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/LoadingIndicator.kt
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ProgressIndicator.kt
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButtonMenu.kt
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingToolbar.kt
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SwipeToDismissBox.kt
+
 use crate::components::{Fab, FilledIconToggleButton, TextField, TextFieldState};
 use crate::theme::ActiveTheme;
 use gpui::{
@@ -101,13 +119,11 @@ impl RangeSlider {
         self
     }
 
-    /// 设置是否接受指针操作。
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.enabled = enabled;
         self
     }
 
-    /// 设置区间变化回调；调用者应保存新值并重新渲染。
     pub fn on_value_change(
         mut self,
         handler: impl Fn((f32, f32), &mut Window, &mut App) + 'static,
@@ -373,29 +389,24 @@ pub struct SwipeToDismissBox {
     on_value_change: Option<SwipeChangeHandler>,
 }
 
-/// AndroidX SwipeToDismissBoxValue 对应的滑动结果。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum SwipeToDismissBoxValue {
-    /// 内容停留在原位。
     #[default]
     Settled,
-    /// 从左向右滑动完成。
+
     StartToEnd,
-    /// 从右向左滑动完成。
+
     EndToStart,
 }
 
-/// AndroidX SwipeToDismissBoxState 对应的当前滑动结果。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SwipeToDismissBoxState {
-    /// 当前显示位置。
     pub current_value: SwipeToDismissBoxValue,
 }
 
 type SwipeChangeHandler = Rc<dyn Fn(SwipeToDismissBoxValue, &mut Window, &mut App)>;
 
 impl SwipeToDismissBox {
-    /// 创建未滑动的内容容器。
     pub fn new(id: impl Into<ElementId>, content: impl IntoElement) -> Self {
         Self {
             id: id.into(),
@@ -406,22 +417,22 @@ impl SwipeToDismissBox {
             on_value_change: None,
         }
     }
-    /// 设置滑动时露出的背景。
+
     pub fn background(mut self, b: impl IntoElement) -> Self {
         self.background = Some(b.into_any_element());
         self
     }
-    /// 设置当前滑动结果。
+
     pub fn state(mut self, state: SwipeToDismissBoxState) -> Self {
         self.state = state;
         self
     }
-    /// 设置是否允许滑动手势。
+
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.enabled = enabled;
         self
     }
-    /// 手势横向移动超过 80dp 时报告滑动方向。
+
     pub fn on_value_change(
         mut self,
         handler: impl Fn(SwipeToDismissBoxValue, &mut Window, &mut App) + 'static,
@@ -477,25 +488,20 @@ pub struct FloatingToolbar {
     state: FloatingToolbarState,
 }
 
-/// AndroidX FloatingToolbarState 对应的展开状态。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FloatingToolbarState {
-    /// 工具栏内容是否展开显示。
     pub expanded: bool,
 }
 
 impl FloatingToolbarState {
-    /// 创建给定初始状态的工具栏状态。
     pub fn new(expanded: bool) -> Self {
         Self { expanded }
     }
 
-    /// 展开工具栏内容。
     pub fn expand(&mut self) {
         self.expanded = true;
     }
 
-    /// 收起工具栏内容。
     pub fn collapse(&mut self) {
         self.expanded = false;
     }
@@ -507,10 +513,8 @@ impl Default for FloatingToolbarState {
     }
 }
 
-/// AndroidX HorizontalFloatingToolbar 对应的横向浮动工具栏。
 pub type HorizontalFloatingToolbar = FloatingToolbar;
 
-/// AndroidX VerticalFloatingToolbar 对应的纵向浮动工具栏。
 #[derive(IntoElement)]
 pub struct VerticalFloatingToolbar(FloatingToolbar);
 
@@ -524,13 +528,11 @@ impl FloatingToolbar {
         }
     }
 
-    /// 将工具栏内容按纵向排列。
     pub fn vertical(mut self) -> Self {
         self.vertical = true;
         self
     }
 
-    /// 设置工具栏展开状态。
     pub fn state(mut self, state: FloatingToolbarState) -> Self {
         self.state = state;
         self
@@ -538,12 +540,10 @@ impl FloatingToolbar {
 }
 
 impl VerticalFloatingToolbar {
-    /// 创建纵向浮动工具栏。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self(FloatingToolbar::new(id).vertical())
     }
 
-    /// 设置工具栏展开状态。
     pub fn state(mut self, state: FloatingToolbarState) -> Self {
         self.0 = self.0.state(state);
         self
@@ -587,11 +587,10 @@ pub struct FabMenu {
     actions: Vec<gpui::AnyElement>,
 }
 
-/// AndroidX FloatingActionButtonMenu 对应的展开式 FAB 菜单。
 pub type FloatingActionButtonMenu = FabMenu;
-/// AndroidX FloatingActionButtonMenuItem 对应的菜单操作项。
+
 pub type FloatingActionButtonMenuItem = Fab;
-/// AndroidX ToggleFloatingActionButton 对应的可切换 FAB。
+
 pub type ToggleFloatingActionButton = FilledIconToggleButton;
 impl FabMenu {
     pub fn new(id: impl Into<ElementId>) -> Self {
@@ -622,19 +621,16 @@ impl RenderOnce for FabMenu {
     }
 }
 
-/// 日期选择器当前显示月份和选中日期。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DatePickerState {
-    /// 当前显示的年份。
     pub year: i32,
-    /// 当前显示的月份，范围为 1..=12。
+
     pub month: u32,
-    /// 当前月份中选中的日期。
+
     pub selected_day: Option<u32>,
 }
 
 impl DatePickerState {
-    /// 创建并限制月份及日期到合法范围。
     pub fn new(year: i32, month: u32, selected_day: Option<u32>) -> Self {
         let month = month.clamp(1, 12);
         Self {
@@ -645,7 +641,6 @@ impl DatePickerState {
         }
     }
 
-    /// 使用当前 UTC 月份创建默认状态。
     pub fn today() -> Self {
         let days = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -689,7 +684,6 @@ fn year_month_from_days(days: i64) -> (i32, u32) {
 type DateChangeHandler = Rc<dyn Fn(i32, u32, u32, &mut Window, &mut App)>;
 type MonthChangeHandler = Rc<dyn Fn(i32, u32, &mut Window, &mut App)>;
 
-/// 带月份导航和日期选择的 AndroidX DatePicker 对应控件。
 #[derive(IntoElement)]
 pub struct DatePicker {
     id: ElementId,
@@ -699,7 +693,6 @@ pub struct DatePicker {
     on_month_change: Option<MonthChangeHandler>,
 }
 impl DatePicker {
-    /// 创建显示当前 UTC 月份的日期选择器。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
@@ -709,17 +702,17 @@ impl DatePicker {
             on_month_change: None,
         }
     }
-    /// 设置标题文字。
+
     pub fn value(mut self, v: impl Into<SharedString>) -> Self {
         self.value = v.into();
         self
     }
-    /// 设置显示月份与选中日期。
+
     pub fn state(mut self, state: DatePickerState) -> Self {
         self.state = state;
         self
     }
-    /// 设置日期选择回调，依次传递年、月、日。
+
     pub fn on_date_change(
         mut self,
         handler: impl Fn(i32, u32, u32, &mut Window, &mut App) + 'static,
@@ -727,7 +720,7 @@ impl DatePicker {
         self.on_date_change = Some(Rc::new(handler));
         self
     }
-    /// 设置月份导航回调，依次传递新年、新月。
+
     pub fn on_month_change(
         mut self,
         handler: impl Fn(i32, u32, &mut Window, &mut App) + 'static,
@@ -815,17 +808,14 @@ impl RenderOnce for DatePicker {
 }
 pub type ExposedDatePicker = DatePicker;
 
-/// AndroidX TimePickerState 对应的 24 小时时间值。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TimePickerState {
-    /// 小时，范围为 0..=23。
     pub hour: u8,
-    /// 分钟，范围为 0..=59。
+
     pub minute: u8,
 }
 
 impl TimePickerState {
-    /// 创建并限制小时与分钟到合法范围。
     pub fn new(hour: u8, minute: u8) -> Self {
         Self {
             hour: hour.min(23),
@@ -865,7 +855,6 @@ pub struct TimePicker {
     on_time_change: Option<TimeChangeHandler>,
 }
 impl TimePicker {
-    /// 创建初始为零点的时间选择器。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
@@ -874,17 +863,17 @@ impl TimePicker {
             on_time_change: None,
         }
     }
-    /// 设置标题文字。
+
     pub fn value(mut self, v: impl Into<SharedString>) -> Self {
         self.value = v.into();
         self
     }
-    /// 设置当前小时和分钟。
+
     pub fn state(mut self, state: TimePickerState) -> Self {
         self.state = state;
         self
     }
-    /// 设置时间变化回调；调用者应保存新状态并重新渲染。
+
     pub fn on_time_change(
         mut self,
         handler: impl Fn(TimePickerState, &mut Window, &mut App) + 'static,
@@ -952,7 +941,6 @@ impl RenderOnce for TimePicker {
 }
 pub type ExposedTimePicker = TimePicker;
 
-/// AndroidX TimeInput 对应的 HH:MM 文本输入控件。
 pub struct TimeInput {
     id: ElementId,
     state: TimePickerState,
@@ -961,7 +949,6 @@ pub struct TimeInput {
 }
 
 impl TimeInput {
-    /// 创建 24 小时制时间输入框。
     pub fn new(id: impl Into<ElementId>, state: TimePickerState) -> Self {
         Self {
             id: id.into(),
@@ -971,13 +958,11 @@ impl TimeInput {
         }
     }
 
-    /// 设置输入框是否可编辑。
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.enabled = enabled;
         self
     }
 
-    /// 设置合法时间变化回调；未完成或越界的中间输入不会提交。
     pub fn on_time_change(
         mut self,
         handler: impl Fn(TimePickerState, &mut Window, &mut App) + 'static,
@@ -986,7 +971,6 @@ impl TimeInput {
         self
     }
 
-    /// 构建可编辑文本框实体。
     pub fn build(self, cx: &mut App) -> Entity<TextFieldState> {
         let mut input = TextField::new(self.id, "Time")
             .value(format!("{:02}:{:02}", self.state.hour, self.state.minute))

@@ -1,18 +1,16 @@
-//! MD3 Tabs（对应 material-web 的 `md-tabs` / `md-primary-tab`）。
-//!
-//! Primary tabs：高 48dp（带图标 64dp），底部 3dp 圆角指示条。
-//!
-//! 指示条滑动动画移植自 [m3fx](https://github.com/Glavo/m3fx) 的
-//! `M3TabBarSkin`（Apache-2.0，© 2026 Glavo）：选中指示条以
-//! fastSpatial 弹簧在标签间滑动。
-//!
-//! ```ignore
-//! TabBar::new("tabs")
-//!     .tabs([Tab::new("One"), Tab::new("Two")])
-//!     .selected(0)
-//!     .on_change(|ix, _, _| {})
-//!     .build(cx)   // -> Entity<TabBarState>
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3TabBarSkin.java
 
 use std::rc::Rc;
 use std::time::Instant;
@@ -29,19 +27,16 @@ use crate::theme::{ActiveTheme, HOVER_OPACITY, PRESSED_OPACITY};
 
 type ChangeHandler = Rc<dyn Fn(usize, &mut Window, &mut App) + 'static>;
 
-/// 单个标签页描述
 pub struct Tab {
-    /// 标签文本。
     pub label: SharedString,
-    /// 可选图标。
+
     pub icon: Option<IconName>,
-    /// 是否允许点击此标签。
+
     pub enabled: bool,
     leading_icon: bool,
 }
 
 impl Tab {
-    /// 创建标签描述。
     pub fn new(label: impl Into<SharedString>) -> Self {
         Self {
             label: label.into(),
@@ -51,19 +46,16 @@ impl Tab {
         }
     }
 
-    /// 设置图标。
     pub fn icon(mut self, icon: IconName) -> Self {
         self.icon = Some(icon);
         self
     }
 
-    /// 设置标签是否可交互。
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.enabled = enabled;
         self
     }
 
-    /// 将图标放在标题左侧。
     pub fn leading_icon(mut self, icon: IconName) -> Self {
         self.icon = Some(icon);
         self.leading_icon = true;
@@ -71,16 +63,13 @@ impl Tab {
     }
 }
 
-/// AndroidX LeadingIconTab 对应的图标与文字并排标签。
 pub struct LeadingIconTab(Tab);
 
 impl LeadingIconTab {
-    /// 创建带前导图标的标签。
     pub fn new(label: impl Into<SharedString>, icon: IconName) -> Self {
         Self(Tab::new(label).leading_icon(icon))
     }
 
-    /// 设置标签是否可交互。
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.0 = self.0.enabled(enabled);
         self
@@ -93,17 +82,14 @@ impl From<LeadingIconTab> for Tab {
     }
 }
 
-/// AndroidX 标签行的视觉层级。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum TabRowVariant {
-    /// 主标签行，显示强调色指示条。
     #[default]
     Primary,
-    /// 次级标签行，显示较细的指示条。
+
     Secondary,
 }
 
-/// MD3 标签栏构建器（`.build(cx)` 产出 [`TabBarState`]）。
 pub struct TabBar {
     id: ElementId,
     tabs: Vec<Tab>,
@@ -113,7 +99,6 @@ pub struct TabBar {
     on_change: Option<ChangeHandler>,
 }
 
-/// 标签栏的有状态部分：指示条滑动动画。
 pub struct TabBarState {
     id: ElementId,
     tabs: Vec<Tab>,
@@ -121,13 +106,12 @@ pub struct TabBarState {
     variant: TabRowVariant,
     scrollable: bool,
     on_change: Option<ChangeHandler>,
-    /// 指示条位置（以标签下标为单位，弹簧驱动）。
+
     indicator: Animatable,
     driver: AnimationDriver,
 }
 
 impl TabBar {
-    /// 创建标签栏构建器。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
@@ -139,43 +123,36 @@ impl TabBar {
         }
     }
 
-    /// 追加一个标签。
     pub fn tab(mut self, tab: impl Into<Tab>) -> Self {
         self.tabs.push(tab.into());
         self
     }
 
-    /// 批量追加标签。
     pub fn tabs(mut self, tabs: impl IntoIterator<Item = impl Into<Tab>>) -> Self {
         self.tabs.extend(tabs.into_iter().map(Into::into));
         self
     }
 
-    /// 初始选中下标。
     pub fn selected(mut self, index: usize) -> Self {
         self.selected = index;
         self
     }
 
-    /// 设置主或次级标签行外观。
     pub fn variant(mut self, variant: TabRowVariant) -> Self {
         self.variant = variant;
         self
     }
 
-    /// 设置为可横向滚动的标签行。
     pub fn scrollable(mut self, scrollable: bool) -> Self {
         self.scrollable = scrollable;
         self
     }
 
-    /// 选中标签变化回调，参数为新选中的下标。
     pub fn on_change(mut self, handler: impl Fn(usize, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
     }
 
-    /// 构建有状态组件实体。
     pub fn build(self, cx: &mut App) -> Entity<TabBarState> {
         let selected = self.selected.min(self.tabs.len().saturating_sub(1));
         cx.new(|_| TabBarState {
@@ -191,7 +168,6 @@ impl TabBar {
     }
 }
 
-/// AndroidX TabRow 对应的固定宽度标签行。
 pub type TabRow = TabBar;
 
 macro_rules! tab_row_variant {
@@ -200,7 +176,6 @@ macro_rules! tab_row_variant {
         pub struct $name(TabBar);
 
         impl $name {
-            /// 创建指定视觉层级和滚动方式的标签行。
             pub fn new(id: impl Into<ElementId>) -> Self {
                 Self(
                     TabBar::new(id)
@@ -209,25 +184,21 @@ macro_rules! tab_row_variant {
                 )
             }
 
-            /// 添加单个标签。
             pub fn tab(mut self, tab: impl Into<Tab>) -> Self {
                 self.0 = self.0.tab(tab);
                 self
             }
 
-            /// 批量添加标签。
             pub fn tabs(mut self, tabs: impl IntoIterator<Item = impl Into<Tab>>) -> Self {
                 self.0 = self.0.tabs(tabs);
                 self
             }
 
-            /// 设置初始选中下标。
             pub fn selected(mut self, index: usize) -> Self {
                 self.0 = self.0.selected(index);
                 self
             }
 
-            /// 设置选中项变化回调。
             pub fn on_change(
                 mut self,
                 handler: impl Fn(usize, &mut Window, &mut App) + 'static,
@@ -236,7 +207,6 @@ macro_rules! tab_row_variant {
                 self
             }
 
-            /// 构建可渲染的标签行实体。
             pub fn build(self, cx: &mut App) -> Entity<TabBarState> {
                 self.0.build(cx)
             }
@@ -250,12 +220,10 @@ tab_row_variant!(PrimaryScrollableTabRow, Primary, true);
 tab_row_variant!(SecondaryScrollableTabRow, Secondary, true);
 
 impl TabBarState {
-    /// 当前选中下标。
     pub fn selected(&self) -> usize {
         self.selected
     }
 
-    /// 切换到指定标签（指示条弹簧滑动）。
     pub fn select(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
         if index >= self.tabs.len() || index == self.selected {
             return;
@@ -345,8 +313,6 @@ impl Render for TabBarState {
                     .text_color(fg)
                     .hover(move |s| s.bg(layer.opacity(HOVER_OPACITY)))
                     .active(move |s| s.bg(layer.opacity(PRESSED_OPACITY)))
-                    // 点击:组件内部先完成选中(弹簧滑动),
-                    // 状态真正变化才触发一次 on_change
                     .when(tab.enabled, |el| {
                         el.on_click(move |_, window, cx| {
                             click_entity.update(cx, |state, cx| {
@@ -362,10 +328,7 @@ impl Render for TabBarState {
                         el.child(Icon::new(icon).size(style.icon_size))
                     });
                 let tab_el = label_style.apply(tab_el).child(tab.label.clone());
-                // 选中指示条：3dp 高、圆角上边、宽度收窄。
-                // 画在选中标签内部并以弹簧位置做相对偏移
-                //（一个标签宽度 = 1.0 个 relative 单位，0.5 为标签中心，
-                // 滑动时随偏移跨标签平移，由容器 overflow_hidden 裁剪）。
+
                 tab_el.when(is_selected, |el| {
                     el.child(
                         div()
@@ -399,38 +362,36 @@ pub use appearance::TabBarStyle;
 mod appearance {
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// MD3 标签栏样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct TabBarStyle {
-        /// 栏背景色。
         pub container_color: Hsla,
-        /// 底部分隔线色。
+
         pub divider_color: Hsla,
-        /// 选中项内容色。
+
         pub selected_item_color: Hsla,
-        /// 未选中项内容色。
+
         pub unselected_item_color: Hsla,
-        /// 指示条颜色。
+
         pub indicator_color: Hsla,
-        /// 指示条高/宽。
+
         pub indicator_size: (Pixels, Pixels),
-        /// 无图标时栏高。
+
         pub height: Pixels,
-        /// 带图标时栏高。
+
         pub height_with_icon: Pixels,
-        /// 图标尺寸。
+
         pub icon_size: Pixels,
-        /// 图标与文字间距。
+
         pub gap: Pixels,
-        /// hover 状态层不透明度。
+
         pub hover_opacity: f32,
-        /// 按压状态层不透明度。
+
         pub pressed_opacity: f32,
-        /// 标签字型。
+
         pub label: crate::theme::TypeStyle,
     }
     impl TabBarStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet, _has_icons: bool) -> Self {
             let colors = &tokens.colors;
             Self {
@@ -451,7 +412,6 @@ mod appearance {
         }
     }
     impl TabBarStyle {
-        /// 当前使用的栏高。
         pub fn bar_height(&self, has_icons: bool) -> Pixels {
             if has_icons {
                 self.height_with_icon

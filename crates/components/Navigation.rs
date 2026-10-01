@@ -1,18 +1,18 @@
-//! MD3 导航组件族（对应 material-web 的 navigation-bar / navigation-rail /
-//! navigation-drawer 与 m3fx 的 `M3NavigationBar` / `M3NavigationRail` /
-//! `M3NavigationDrawer` / `M3TopAppBar`）。
-//!
-//! 指示条滑动动画对齐 m3fx（Apache-2.0，© 2026 Glavo）：active indicator
-//! 以 fastSpatial 弹簧在项间滑动。
-//!
-//! ```ignore
-//! NavigationBar::new("nav")
-//!     .item(NavigationItemSpec::new("Home", IconName::Home))
-//!     .item(NavigationItemSpec::new("Search", IconName::Search))
-//!     .selected(0)
-//!     .on_change(|ix, _, _| {})
-//!     .build(cx)   // -> Entity<NavigationBarState>
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3NavigationBarSkin.java
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3NavigationRailSkin.java
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3NavigationDrawerSkin.java
 
 use std::rc::Rc;
 use std::time::Instant;
@@ -29,12 +29,9 @@ use crate::theme::ActiveTheme;
 
 type ChangeHandler = Rc<dyn Fn(usize, &mut Window, &mut App) + 'static>;
 
-/// 可选中导航族(Bar / Rail / Drawer)的内部状态接口:
-/// 点击项时由组件内部完成选中,状态真正变化才触发 on_change。
 trait NavSelection: 'static {
-    /// 当前选中下标。
     fn selected_index(&self) -> usize;
-    /// 切换选中项(指示条动画由各实现自带)。
+
     fn select_index(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>)
     where
         Self: Sized;
@@ -70,31 +67,27 @@ impl NavSelection for NavigationDrawerState {
     }
 }
 
-/// 导航项描述。
 #[derive(Clone)]
 pub struct NavigationItemSpec {
-    /// 标签。
     pub label: SharedString,
-    /// 图标。
+
     pub icon: Option<IconName>,
-    /// 可选徽标文字（右上天角）。
+
     pub badge: Option<SharedString>,
-    /// 是否允许点击与选中。
+
     pub enabled: bool,
     on_click: Option<ItemClickHandler>,
 }
 
 type ItemClickHandler = Rc<dyn Fn(&mut Window, &mut App)>;
 
-/// AndroidX NavigationBarItem 对应的条目配置。
 pub type NavigationBarItem = NavigationItemSpec;
-/// AndroidX NavigationRailItem 对应的条目配置。
+
 pub type NavigationRailItem = NavigationItemSpec;
-/// AndroidX NavigationDrawerItem 对应的条目配置。
+
 pub type NavigationDrawerItem = NavigationItemSpec;
 
 impl NavigationItemSpec {
-    /// 创建导航项。
     pub fn new(label: impl Into<SharedString>, icon: IconName) -> Self {
         Self {
             label: label.into(),
@@ -105,26 +98,22 @@ impl NavigationItemSpec {
         }
     }
 
-    /// 设置徽标文字。
     pub fn badge(mut self, badge: impl Into<SharedString>) -> Self {
         self.badge = Some(badge.into());
         self
     }
 
-    /// 设置条目是否可以响应点击。
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.enabled = enabled;
         self
     }
 
-    /// 设置条目级点击回调；它在容器的选中回调之后执行。
     pub fn on_click(mut self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
         self.on_click = Some(Rc::new(handler));
         self
     }
 }
 
-/// 导航项内容渲染（Bar / Rail / Drawer 共用）。
 #[allow(clippy::too_many_arguments)]
 fn navigation_item<T: NavSelection>(
     id: impl Into<ElementId>,
@@ -157,8 +146,6 @@ fn navigation_item<T: NavSelection>(
     let enabled = spec.enabled;
     let interaction_group = SharedString::from(format!("navigation-{:?}-{ix}", entity.entity_id()));
 
-    // 指示条胶囊：仅选中项渲染，锚定整项宽度的中心（relative 0.5），
-    // 按 (弹簧位置 − 项下标) 的偏移跨项滑动；越出部分由容器裁剪
     let pill = indicator_offset.map(|offset| {
         div()
             .absolute()
@@ -183,8 +170,6 @@ fn navigation_item<T: NavSelection>(
         .gap(px(item_gap_from(horizontal)))
         .when(enabled, |el| el.cursor_pointer())
         .text_color(label_color)
-        // 指示条胶囊在下、图标在上;图标行铺满整项宽度,
-        // 使胶囊的 relative 定位以整项为基准
         .child(
             div()
                 .relative()
@@ -215,8 +200,6 @@ fn navigation_item<T: NavSelection>(
                     el.child(Icon::new(icon).size(item.icon_size).color(icon_color))
                 }),
         )
-        // 点击:组件内部先完成选中(指示条滑动),
-        // 状态真正变化才触发一次 on_change(未设置回调时仅内部切换)
         .when(enabled, |el| {
             el.on_click(move |_, window, cx| {
                 click_entity.update(cx, |state, cx| {
@@ -237,14 +220,9 @@ fn navigation_item<T: NavSelection>(
 }
 
 fn item_gap_from(horizontal: bool) -> f32 {
-    if horizontal {
-        16. // rail: 图标区与标签间距
-    } else {
-        4. // bar: 紧凑
-    }
+    if horizontal { 16. } else { 4. }
 }
 
-/// MD3 底部导航栏。
 pub struct NavigationBar {
     id: ElementId,
     items: Vec<NavigationItemSpec>,
@@ -252,7 +230,6 @@ pub struct NavigationBar {
     on_change: Option<ChangeHandler>,
 }
 
-/// 底部导航栏的有状态部分。
 pub struct NavigationBarState {
     id: ElementId,
     items: Vec<NavigationItemSpec>,
@@ -263,7 +240,6 @@ pub struct NavigationBarState {
 }
 
 impl NavigationBar {
-    /// 创建导航栏构建器。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
@@ -273,31 +249,26 @@ impl NavigationBar {
         }
     }
 
-    /// 追加导航项。
     pub fn item(mut self, item: NavigationItemSpec) -> Self {
         self.items.push(item);
         self
     }
 
-    /// 批量追加。
     pub fn items(mut self, items: impl IntoIterator<Item = NavigationItemSpec>) -> Self {
         self.items.extend(items);
         self
     }
 
-    /// 初始选中下标。
     pub fn selected(mut self, index: usize) -> Self {
         self.selected = index;
         self
     }
 
-    /// 选中变化回调。
     pub fn on_change(mut self, handler: impl Fn(usize, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
     }
 
-    /// 构建实体。
     pub fn build(self, cx: &mut App) -> Entity<NavigationBarState> {
         let selected = self.selected.min(self.items.len().saturating_sub(1));
         cx.new(|_| NavigationBarState {
@@ -312,12 +283,10 @@ impl NavigationBar {
 }
 
 impl NavigationBarState {
-    /// 当前选中下标。
     pub fn selected(&self) -> usize {
         self.selected
     }
 
-    /// 切换选中项（指示条弹簧滑动）。
     pub fn select(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
         if index >= self.items.len() || index == self.selected {
             return;
@@ -365,7 +334,7 @@ impl Render for NavigationBarState {
             .bg(bar.container_color)
             .children(self.items.iter().enumerate().map(|(ix, spec)| {
                 let is_selected = ix == selected;
-                // 指示条画在选中项内部，弹簧进度做相对偏移
+
                 let offset = if is_selected {
                     Some(indicator_pos - ix as f32)
                 } else {
@@ -391,7 +360,6 @@ impl Render for NavigationBarState {
     }
 }
 
-/// MD3 导航侧栏（Rail）。
 pub struct NavigationRail {
     id: ElementId,
     items: Vec<NavigationItemSpec>,
@@ -402,7 +370,6 @@ pub struct NavigationRail {
 
 use crate::components::fab::FabState;
 
-/// 导航侧栏的有状态部分。
 pub struct NavigationRailState {
     id: ElementId,
     items: Vec<NavigationItemSpec>,
@@ -414,7 +381,6 @@ pub struct NavigationRailState {
 }
 
 impl NavigationRail {
-    /// 创建导航侧栏构建器。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
@@ -425,37 +391,31 @@ impl NavigationRail {
         }
     }
 
-    /// 追加导航项。
     pub fn item(mut self, item: NavigationItemSpec) -> Self {
         self.items.push(item);
         self
     }
 
-    /// 批量追加。
     pub fn items(mut self, items: impl IntoIterator<Item = NavigationItemSpec>) -> Self {
         self.items.extend(items);
         self
     }
 
-    /// 初始选中下标。
     pub fn selected(mut self, index: usize) -> Self {
         self.selected = index;
         self
     }
 
-    /// 顶部槽位内容（通常为 FAB）。
     pub fn header(mut self, header: Entity<FabState>) -> Self {
         self.header = Some(header);
         self
     }
 
-    /// 选中变化回调。
     pub fn on_change(mut self, handler: impl Fn(usize, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
     }
 
-    /// 构建实体。
     pub fn build(self, cx: &mut App) -> Entity<NavigationRailState> {
         let selected = self.selected.min(self.items.len().saturating_sub(1));
         cx.new(|_| NavigationRailState {
@@ -471,12 +431,10 @@ impl NavigationRail {
 }
 
 impl NavigationRailState {
-    /// 当前选中下标。
     pub fn selected(&self) -> usize {
         self.selected
     }
 
-    /// 切换选中项（指示条弹簧滑动）。
     pub fn select(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
         if index >= self.items.len() || index == self.selected {
             return;
@@ -529,7 +487,7 @@ impl Render for NavigationRailState {
             .children(header.map(|h| div().pb(px(16.)).child(h)))
             .children(self.items.iter().enumerate().map(|(ix, spec)| {
                 let is_selected = ix == selected;
-                // Rail 为纵向列表：指示条在选中项内居中（无跨项滑动）
+
                 let offset = if is_selected { Some(0.0) } else { None };
                 navigation_item(
                     (SharedString::from(format!("{}-item", self.id)), ix),
@@ -548,15 +506,12 @@ impl Render for NavigationRailState {
     }
 }
 
-/// 导航抽屉内容项（分组内条目或分组标题）。
 pub enum DrawerEntry {
-    /// 分组标题。
     Section(SharedString),
-    /// 导航项。
+
     Item(NavigationItemSpec),
 }
 
-/// MD3 导航抽屉。
 pub struct NavigationDrawer {
     id: ElementId,
     entries: Vec<DrawerEntry>,
@@ -565,7 +520,6 @@ pub struct NavigationDrawer {
     on_change: Option<ChangeHandler>,
 }
 
-/// 导航抽屉的有状态部分。
 pub struct NavigationDrawerState {
     id: ElementId,
     entries: Vec<DrawerEntry>,
@@ -576,7 +530,6 @@ pub struct NavigationDrawerState {
 }
 
 impl NavigationDrawer {
-    /// 创建导航抽屉构建器。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
@@ -587,43 +540,36 @@ impl NavigationDrawer {
         }
     }
 
-    /// 追加条目。
     pub fn entry(mut self, entry: DrawerEntry) -> Self {
         self.entries.push(entry);
         self
     }
 
-    /// 追加导航项。
     pub fn item(mut self, item: NavigationItemSpec) -> Self {
         self.entries.push(DrawerEntry::Item(item));
         self
     }
 
-    /// 追加分组标题。
     pub fn section(mut self, title: impl Into<SharedString>) -> Self {
         self.entries.push(DrawerEntry::Section(title.into()));
         self
     }
 
-    /// 初始选中下标（按条目中的 Item 序号）。
     pub fn selected(mut self, index: usize) -> Self {
         self.selected = index;
         self
     }
 
-    /// modal 变体（带阴影，配 scrim 使用）。
     pub fn modal(mut self, modal: bool) -> Self {
         self.modal = modal;
         self
     }
 
-    /// 选中变化回调。
     pub fn on_change(mut self, handler: impl Fn(usize, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
     }
 
-    /// 构建实体。
     pub fn build(self, cx: &mut App) -> Entity<NavigationDrawerState> {
         cx.new(|_| NavigationDrawerState {
             id: self.id,
@@ -642,30 +588,25 @@ macro_rules! navigation_drawer_variant {
         pub struct $name(NavigationDrawer);
 
         impl $name {
-            /// 创建指定呈现方式的导航抽屉。
             pub fn new(id: impl Into<ElementId>) -> Self {
                 Self(NavigationDrawer::new(id).modal($modal))
             }
 
-            /// 添加导航项。
             pub fn item(mut self, item: NavigationDrawerItem) -> Self {
                 self.0 = self.0.item(item);
                 self
             }
 
-            /// 添加分组标题。
             pub fn section(mut self, title: impl Into<SharedString>) -> Self {
                 self.0 = self.0.section(title);
                 self
             }
 
-            /// 设置选中项下标。
             pub fn selected(mut self, index: usize) -> Self {
                 self.0 = self.0.selected(index);
                 self
             }
 
-            /// 设置选中项变化回调。
             pub fn on_change(
                 mut self,
                 handler: impl Fn(usize, &mut Window, &mut App) + 'static,
@@ -674,7 +615,6 @@ macro_rules! navigation_drawer_variant {
                 self
             }
 
-            /// 构建导航抽屉实体。
             pub fn build(self, cx: &mut App) -> Entity<NavigationDrawerState> {
                 self.0.build(cx)
             }
@@ -686,11 +626,10 @@ navigation_drawer_variant!(ModalNavigationDrawer, true);
 navigation_drawer_variant!(PermanentNavigationDrawer, false);
 navigation_drawer_variant!(DismissibleNavigationDrawer, false);
 
-/// AndroidX ModalDrawerSheet 对应的模态抽屉面板。
 pub type ModalDrawerSheet = ModalNavigationDrawer;
-/// AndroidX PermanentDrawerSheet 对应的常驻抽屉面板。
+
 pub type PermanentDrawerSheet = PermanentNavigationDrawer;
-/// AndroidX DismissibleDrawerSheet 对应的可收起抽屉面板。
+
 pub type DismissibleDrawerSheet = DismissibleNavigationDrawer;
 
 impl AnimatedComponent for NavigationDrawerState {
@@ -704,12 +643,10 @@ impl AnimatedComponent for NavigationDrawerState {
 }
 
 impl NavigationDrawerState {
-    /// 当前选中下标（按条目中的 Item 序号）。
     pub fn selected(&self) -> usize {
         self.selected
     }
 
-    /// 切换选中条目（按 Item 序号；选中高亮即时更新）。
     pub fn select(&mut self, index: usize, _window: &mut Window, cx: &mut Context<Self>) {
         let item_count = self
             .entries
@@ -777,7 +714,7 @@ impl Render for NavigationDrawerState {
                     };
                     let hover = item.hover_opacity;
                     let pressed = item.pressed_opacity;
-                    // 抽屉条目为横向行式布局:[图标 24][标签][可选徽标]
+
                     let el = div()
                         .id((SharedString::from(format!("{}-item", self.id)), ix))
                         .w_full()
@@ -842,34 +779,32 @@ pub use appearance::{
 mod appearance {
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// 导航项（NavigationBar / Rail / Drawer 共用）样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct NavigationItemStyle {
-        /// 指示条胶囊宽/高。
         pub indicator_size: (Pixels, Pixels),
-        /// 指示条圆角。
+
         pub indicator_radius: Pixels,
-        /// 选中指示条色。
+
         pub indicator_color: Hsla,
-        /// 选中项图标色。
+
         pub selected_icon_color: Hsla,
-        /// 未选中项图标色。
+
         pub unselected_icon_color: Hsla,
-        /// 选中项标签色。
+
         pub selected_label_color: Hsla,
-        /// 未选中项标签色。
+
         pub unselected_label_color: Hsla,
-        /// 图标尺寸。
+
         pub icon_size: Pixels,
-        /// 标签字型。
+
         pub label: crate::theme::TypeStyle,
-        /// hover 状态层不透明度。
+
         pub hover_opacity: f32,
-        /// 按压状态层不透明度。
+
         pub pressed_opacity: f32,
     }
     impl NavigationItemStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet) -> Self {
             let colors = &tokens.colors;
             Self {
@@ -887,20 +822,18 @@ mod appearance {
             }
         }
     }
-    /// NavigationBar 样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct NavigationBarStyle {
-        /// 容器色。
         pub container_color: Hsla,
-        /// 高度。
+
         pub height: Pixels,
-        /// 项间距（项内部 图标区/标签 间距）。
+
         pub item_gap: Pixels,
-        /// 项内边距。
+
         pub item_padding: Pixels,
     }
     impl NavigationBarStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet) -> Self {
             Self {
                 container_color: tokens.colors.surface_container,
@@ -910,20 +843,18 @@ mod appearance {
             }
         }
     }
-    /// NavigationRail 样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct NavigationRailStyle {
-        /// 容器色。
         pub container_color: Hsla,
-        /// 宽度。
+
         pub width: Pixels,
-        /// 项间距。
+
         pub item_gap: Pixels,
-        /// 顶部内边距。
+
         pub top_padding: Pixels,
     }
     impl NavigationRailStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet) -> Self {
             Self {
                 container_color: tokens.colors.surface_container,
@@ -933,30 +864,28 @@ mod appearance {
             }
         }
     }
-    /// NavigationDrawer 样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct NavigationDrawerStyle {
-        /// 容器色。
         pub container_color: Hsla,
-        /// 标准宽度。
+
         pub width: Pixels,
-        /// modal 宽度。
+
         pub modal_width: Pixels,
-        /// 分组标题色。
+
         pub section_header_color: Hsla,
-        /// 内边距。
+
         pub padding: Pixels,
-        /// 项水平内边距。
+
         pub item_horizontal_padding: Pixels,
-        /// 阴影颜色。
+
         pub shadow_color: Hsla,
-        /// modal 阴影等级。
+
         pub modal_elevation: crate::theme::Elevation,
-        /// 分组标题字型。
+
         pub section_header: crate::theme::TypeStyle,
     }
     impl NavigationDrawerStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet, _modal: bool) -> Self {
             Self {
                 container_color: tokens.colors.surface_container_low,
@@ -971,7 +900,6 @@ mod appearance {
             }
         }
 
-        /// 当前宽度。
         pub fn drawer_width(&self, modal: bool) -> Pixels {
             if modal { self.modal_width } else { self.width }
         }

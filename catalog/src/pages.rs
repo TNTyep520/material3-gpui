@@ -1,6 +1,16 @@
-//! catalog 组件展厅：每页使用独立 Entity，组件状态变化只刷新对应页面。
-//! 共用分组表面和带标签的预览单元统一变体与状态展示。
-// 页面文件按 `Page_<Name>` 命名(多词用驼峰式),非 snake_case
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #![allow(non_snake_case)]
 
 pub mod Page_Additional;
@@ -22,10 +32,8 @@ pub mod Page_TextFields;
 
 use gpui::{AnyElement, App, Entity, IntoElement, Styled, div, prelude::*, px};
 
-// 页面间回调类型（页 → 根）。
 pub type PageCallback<A> = std::rc::Rc<dyn Fn(A, &mut App)>;
 
-/// 实体更新失败的兜底(窗口/页面已释放等场景):输出到 stderr 后放行。
 pub(crate) trait LogErr<T, E: std::fmt::Display> {
     fn log_err(self) -> Option<T>;
 }
@@ -44,7 +52,6 @@ impl<T, E: std::fmt::Display> LogErr<T, E> for Result<T, E> {
 
 use material3_gpui::prelude::*;
 
-/// 页面集合：根视图持有并按导航切换。
 #[derive(Clone)]
 pub struct Pages {
     pub additional: Entity<Page_Additional::AdditionalPage>,
@@ -66,7 +73,6 @@ pub struct Pages {
 }
 
 impl Pages {
-    /// 创建全部页面视图（组件实体在各页面构造函数中只创建一次）。
     pub fn new(cx: &mut App) -> Self {
         Self {
             additional: Page_Additional::AdditionalPage::new(cx),
@@ -89,7 +95,6 @@ impl Pages {
     }
 }
 
-/// 垂直排列组件分组，宽度由页面容器约束。
 pub(crate) fn gallery(groups: impl IntoIterator<Item = AnyElement>) -> impl IntoElement {
     div()
         .w_full()
@@ -100,7 +105,6 @@ pub(crate) fn gallery(groups: impl IntoIterator<Item = AnyElement>) -> impl Into
         .children(groups)
 }
 
-/// 核心主题色的紧凑预览，颜色随主题更新。
 pub(crate) fn palette_strip(cx: &App) -> impl IntoElement {
     let colors = *cx.theme().colors();
     div()
@@ -120,7 +124,6 @@ pub(crate) fn palette_strip(cx: &App) -> impl IntoElement {
         )
 }
 
-/// 带标题的组件展示区域；内容按行换行，保留组件自己的表面样式。
 pub(crate) fn showcase_group(
     cx: &App,
     title: &'static str,
@@ -160,7 +163,6 @@ pub(crate) fn showcase_group(
         .into_any_element()
 }
 
-/// 固定最小展示高度并附加标签，便于比较同组组件的变体和状态。
 pub(crate) fn specimen(cx: &App, label: &'static str, element: impl IntoElement) -> AnyElement {
     let theme = cx.theme();
     div()
@@ -188,7 +190,7 @@ pub(crate) fn specimen(cx: &App, label: &'static str, element: impl IntoElement)
         )
         .into_any_element()
 }
-/// 为不同 Card 变体提供相同的内容和尺寸，以便直接比较表面样式。
+
 pub(crate) fn catalog_card(cx: &App, card: Card, title: &'static str) -> impl IntoElement {
     let theme = cx.theme();
     card.w(px(220.))

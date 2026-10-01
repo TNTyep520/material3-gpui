@@ -1,3 +1,17 @@
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SplitButton.kt
+
 use crate::components::overlay::show_menu;
 use crate::components::{Button, ButtonVariant, IconButton, IconButtonVariant};
 use crate::icon::IconName;
@@ -10,15 +24,12 @@ use gpui::{
 
 type ClickHandler = Box<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
 
-/// 分裂按钮样式(由令牌推导)。
 #[derive(Clone, Copy, Debug)]
 pub struct SplitButtonStyle {
-    /// 主按钮与尾部图标按钮之间的间距。
     pub between_space: Pixels,
 }
 
 impl SplitButtonStyle {
-    /// 由令牌推导默认样式(小尺寸分裂按钮,间距 2dp)。
     pub fn resolve(_tokens: &TokenSet) -> Self {
         Self {
             between_space: SplitButtonSmallTokens::BETWEEN_SPACE.pixels(),
@@ -26,7 +37,6 @@ impl SplitButtonStyle {
     }
 }
 
-/// MD3 分裂按钮:主按钮 + 尾部下拉图标按钮。
 #[derive(IntoElement)]
 pub struct SplitButton {
     id: ElementId,
@@ -38,7 +48,6 @@ pub struct SplitButton {
     menu: Option<Entity<crate::components::overlay::MenuState>>,
 }
 
-/// AndroidX SplitButtonLayout 对应的双操作按钮布局。
 pub type SplitButtonLayout = SplitButton;
 
 impl SplitButton {
@@ -78,7 +87,6 @@ impl SplitButton {
         self
     }
 
-    /// 设置尾部按钮的独立点击回调。
     pub fn on_trailing_click(
         mut self,
         handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -86,7 +94,7 @@ impl SplitButton {
         self.on_trailing_click = Some(Box::new(handler));
         self
     }
-    /// 设置尾部按钮展开的下拉菜单;点击尾部按钮时经窗口 OverlayHost 弹出。
+
     pub fn menu(mut self, menu: Entity<crate::components::overlay::MenuState>) -> Self {
         self.menu = Some(menu);
         self

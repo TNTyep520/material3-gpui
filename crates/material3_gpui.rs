@@ -1,40 +1,15 @@
-//! # material3-gpui
-//!
-//! 基于 [gpui](https://github.com/zed-industries/zed/tree/main/crates/gpui) 的
-//! Material Design 3 组件库。令牌与运动系统移植自
-//! [m3fx](https://github.com/Glavo/m3fx)（Apache-2.0），并对齐
-//! [material-web](https://github.com/material-components/material-web) 的组件规格。
-//!
-//! ## 快速开始
-//!
-//! ```ignore
-//! use gpui::*;
-//! use gpui_platform::application;
-//! use material3_gpui::prelude::*;
-//!
-//! fn main() {
-//!     application()
-//!         .with_assets(Md3Assets)          // 安装内嵌图标资源
-//!         .run(|cx| {
-//!             material3_gpui::init(cx);          // 安装默认（亮色）主题
-//!             // 或者：自定义种子色动态色
-//!             // Theme::set(cx, Theme::from_seed(0x006A6A, ThemeMode::Light, Profile::Baseline2021));
-//!             cx.open_window(WindowOptions::default(), |_, cx| {
-//!                 cx.new(|_| MyApp)
-//!             }).unwrap();
-//!         });
-//! }
-//!
-//! impl Render for MyApp {
-//!     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-//!         let theme = cx.theme();
-//!         div()
-//!             .size_full()
-//!             .bg(theme.colors().surface)
-//!             .child(Button::new("hi", "Hello MD3").on_click(|_, _, _| {}).build(cx))
-//!     }
-//! }
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #[path = "assets.rs"]
 pub mod assets;
@@ -57,7 +32,6 @@ pub use theme::{ActiveTheme, Theme, ThemeMode};
 
 use gpui::App;
 
-/// 注册内嵌字体并安装默认（亮色）主题。若已有主题则不覆盖。
 pub fn init(cx: &mut App) {
     if let Err(err) = fonts::install(cx) {
         eprintln!("material3-gpui: failed to register embedded fonts: {err}");
@@ -67,7 +41,6 @@ pub fn init(cx: &mut App) {
     }
 }
 
-/// 常用导出集合
 pub mod prelude {
     pub use crate::assets::Md3Assets;
     pub use crate::components::*;

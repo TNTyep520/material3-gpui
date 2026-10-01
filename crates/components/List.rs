@@ -1,7 +1,16 @@
-//! MD3 List / ListItem（对应 material-web 的 `md-list` / `md-list-item`）
-//!
-//! 规格：单行 56dp、双行 72dp，左右内边距 16dp，headline 用 body-large、
-//! supporting 用 body-medium、trailing 用 label-small。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ListItem.kt
 
 use gpui::{
     AnyElement, App, ClickEvent, ElementId, IntoElement, RenderOnce, SharedString, Window, div,
@@ -13,7 +22,6 @@ use crate::theme::{ActiveTheme, HOVER_OPACITY, PRESSED_OPACITY};
 
 type ClickHandler = Box<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
 
-/// MD3 列表容器（简单的纵向 flex + 上下 8dp 内边距）
 #[derive(IntoElement)]
 pub struct List {
     children: Vec<AnyElement>,
@@ -52,7 +60,6 @@ impl RenderOnce for List {
     }
 }
 
-/// MD3 列表项
 #[derive(IntoElement)]
 pub struct ListItem {
     id: ElementId,
@@ -83,13 +90,11 @@ impl ListItem {
         }
     }
 
-    /// 第二行辅助文字（设置后条目高度变为 72dp）
     pub fn supporting_text(mut self, text: impl Into<SharedString>) -> Self {
         self.supporting_text = Some(text.into());
         self
     }
 
-    /// 尾部说明文字（如时间戳）
     pub fn trailing_text(mut self, text: impl Into<SharedString>) -> Self {
         self.trailing_text = Some(text.into());
         self
@@ -105,13 +110,11 @@ impl ListItem {
         self
     }
 
-    /// 自定义头部元素（头像等），优先于 leading_icon
     pub fn leading(mut self, element: impl IntoElement) -> Self {
         self.leading = Some(element.into_any_element());
         self
     }
 
-    /// 自定义尾部元素（如 Checkbox / Switch），优先于 trailing_icon
     pub fn trailing(mut self, element: impl IntoElement) -> Self {
         self.trailing = Some(element.into_any_element());
         self
@@ -122,7 +125,6 @@ impl ListItem {
         self
     }
 
-    /// 设置条目的启用状态；禁用时移除点击交互。
     pub fn enabled(self, enabled: bool) -> Self {
         self.disabled(!enabled)
     }
@@ -172,7 +174,6 @@ impl RenderOnce for ListItem {
             .when_some(self.on_click.filter(|_| !disabled), |el, handler| {
                 el.on_click(move |event, window, cx| handler(event, window, cx))
             })
-            // leading（自定义元素优先于图标）
             .when_some(
                 self.leading_icon.filter(|_| self.leading.is_none()),
                 |el, icon| {
@@ -184,7 +185,6 @@ impl RenderOnce for ListItem {
                 },
             )
             .when_some(self.leading, |el, leading| el.child(leading))
-            // 中间文本区
             .child(
                 div()
                     .flex()
@@ -206,7 +206,6 @@ impl RenderOnce for ListItem {
                         )
                     }),
             )
-            // trailing
             .when_some(self.trailing_text, |el, text| {
                 el.child(
                     trailing_style
@@ -226,7 +225,6 @@ impl RenderOnce for ListItem {
     }
 }
 
-/// AndroidX SegmentedListItem 对应的连组列表项。
 #[derive(IntoElement)]
 pub struct SegmentedListItem {
     item: ListItem,
@@ -235,7 +233,6 @@ pub struct SegmentedListItem {
 }
 
 impl SegmentedListItem {
-    /// 创建位于指定位置的连组列表项。
     pub fn new(
         id: impl Into<ElementId>,
         headline: impl Into<SharedString>,
@@ -249,19 +246,16 @@ impl SegmentedListItem {
         }
     }
 
-    /// 设置辅助文字。
     pub fn supporting_text(mut self, text: impl Into<SharedString>) -> Self {
         self.item = self.item.supporting_text(text);
         self
     }
 
-    /// 设置条目是否可交互。
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.item = self.item.enabled(enabled);
         self
     }
 
-    /// 设置点击回调。
     pub fn on_click(
         mut self,
         handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -291,38 +285,36 @@ pub use appearance::ListItemStyle;
 mod appearance {
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// MD3 列表项样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct ListItemStyle {
-        /// 单行高度。
         pub height_single_line: Pixels,
-        /// 双行高度。
+
         pub height_two_line: Pixels,
-        /// 内容色。
+
         pub content_color: Hsla,
-        /// 支撑文本色。
+
         pub supporting_color: Hsla,
-        /// 尾随元素色。
+
         pub trailing_color: Hsla,
-        /// 水平内边距。
+
         pub horizontal_padding: Pixels,
-        /// 垂直内边距。
+
         pub vertical_padding: Pixels,
-        /// 元素间距。
+
         pub gap: Pixels,
-        /// 图标尺寸。
+
         pub icon_size: Pixels,
-        /// hover 状态层不透明度。
+
         pub hover_opacity: f32,
-        /// 标题字型。
+
         pub headline: crate::theme::TypeStyle,
-        /// 支撑文本字型。
+
         pub supporting: crate::theme::TypeStyle,
-        /// 尾随字型。
+
         pub trailing: crate::theme::TypeStyle,
     }
     impl ListItemStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet) -> Self {
             let colors = &tokens.colors;
             Self {

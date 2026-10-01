@@ -1,11 +1,16 @@
-//! MD3 Badge（对应 compose material3 的 `BadgedBox` + `Badge`）
-//!
-//! 规格：纯圆点 6dp、带数字徽标最小 16dp 高、error 底 + on_error 文字、
-//! 圆角全圆。与任意元素组合时以相对定位叠放在右上角：
-//!
-//! ```ignore
-//! badged(Icon::new(IconName::Notifications).size(px(24.)), Badge::new().label("3"))
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Badge.kt
 
 use gpui::{
     AnyElement, App, ElementId, Hsla, IntoElement, ParentElement as _, Pixels, RenderOnce,
@@ -41,7 +46,6 @@ impl BadgeStyle {
     }
 }
 
-/// MD3 徽标：未设置 label 时渲染为圆点，否则渲染为带文字的胶囊。
 #[derive(IntoElement)]
 pub struct Badge {
     id: ElementId,
@@ -56,7 +60,6 @@ impl Badge {
         }
     }
 
-    /// 徽标文字（如未读数）；不设置则为纯圆点。
     pub fn label(mut self, label: impl Into<SharedString>) -> Self {
         self.label = Some(label.into());
         self
@@ -92,7 +95,6 @@ impl RenderOnce for Badge {
     }
 }
 
-/// 把徽标叠放到任意元素的右上角（compose `BadgedBox` 的等价用法）。
 pub fn badged(anchor: impl IntoElement, badge: Badge) -> AnyElement {
     div()
         .relative()
@@ -101,7 +103,6 @@ pub fn badged(anchor: impl IntoElement, badge: Badge) -> AnyElement {
         .into_any_element()
 }
 
-/// AndroidX BadgedBox 对应的徽标叠放容器。
 #[derive(IntoElement)]
 pub struct BadgedBox {
     anchor: AnyElement,
@@ -109,7 +110,6 @@ pub struct BadgedBox {
 }
 
 impl BadgedBox {
-    /// 创建带徽标的内容容器。
     pub fn new(anchor: impl IntoElement, badge: Badge) -> Self {
         Self {
             anchor: anchor.into_any_element(),

@@ -1,21 +1,30 @@
-//! Chips 页：分组展示标签类型及可移除状态。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{App, AppContext as _, Entity, IntoElement, Render, Window};
 use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group, specimen};
 
-/// Chips 页视图。
 pub struct ChipsPage {
     chip_assist: Entity<ChipState>,
     chip_filters: Vec<Entity<ChipState>>,
-    /// Input chip：点击移除按钮后从页面消失。
+
     chip_input: Option<Entity<ChipState>>,
     chip_suggestion: Entity<ChipState>,
 }
 
 impl ChipsPage {
-    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
         let chip_assist = Chip::new("chip-assist", "Draft reply")
             .assist()
@@ -53,7 +62,6 @@ impl ChipsPage {
             chip_suggestion,
         });
 
-        // Input chip 需要在回调里更新页面状态，因此拿到页面句柄后再构建
         page.update(cx, |page, cx| {
             let page_entity = cx.entity();
             let chip_input = Chip::new("chip-input", "On vacation")

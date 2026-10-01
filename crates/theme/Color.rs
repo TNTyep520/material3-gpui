@@ -1,18 +1,23 @@
-//! MD3 颜色方案（Color Scheme）
-//!
-//! 完整实现 Material Design 3 的颜色角色（color roles），
-//! 基线（baseline）取值与 material-web 的 `md-sys-color` 令牌一致。
-//! 参考: <https://m3.material.io/styles/color/roles>
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use crate::tokens::ColorLightTokens;
 use gpui::{Hsla, rgb};
 
-/// 十六进制 -> Hsla 便捷函数
 pub fn hex(value: u32) -> Hsla {
     rgb(value).into()
 }
 
-/// MD3 颜色角色全集（对应 material-web 的 `--md-sys-color-*` 令牌）
 #[derive(Clone, Copy, Debug)]
 pub struct ColorScheme {
     pub on_primary_fixed: Hsla,
@@ -27,28 +32,28 @@ pub struct ColorScheme {
     pub secondary_fixed_dim: Hsla,
     pub tertiary_fixed: Hsla,
     pub tertiary_fixed_dim: Hsla,
-    // Primary
+
     pub primary: Hsla,
     pub on_primary: Hsla,
     pub primary_container: Hsla,
     pub on_primary_container: Hsla,
     pub inverse_primary: Hsla,
-    // Secondary
+
     pub secondary: Hsla,
     pub on_secondary: Hsla,
     pub secondary_container: Hsla,
     pub on_secondary_container: Hsla,
-    // Tertiary
+
     pub tertiary: Hsla,
     pub on_tertiary: Hsla,
     pub tertiary_container: Hsla,
     pub on_tertiary_container: Hsla,
-    // Error
+
     pub error: Hsla,
     pub on_error: Hsla,
     pub error_container: Hsla,
     pub on_error_container: Hsla,
-    // Surface
+
     pub surface: Hsla,
     pub on_surface: Hsla,
     pub surface_variant: Hsla,
@@ -62,19 +67,18 @@ pub struct ColorScheme {
     pub surface_container_highest: Hsla,
     pub inverse_surface: Hsla,
     pub inverse_on_surface: Hsla,
-    // Outline & misc
+
     pub outline: Hsla,
     pub outline_variant: Hsla,
     pub scrim: Hsla,
     pub shadow: Hsla,
     pub surface_tint: Hsla,
-    // 兼容旧命名
+
     pub background: Hsla,
     pub on_background: Hsla,
 }
 
 impl ColorScheme {
-    /// MD3 基线亮色方案（material-web baseline light）
     pub fn light() -> Self {
         Self {
             on_primary_fixed: ColorLightTokens::ON_PRIMARY_FIXED.resolve(),
@@ -135,7 +139,6 @@ impl ColorScheme {
         }
     }
 
-    /// MD3 基线暗色方案（material-web baseline dark）
     pub fn dark() -> Self {
         Self {
             on_primary_fixed: ColorLightTokens::ON_PRIMARY_FIXED.resolve(),
@@ -196,12 +199,10 @@ impl ColorScheme {
         }
     }
 
-    /// 禁用态内容色(on_surface × 禁用内容不透明度 38%)。
     pub fn disabled_content(&self, state: &crate::theme::state::StateLayerTokens) -> Hsla {
         self.on_surface.opacity(state.disabled_content)
     }
 
-    /// 禁用态容器色(on_surface × 禁用容器不透明度 12%)。
     pub fn disabled_container(&self, state: &crate::theme::state::StateLayerTokens) -> Hsla {
         self.on_surface.opacity(state.disabled_container)
     }

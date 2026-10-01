@@ -1,13 +1,16 @@
-//! MD3 TopAppBar（对应 compose material3 的 `TopAppBar` 三档变体）
-//!
-//! 规格：Small 64dp（标题居中）、Medium 112dp 与 Large 152dp（标题位于
-//! 左下），背景 surface,前后槽位放图标按钮:
-//!
-//! ```ignore
-//! TopAppBar::small("app-bar").title("Title")
-//!     .leading(IconButton::new("back", IconName::ArrowBack))
-//!     .action(IconButton::new("more", IconName::Menu))
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt
 
 use gpui::{
     AnyElement, App, ElementId, IntoElement, ParentElement as _, RenderOnce, SharedString, Styled,
@@ -16,24 +19,21 @@ use gpui::{
 
 use crate::prelude::ActiveTheme;
 
-/// 顶栏高度档位。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TopAppBarVariant {
-    /// 64dp，标题靠左。
     Small,
-    /// 64dp，标题居中。
+
     CenterAligned,
-    /// 112dp,标题左下。
+
     Medium,
-    /// 152dp,标题左下。
+
     Large,
-    /// 可在 112dp 与 64dp 之间折叠。
+
     MediumFlexible,
-    /// 可在 152dp 与 64dp 之间折叠。
+
     LargeFlexible,
 }
 
-/// MD3 顶栏。
 #[derive(IntoElement)]
 pub struct TopAppBar {
     id: ElementId,
@@ -64,7 +64,6 @@ impl TopAppBar {
         Self::new(id).variant(TopAppBarVariant::Medium)
     }
 
-    /// 创建居中标题的顶部应用栏。
     pub fn center_aligned(id: impl Into<ElementId>) -> Self {
         Self::new(id).variant(TopAppBarVariant::CenterAligned)
     }
@@ -78,7 +77,6 @@ impl TopAppBar {
         self
     }
 
-    /// 设置可折叠应用栏进度，0 为展开，1 为折叠。
     pub fn collapsed_fraction(mut self, fraction: f32) -> Self {
         self.collapsed_fraction = fraction.clamp(0., 1.);
         self
@@ -89,18 +87,15 @@ impl TopAppBar {
         self
     }
 
-    /// 前置槽位（一般为返回/菜单图标按钮）。
     pub fn leading(mut self, leading: impl IntoElement) -> Self {
         self.leading.push(leading.into_any_element());
         self
     }
 
-    /// 设置导航图标内容，对应 AndroidX navigationIcon 槽位。
     pub fn navigation_icon(self, content: impl IntoElement) -> Self {
         self.leading(content)
     }
 
-    /// 后置动作槽位（图标按钮,从左到右追加）。
     pub fn action(mut self, action: impl IntoElement) -> Self {
         self.actions.push(action.into_any_element());
         self
@@ -114,30 +109,25 @@ macro_rules! top_app_bar_variant {
         pub struct $name(TopAppBar);
 
         impl $name {
-            /// 创建指定标题布局的应用栏。
             pub fn new(id: impl Into<ElementId>) -> Self {
                 Self(TopAppBar::new(id).variant(TopAppBarVariant::$variant))
             }
 
-            /// 设置标题。
             pub fn title(mut self, title: impl Into<SharedString>) -> Self {
                 self.0 = self.0.title(title);
                 self
             }
 
-            /// 设置可折叠应用栏进度。
             pub fn collapsed_fraction(mut self, fraction: f32) -> Self {
                 self.0 = self.0.collapsed_fraction(fraction);
                 self
             }
 
-            /// 添加导航图标或其他前置内容。
             pub fn navigation_icon(mut self, content: impl IntoElement) -> Self {
                 self.0 = self.0.leading(content);
                 self
             }
 
-            /// 添加动作内容。
             pub fn action(mut self, content: impl IntoElement) -> Self {
                 self.0 = self.0.action(content);
                 self
@@ -158,10 +148,8 @@ top_app_bar_variant!(LargeTopAppBar, Large);
 top_app_bar_variant!(MediumFlexibleTopAppBar, MediumFlexible);
 top_app_bar_variant!(LargeFlexibleTopAppBar, LargeFlexible);
 
-/// AndroidX TwoRowsTopAppBar 对应的双行标题应用栏。
 pub type TwoRowsTopAppBar = LargeTopAppBar;
 
-/// AndroidX BottomAppBar 对应的底部应用栏。
 #[derive(IntoElement)]
 pub struct BottomAppBar {
     id: ElementId,
@@ -170,15 +158,12 @@ pub struct BottomAppBar {
     collapsed_fraction: f32,
 }
 
-/// AndroidX BottomAppBarState 对应的折叠进度。
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct BottomAppBarState {
-    /// 0 为展开，1 为折叠。
     pub collapsed_fraction: f32,
 }
 
 impl BottomAppBarState {
-    /// 创建并限制折叠进度到 0..=1。
     pub fn new(collapsed_fraction: f32) -> Self {
         Self {
             collapsed_fraction: collapsed_fraction.clamp(0., 1.),
@@ -187,7 +172,6 @@ impl BottomAppBarState {
 }
 
 impl BottomAppBar {
-    /// 创建底部应用栏。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
@@ -197,48 +181,40 @@ impl BottomAppBar {
         }
     }
 
-    /// 添加一个操作控件。
     pub fn action(mut self, action: impl IntoElement) -> Self {
         self.actions.push(action.into_any_element());
         self
     }
 
-    /// 设置栏内的悬浮操作按钮。
     pub fn floating_action_button(mut self, button: impl IntoElement) -> Self {
         self.floating_action_button = Some(button.into_any_element());
         self
     }
 
-    /// 设置底栏折叠状态。
     pub fn state(mut self, state: BottomAppBarState) -> Self {
         self.collapsed_fraction = state.collapsed_fraction;
         self
     }
 }
 
-/// AndroidX FlexibleBottomAppBar 对应的可折叠底部应用栏。
 #[derive(IntoElement)]
 pub struct FlexibleBottomAppBar(BottomAppBar);
 
 impl FlexibleBottomAppBar {
-    /// 创建展开的灵活底部应用栏。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self(BottomAppBar::new(id))
     }
 
-    /// 添加操作控件。
     pub fn action(mut self, action: impl IntoElement) -> Self {
         self.0 = self.0.action(action);
         self
     }
 
-    /// 设置栏内 FAB。
     pub fn floating_action_button(mut self, button: impl IntoElement) -> Self {
         self.0 = self.0.floating_action_button(button);
         self
     }
 
-    /// 设置折叠状态。
     pub fn state(mut self, state: BottomAppBarState) -> Self {
         self.0 = self.0.state(state);
         self
@@ -340,7 +316,6 @@ impl RenderOnce for TopAppBar {
             .bg(style.container_color);
 
         if small {
-            // Small:单行,前置 | 居中标题 | 动作
             bar.child(
                 div()
                     .flex_1()
@@ -362,7 +337,6 @@ impl RenderOnce for TopAppBar {
                     .child(actions_row),
             )
         } else {
-            // Medium/Large:顶行前置+动作,标题沉底靠左(Compose 规范)
             bar.child(
                 div()
                     .h(px(64.))
@@ -394,26 +368,24 @@ pub use appearance::TopAppBarStyle;
 mod appearance {
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// TopAppBar 样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct TopAppBarStyle {
-        /// 容器色。
         pub container_color: Hsla,
-        /// 标题色。
+
         pub title_color: Hsla,
-        /// 图标色。
+
         pub icon_color: Hsla,
-        /// 高度。
+
         pub height: Pixels,
-        /// 水平内边距。
+
         pub horizontal_padding: Pixels,
-        /// 元素间距。
+
         pub gap: Pixels,
-        /// 标题字型。
+
         pub title: crate::theme::TypeStyle,
     }
     impl TopAppBarStyle {
-        /// 由令牌推导默认样式(AppBar Small/Medium/Large 令牌)。
         pub fn resolve(tokens: &TokenSet, variant: super::TopAppBarVariant) -> Self {
             use crate::tokens::{AppBarLargeTokens, AppBarMediumTokens, AppBarSmallTokens};
             let (height, title) = match variant {

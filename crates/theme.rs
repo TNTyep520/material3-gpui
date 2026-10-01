@@ -1,23 +1,16 @@
-//! MD3 主题系统：颜色 / 字体 / 形状 / 高度 / 状态层 / 运动 / 组件令牌的聚合。
-//!
-//! 架构移植自 [m3fx](https://github.com/Glavo/m3fx) 的 `tokens` + `theme`
-//! 包（Apache-2.0，© 2026 Glavo）：主题 = [`TokenSet`]（不可变令牌集合，
-//! 支持 profile 预设与整组覆盖）+ 全局字体族。
-//!
-//! 用法：
-//! ```ignore
-//! use material3_gpui::prelude::*;
-//!
-//! application().run(|cx| {
-//!     material3_gpui::init(cx);                          // 安装默认亮色主题
-//!     // 或者：种子色动态色主题
-//!     Theme::set(cx, Theme::from_seed(0x6750A4, ThemeMode::Light, Profile::Baseline2021));
-//! });
-//!
-//! // 在任意 render 中：
-//! let theme = cx.theme();
-//! div().bg(theme.colors().surface)
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/theme/M3Theme.java
 
 #[path = "theme/Color.rs"]
 mod color;
@@ -60,21 +53,14 @@ use gpui::{App, Global, SharedString};
 
 use crate::motion::MotionScheme;
 
-/// 主题模式
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum ThemeMode {
-    /// 亮色。
     #[default]
     Light,
-    /// 暗色。
+
     Dark,
 }
 
-/// MD3 主题（作为 gpui Global 存储）。
-///
-/// 主题 = [`TokenSet`] + 字体族；颜色/字型/形状/运动等一律经
-/// 访问器读取。主题是纯数据对象，替换后需触发重绘
-/// （如 `cx.refresh_windows()`）。
 #[derive(Clone, Debug)]
 pub struct Theme {
     mode: ThemeMode,
@@ -89,25 +75,14 @@ impl Theme {
         Self::from_token_set(TokenSet::androidx(mode), mode, DEFAULT_FONT_FAMILY)
     }
 
-    /// MD3 基线亮色主题（种子色 `#6750A4`，Baseline2021 profile）。
     pub fn light() -> Self {
         Self::from_seed(0x6750A4, ThemeMode::Light, Profile::Baseline2021)
     }
 
-    /// MD3 基线暗色主题（种子色 `#6750A4`，Baseline2021 profile）。
     pub fn dark() -> Self {
         Self::from_seed(0x6750A4, ThemeMode::Dark, Profile::Baseline2021)
     }
 
-    /// 由种子色生成主题。
-    ///
-    /// 基线种子色 `0x6750A4` + `Baseline2021` 直接使用 material-web /
-    /// MD3 官方的精确 baseline 亮/暗常量表（与动态色推导存在 ±1~3/255
-    /// 的 HCT 舍入差异，为保证 switch 手柄等角色与规范一致，此处精确对齐）。
-    ///
-    /// 其余种子色需启用 `dynamic-color` feature 经
-    /// material-color-utilities 动态生成；未启用时回退到基线色表
-    /// （仅亮/暗模式生效）。
     pub fn from_seed(seed: u32, mode: ThemeMode, profile: Profile) -> Self {
         let is_dark = mode == ThemeMode::Dark;
 
@@ -128,12 +103,11 @@ impl Theme {
         } else {
             ColorScheme::light()
         };
-        let _ = (seed, profile); // feature 关闭时参数仅由模式决定
+        let _ = (seed, profile);
 
         Self::from_token_set(TokenSet::new(profile, colors), mode, DEFAULT_FONT_FAMILY)
     }
 
-    /// 由令牌集构建主题。
     pub fn from_token_set(
         tokens: TokenSet,
         mode: ThemeMode,
@@ -146,91 +120,72 @@ impl Theme {
         }
     }
 
-    /// 主题模式。
     pub fn mode(&self) -> ThemeMode {
         self.mode
     }
 
-    /// 是否暗色模式。
     pub fn is_dark(&self) -> bool {
         self.mode == ThemeMode::Dark
     }
 
-    /// 全局字体族。
     pub fn font_family(&self) -> &SharedString {
         &self.font_family
     }
 
-    /// 完整令牌集。
     pub fn token_set(&self) -> &TokenSet {
         &self.tokens
     }
 
-    /// 替换令牌集（保持当前模式与字体族）。
     pub fn set_token_set(&mut self, tokens: TokenSet) {
         self.tokens = tokens;
     }
 
-    /// 令牌 Profile。
     pub fn profile(&self) -> Profile {
         self.tokens.profile
     }
 
-    /// 布局密度。
     pub fn density(&self) -> Density {
         self.tokens.density
     }
 
-    /// 颜色角色令牌。
     pub fn colors(&self) -> &ColorScheme {
         &self.tokens.colors
     }
 
-    /// 字体排印令牌。
     pub fn typography(&self) -> &TypeScale {
         &self.tokens.typography
     }
 
-    /// 形状（圆角刻度）令牌。
     pub fn shapes(&self) -> &Shapes {
         &self.tokens.shapes
     }
 
-    /// 高度令牌。
     pub fn elevation_tokens(&self) -> &ElevationTokens {
         &self.tokens.elevation
     }
 
-    /// 运动方案。
     pub fn motion(&self) -> &MotionScheme {
         &self.tokens.motion
     }
 
-    /// 状态层令牌。
     pub fn state_layer(&self) -> &StateLayerTokens {
         &self.tokens.state_layer
     }
 
-    /// 组件令牌。
     pub fn component(&self) -> &ComponentTokens {
         &self.tokens.component
     }
 
-    /// 读取全局主题。
     pub fn global(cx: &App) -> &Theme {
         cx.global::<Theme>()
     }
 
-    /// 替换全局主题（切换主题后请触发一次重绘，如 `cx.refresh_windows()`
-    /// 或视图 `cx.notify()`）。
     pub fn set(cx: &mut App, theme: Theme) {
         cx.set_global(theme);
     }
 }
 
-/// 便捷 trait：`cx.theme()`
 pub trait ActiveTheme {
-    /// 读取全局主题。
     fn theme(&self) -> &Theme;
 }
 
@@ -246,7 +201,6 @@ mod tests {
 
     #[test]
     fn from_seed_matches_baseline_defaults() {
-        // 基线种子色的亮色主题应与旧版手写的基线方案一致
         let theme = Theme::light();
         assert_eq!(theme.mode(), ThemeMode::Light);
         assert_eq!(theme.profile(), Profile::Baseline2021);

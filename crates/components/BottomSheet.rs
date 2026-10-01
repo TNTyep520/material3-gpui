@@ -1,17 +1,17 @@
-//! MD3 ModalBottomSheet（对应 compose material3 的 `ModalBottomSheet`）
-//!
-//! 规格：面板沉底、顶部圆角 28dp、surface-container-low 底色、32% scrim、
-//! 顶部居中 DragHandle。作为元素条件渲染（同 Dialog）：
-//!
-//! ```ignore
-//! div().when(self.sheet_open, |el| {
-//!     el.child(
-//!         ModalBottomSheet::new("sheet")
-//!             .child("Sheet content")
-//!             .on_dismiss(|window, cx| { /* 点击 scrim 关闭 */ }),
-//!     )
-//! })
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ModalBottomSheet.kt
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/BottomSheetScaffold.kt
 
 use gpui::{
     AnyElement, App, ElementId, Hsla, IntoElement, ParentElement as _, Pixels, RenderOnce, Window,
@@ -56,7 +56,6 @@ impl BottomSheetStyle {
 type DismissHandler = Rc<dyn Fn(&mut Window, &mut App) + 'static>;
 type ExpandedChangeHandler = Rc<dyn Fn(bool, &mut Window, &mut App)>;
 
-/// MD3 模态底部弹层。
 #[derive(IntoElement)]
 pub struct ModalBottomSheet {
     id: ElementId,
@@ -66,7 +65,6 @@ pub struct ModalBottomSheet {
     on_dismiss: Option<DismissHandler>,
 }
 
-/// AndroidX BottomSheetScaffold 对应的常驻底部面板布局。
 #[derive(IntoElement)]
 pub struct BottomSheetScaffold {
     id: ElementId,
@@ -79,7 +77,6 @@ pub struct BottomSheetScaffold {
 }
 
 impl BottomSheetScaffold {
-    /// 创建常驻面板，默认折叠并露出 56dp。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
@@ -92,31 +89,26 @@ impl BottomSheetScaffold {
         }
     }
 
-    /// 设置面板内容。
     pub fn sheet_content(mut self, content: impl IntoElement) -> Self {
         self.sheet_content.push(content.into_any_element());
         self
     }
 
-    /// 设置页面顶部应用栏。
     pub fn top_bar(mut self, bar: impl IntoElement) -> Self {
         self.top_bar = Some(bar.into_any_element());
         self
     }
 
-    /// 设置面板是否展开。
     pub fn expanded(mut self, expanded: bool) -> Self {
         self.expanded = expanded;
         self
     }
 
-    /// 设置折叠时露出的面板高度。
     pub fn sheet_peek_height(mut self, height: Pixels) -> Self {
         self.peek_height = height.max(px(0.));
         self
     }
 
-    /// 设置拖动把手点击时的展开状态变化回调。
     pub fn on_expanded_change(
         mut self,
         handler: impl Fn(bool, &mut Window, &mut App) + 'static,
@@ -203,25 +195,21 @@ impl ModalBottomSheet {
         }
     }
 
-    /// 是否显示顶部拖动把手（默认显示）。
     pub fn drag_handle(mut self, drag_handle: bool) -> Self {
         self.drag_handle = drag_handle;
         self
     }
 
-    /// 设置面板可见状态；隐藏时不渲染 scrim 和面板。
     pub fn visible(mut self, visible: bool) -> Self {
         self.visible = visible;
         self
     }
 
-    /// 点击 scrim 时触发（不设置则点击 scrim 无效果）。
     pub fn on_dismiss(mut self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
         self.on_dismiss = Some(Rc::new(handler));
         self
     }
 
-    /// 设置关闭请求回调，对应 AndroidX onDismissRequest。
     pub fn on_dismiss_request(self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
         self.on_dismiss(handler)
     }

@@ -1,22 +1,31 @@
-//! Dialogs 页「Manage files」：对话框启动按钮在本页，对话框本体由根视图渲染。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
 use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
-/// Dialogs 页视图。
 pub struct DialogsPage {
     pub b_dialog: Entity<ButtonState>,
     pub b_help: Entity<ButtonState>,
     pub dlg_cancel: Entity<ButtonState>,
     pub dlg_ok: Entity<ButtonState>,
-    /// 打开对话框回调（由根视图接线）。
+
     pub(crate) on_open_dialog: Option<super::PageCallback<()>>,
 }
 
 impl DialogsPage {
-    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
         let b_dialog = Button::new("b-dialog", "Delete recordings")
             .filled()
@@ -44,7 +53,6 @@ impl DialogsPage {
         })
     }
 
-    /// 设置打开对话框回调（根视图首帧接线）。
     pub fn set_on_open_dialog(&mut self, handler: super::PageCallback<()>) {
         self.on_open_dialog = Some(handler);
     }

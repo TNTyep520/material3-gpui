@@ -1,3 +1,17 @@
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SegmentedButton.kt
+
 use std::rc::Rc;
 use std::time::Instant;
 
@@ -55,7 +69,6 @@ impl SegmentedButton {
         self
     }
 
-    /// 设置条目的启用状态。
     pub fn enabled(self, enabled: bool) -> Self {
         self.disabled(!enabled)
     }
@@ -104,7 +117,6 @@ impl SegmentedButtonRow {
         self
     }
 
-    /// 设置整行的启用状态。
     pub fn enabled(self, enabled: bool) -> Self {
         self.disabled(!enabled)
     }
@@ -191,26 +203,22 @@ macro_rules! segmented_button_row_variant {
         pub struct $name(SegmentedButtonRow);
 
         impl $name {
-            /// 创建指定选择模式的按钮行。
             pub fn new(id: impl Into<ElementId>) -> Self {
                 Self(
                     SegmentedButtonRow::new(id).selection_mode(SegmentedButtonSelectionMode::$mode),
                 )
             }
 
-            /// 设置行内按钮。
             pub fn buttons(mut self, buttons: impl IntoIterator<Item = SegmentedButton>) -> Self {
                 self.0 = self.0.buttons(buttons);
                 self
             }
 
-            /// 设置整行的启用状态。
             pub fn enabled(mut self, enabled: bool) -> Self {
                 self.0 = self.0.enabled(enabled);
                 self
             }
 
-            /// 设置选择变化回调，返回被选中的下标集合。
             pub fn on_change(
                 mut self,
                 handler: impl Fn(&[usize], &mut Window, &mut App) + 'static,
@@ -219,7 +227,6 @@ macro_rules! segmented_button_row_variant {
                 self
             }
 
-            /// 构建可渲染的分段按钮行实体。
             pub fn build(self, cx: &mut App) -> Entity<SegmentedButtonRowState> {
                 self.0.build(cx)
             }

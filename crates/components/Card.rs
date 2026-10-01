@@ -1,7 +1,16 @@
-//! MD3 Card（对应 material-web labs 的 `md-*-card`）
-//!
-//! 变体：Elevated / Filled / Outlined，圆角 12dp。
-//! Card 实现了 `Styled` 与 `ParentElement`，可以像 `div` 一样追加样式和子元素。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Card.kt
 
 use gpui::{
     AnyElement, App, Div, IntoElement, ParentElement, RenderOnce, StyleRefinement, Styled, Window,
@@ -12,16 +21,14 @@ use crate::theme::ActiveTheme;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum CardVariant {
-    /// 浮起卡片。
     Elevated,
-    /// 默认填充卡片。
+
     #[default]
     Filled,
-    /// 描边卡片。
+
     Outlined,
 }
 
-/// MD3 卡片容器
 #[derive(IntoElement)]
 pub struct Card {
     base: Div,
@@ -30,7 +37,6 @@ pub struct Card {
 }
 
 impl Card {
-    /// 创建默认的填充卡片。
     pub fn new() -> Self {
         Self {
             base: div(),
@@ -64,7 +70,6 @@ macro_rules! card_variant {
         pub struct $name(Card);
 
         impl $name {
-            /// 创建此卡片变体。
             pub fn new() -> Self {
                 Self(Card::new().variant(CardVariant::$variant))
             }
@@ -143,24 +148,22 @@ mod appearance {
     use super::CardVariant;
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels};
-    /// MD3 卡片样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct CardStyle {
-        /// 容器色。
         pub container_color: Hsla,
-        /// 内容色。
+
         pub content_color: Hsla,
-        /// 描边色（`Some` 启用 1dp 描边）。
+
         pub outline_color: Option<Hsla>,
-        /// 圆角。
+
         pub corner_radius: Pixels,
-        /// 阴影颜色。
+
         pub shadow_color: Hsla,
-        /// 阴影等级。
+
         pub elevation: crate::theme::Elevation,
     }
     impl CardStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet, variant: CardVariant) -> Self {
             let colors = &tokens.colors;
             let (container, outline, elevation) = match variant {

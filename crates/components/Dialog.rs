@@ -1,20 +1,16 @@
-//! MD3 Dialog（对应 material-web 的 `md-dialog`）
-//!
-//! 规格：min 280 / max 560dp 宽、圆角 28dp、surface-container-high 底色、
-//! Level3 阴影、32% scrim。作为元素条件渲染：
-//!
-//! ```ignore
-//! div().when(self.dialog_open, |el| {
-//!     el.child(
-//!         Dialog::new("confirm")
-//!             .title("Delete item?")
-//!             .child("This action cannot be undone.")
-//!             .action(Button::new("cancel", "Cancel").text().on_click(...))
-//!             .action(Button::new("ok", "Delete").text().on_click(...))
-//!             .on_dismiss(|window, cx| { /* 点击 scrim 关闭 */ }),
-//!     )
-//! })
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AlertDialog.kt
 
 use gpui::{
     AnyElement, App, ElementId, IntoElement, ParentElement, RenderOnce, SharedString, Window,
@@ -27,7 +23,6 @@ use crate::theme::ActiveTheme;
 
 type DismissHandler = Rc<dyn Fn(&mut Window, &mut App) + 'static>;
 
-/// MD3 对话框
 #[derive(IntoElement)]
 pub struct Dialog {
     id: ElementId,
@@ -38,9 +33,8 @@ pub struct Dialog {
     on_dismiss: Option<DismissHandler>,
 }
 
-/// AndroidX AlertDialog 对应的带标题、正文和操作区的对话框。
 pub type AlertDialog = Dialog;
-/// AndroidX BasicAlertDialog 对应的可自定义内容对话框。
+
 pub type BasicAlertDialog = Dialog;
 
 impl Dialog {
@@ -55,7 +49,6 @@ impl Dialog {
         }
     }
 
-    /// 顶部居中的图标（hero icon）
     pub fn icon(mut self, icon: IconName) -> Self {
         self.icon = Some(icon);
         self
@@ -66,13 +59,11 @@ impl Dialog {
         self
     }
 
-    /// 底部操作按钮（从左到右追加，一般用 Text Button）
     pub fn action(mut self, action: impl IntoElement) -> Self {
         self.actions.push(action.into_any_element());
         self
     }
 
-    /// 点击 scrim 时触发（不设置则点击 scrim 无效果）
     pub fn on_dismiss(mut self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
         self.on_dismiss = Some(Rc::new(handler));
         self
@@ -92,24 +83,20 @@ macro_rules! picker_dialog {
         pub struct $name(Dialog);
 
         impl $name {
-            /// 创建包含日期或时间选择器的对话框。
             pub fn new(id: impl Into<ElementId>, picker: impl IntoElement) -> Self {
                 Self(Dialog::new(id).child(picker))
             }
 
-            /// 设置对话框标题。
             pub fn title(mut self, title: impl Into<SharedString>) -> Self {
                 self.0 = self.0.title(title);
                 self
             }
 
-            /// 添加操作按钮。
             pub fn action(mut self, action: impl IntoElement) -> Self {
                 self.0 = self.0.action(action);
                 self
             }
 
-            /// 设置关闭请求回调。
             pub fn on_dismiss_request(
                 mut self,
                 handler: impl Fn(&mut Window, &mut App) + 'static,
@@ -142,7 +129,6 @@ impl RenderOnce for Dialog {
         let container = div()
             .id(self.id.clone())
             .occlude()
-            // 阻止容器内点击冒泡到 scrim 触发关闭
             .on_click(|_, _, cx| cx.stop_propagation())
             .min_w(style.width_range.0)
             .max_w(style.width_range.1)
@@ -217,40 +203,38 @@ pub use appearance::DialogStyle;
 mod appearance {
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// MD3 对话框样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct DialogStyle {
-        /// 容器色。
         pub container_color: Hsla,
-        /// 内容色。
+
         pub content_color: Hsla,
-        /// 辅助文本色。
+
         pub supporting_color: Hsla,
-        /// 图标色。
+
         pub icon_color: Hsla,
-        /// scrim 颜色。
+
         pub scrim_color: Hsla,
-        /// scrim 不透明度。
+
         pub scrim_opacity: f32,
-        /// 圆角。
+
         pub corner_radius: Pixels,
-        /// 最小/最大宽度。
+
         pub width_range: (Pixels, Pixels),
-        /// 内边距。
+
         pub padding: Pixels,
-        /// 元素间距。
+
         pub gap: Pixels,
-        /// 阴影颜色。
+
         pub shadow_color: Hsla,
-        /// 阴影等级。
+
         pub elevation: crate::theme::Elevation,
-        /// 标题字型。
+
         pub title: crate::theme::TypeStyle,
-        /// 正文字型。
+
         pub body: crate::theme::TypeStyle,
     }
     impl DialogStyle {
-        /// 由令牌推导默认样式(DialogTokens / ScrimTokens)。
         pub fn resolve(tokens: &TokenSet) -> Self {
             use crate::tokens::{DialogTokens, ScrimTokens};
             let colors = &tokens.colors;

@@ -1,39 +1,42 @@
-//! MD3 高度（Elevation）令牌
-//!
-//! 对应 [m3fx](https://github.com/Glavo/m3fx) 的 `M3ElevationTokens`
-//! （Apache-2.0，© 2026 Glavo）；阴影参数取自 MD3 官方 elevation 规范
-//! （level 0–5）。
-//! 参考: <https://m3.material.io/styles/elevation/tokens>
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/tokens/M3ElevationTokens.java
 
 use crate::tokens::ElevationTokens as AndroidxElevationTokens;
 use gpui::{BoxShadow, Hsla, Pixels, point, px};
 
-/// 高度等级的 dp 值令牌（对应 m3fx `M3ElevationTokens`）。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ElevationTokens {
-    /// level 0 的 dp 值。
     pub level0: Pixels,
-    /// level 1 的 dp 值。
+
     pub level1: Pixels,
-    /// level 2 的 dp 值。
+
     pub level2: Pixels,
-    /// level 3 的 dp 值。
+
     pub level3: Pixels,
-    /// level 4 的 dp 值。
+
     pub level4: Pixels,
-    /// level 5 的 dp 值。
+
     pub level5: Pixels,
 }
 
 impl Default for ElevationTokens {
-    /// 基线（2021）高度刻度：0 / 1 / 3 / 6 / 8 / 12 dp。
     fn default() -> Self {
         Self::baseline()
     }
 }
 
 impl ElevationTokens {
-    /// 基线（2021）高度刻度。
     pub fn baseline() -> Self {
         Self {
             level0: AndroidxElevationTokens::LEVEL0.pixels(),
@@ -46,26 +49,22 @@ impl ElevationTokens {
     }
 }
 
-/// 高度等级。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Elevation {
-    /// level 0。
     Level0,
-    /// level 1。
+
     Level1,
-    /// level 2。
+
     Level2,
-    /// level 3。
+
     Level3,
-    /// level 4。
+
     Level4,
-    /// level 5。
+
     Level5,
 }
 
 impl Elevation {
-    /// 生成该 elevation 等级对应的一组 BoxShadow。
-    /// `shadow_color` 一般传 `theme.colors.shadow`（黑色）。
     pub fn shadows(self, shadow_color: Hsla) -> Vec<BoxShadow> {
         let key = |y: f32, blur: f32, spread: f32| BoxShadow {
             color: shadow_color.opacity(0.30),
@@ -89,7 +88,6 @@ impl Elevation {
         }
     }
 
-    /// 该等级对应的 dp 值（信息性）
     pub fn dp(self) -> Pixels {
         match self {
             Elevation::Level0 => px(0.),

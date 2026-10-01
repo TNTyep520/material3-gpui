@@ -1,43 +1,31 @@
-//! MD3 运动缓动曲线。
-//!
-//! 移植自 [m3fx](https://github.com/Glavo/m3fx) 的
-//! `org.glavo.m3fx.animation.M3Motion`（Apache-2.0，© 2026 Glavo）。
-//! 曲线数值与 Compose Material 3 的 `Easing` 定义一致。
-//!
-//! 所有曲线把归一化时间 `t ∈ [0, 1]` 映射为归一化进度 `[0, 1]`。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/animation/M3MotionEasing.java
 
 use std::time::Duration;
 
 use crate::tokens::MotionTokens;
 
-/// 缓动曲线。
-///
-/// `CubicBezier` 覆盖 MD3 的全部标准曲线；`Emphasized` 是
-/// 两段三次贝塞尔拼接的三点曲线（中点 `(1/6, 0.4)`）。
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Easing {
-    /// 线性。
     Linear,
-    /// 三次贝塞尔曲线，参数为两个控制点 `(x1, y1, x2, y2)`，
-    /// 起点 `(0, 0)`、终点 `(1, 1)`，控制点 x 必须位于 `(0, 1)` 内。
-    CubicBezier {
-        /// 控制点 1 的 x
-        x1: f64,
-        /// 控制点 1 的 y
-        y1: f64,
-        /// 控制点 2 的 x
-        x2: f64,
-        /// 控制点 2 的 y
-        y2: f64,
-    },
-    /// 两段三次贝塞尔拼接曲线，中点 `(1/6, 0.4)`。
+
+    CubicBezier { x1: f64, y1: f64, x2: f64, y2: f64 },
+
     Emphasized,
 }
 
 impl Easing {
-    /// 采样曲线在归一化时间 `t` 处的进度值。
-    ///
-    /// `t` 会被夹取到 `[0, 1]`。
     pub fn sample(&self, t: f64) -> f64 {
         let t = t.clamp(0.0, 1.0);
         match *self {
@@ -47,17 +35,14 @@ impl Easing {
                 const MID_X: f64 = 0.166_666;
                 const MID_Y: f64 = 0.4;
                 if t < MID_X {
-                    // 前段：(0,0) -> (MID_X, MID_Y)，控制点 (0.05, 0.0)、(0.133333, 0.06)
                     segment_y(t, MID_X, MID_Y, 0.0, 0.0, 0.05, 0.0, 0.133_333, 0.06)
                 } else {
-                    // 后段：(MID_X, MID_Y) -> (1, 1)，控制点 (0.208333, 0.82)、(0.25, 1.0)
                     segment_y(t, 1.0, 1.0, MID_X, MID_Y, 0.208_333, 0.82, 0.25, 1.0)
                 }
             }
         }
     }
 
-    /// 按时长采样：把已经过时间映射为归一化时间后再求进度。
     pub fn sample_duration(&self, elapsed: Duration, duration: Duration) -> f64 {
         if duration.is_zero() {
             return 1.0;
@@ -67,10 +52,6 @@ impl Easing {
     }
 }
 
-/// 解单位三次贝塞尔（起点 `(0,0)`、终点 `(1,1)`）在 `x = t` 处的 `y` 值。
-///
-/// 算法与 m3fx `M3Motion.cubicBezier` 一致：二分法（24 次迭代）
-/// 求解 x 多项式的参数，再代入 y 多项式求值。
 fn unit_cubic_y(t: f64, x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
     if t <= 0.0 {
         return 0.0;
@@ -85,7 +66,6 @@ fn unit_cubic_y(t: f64, x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
     let by = 3.0 * y2 - 6.0 * y1;
     let cy = 3.0 * y1;
 
-    // x(s) 关于参数 s 单调（控制点 x 位于 (0,1) 内），二分求 s
     let mut lo = 0.0;
     let mut hi = 1.0;
     let mut s = t;
@@ -104,10 +84,6 @@ fn unit_cubic_y(t: f64, x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
     ((ay * s + by) * s + cy) * s
 }
 
-/// 求一般三次贝塞尔段在横坐标 `t` 处的纵坐标。
-///
-/// 参数为段终点 `(to_x, to_y)`、段起点 `(from_x, from_y)`
-/// 与两个控制点；数学上需要 9 个参数。
 #[allow(clippy::too_many_arguments)]
 fn segment_y(
     t: f64,
@@ -128,8 +104,7 @@ fn segment_y(
     if t >= to_x {
         return to_y;
     }
-    // 把段内归一化参数 s 与全局 t 关联：x(s) = from_x + span_x * u(s)，
-    // 其中 u(s) 是以 (0,0)->(1,1)、控制点按段宽归一化的单位贝塞尔。
+
     let u1x = (c1x - from_x) / span_x;
     let u2x = (c2x - from_x) / span_x;
     let u1y = if span_y != 0.0 {
@@ -146,68 +121,67 @@ fn segment_y(
     from_y + unit_cubic_y(local_t, u1x, u1y, u2x, u2y) * span_y
 }
 
-/// 线性曲线常量。
 pub const LINEAR: Easing = Easing::Linear;
-/// 标准（standard）曲线：`cubic-bezier(0.2, 0, 0, 1)`。
+
 pub const STANDARD: Easing = MotionTokens::EASING_STANDARD_CUBIC_BEZIER;
-/// 标准加速曲线：`cubic-bezier(0.3, 0, 1, 1)`。
+
 pub const STANDARD_ACCELERATE: Easing = MotionTokens::EASING_STANDARD_ACCELERATE_CUBIC_BEZIER;
-/// 标准减速曲线：`cubic-bezier(0, 0, 0, 1)`。
+
 pub const STANDARD_DECELERATE: Easing = MotionTokens::EASING_STANDARD_DECELERATE_CUBIC_BEZIER;
-/// 强调加速曲线：`cubic-bezier(0.3, 0, 0.8, 0.15)`。
+
 pub const EMPHASIZED_ACCELERATE: Easing = MotionTokens::EASING_EMPHASIZED_ACCELERATE_CUBIC_BEZIER;
-/// 强调减速曲线：`cubic-bezier(0.05, 0.7, 0.1, 1)`。
+
 pub const EMPHASIZED_DECELERATE: Easing = MotionTokens::EASING_EMPHASIZED_DECELERATE_CUBIC_BEZIER;
-/// 标准空间曲线（spring 的有限回退近似）：`cubic-bezier(0.27, 1.06, 0.18, 1)`。
+
 pub const STANDARD_SPATIAL: Easing = Easing::CubicBezier {
     x1: 0.27,
     y1: 1.06,
     x2: 0.18,
     y2: 1.0,
 };
-/// Expressive 快速空间曲线：`cubic-bezier(0.42, 1.67, 0.21, 0.9)`。
+
 pub const EXPRESSIVE_FAST_SPATIAL: Easing = Easing::CubicBezier {
     x1: 0.42,
     y1: 1.67,
     x2: 0.21,
     y2: 0.9,
 };
-/// Expressive 默认空间曲线：`cubic-bezier(0.38, 1.21, 0.22, 1)`。
+
 pub const EXPRESSIVE_DEFAULT_SPATIAL: Easing = Easing::CubicBezier {
     x1: 0.38,
     y1: 1.21,
     x2: 0.22,
     y2: 1.0,
 };
-/// Expressive 慢速空间曲线：`cubic-bezier(0.39, 1.29, 0.35, 0.98)`。
+
 pub const EXPRESSIVE_SLOW_SPATIAL: Easing = Easing::CubicBezier {
     x1: 0.39,
     y1: 1.29,
     x2: 0.35,
     y2: 0.98,
 };
-/// 快速效果曲线：`cubic-bezier(0.31, 0.94, 0.34, 1)`。
+
 pub const FAST_EFFECTS: Easing = Easing::CubicBezier {
     x1: 0.31,
     y1: 0.94,
     x2: 0.34,
     y2: 1.0,
 };
-/// 默认效果曲线：`cubic-bezier(0.34, 0.8, 0.34, 1)`。
+
 pub const DEFAULT_EFFECTS: Easing = Easing::CubicBezier {
     x1: 0.34,
     y1: 0.8,
     x2: 0.34,
     y2: 1.0,
 };
-/// 慢速效果曲线：`cubic-bezier(0.34, 0.88, 0.34, 1)`。
+
 pub const SLOW_EFFECTS: Easing = Easing::CubicBezier {
     x1: 0.34,
     y1: 0.88,
     x2: 0.34,
     y2: 1.0,
 };
-/// 强调曲线（三段式）：`Easing::Emphasized`。
+
 pub const EMPHASIZED: Easing = Easing::Emphasized;
 
 #[cfg(test)]
@@ -259,7 +233,6 @@ mod tests {
 
     #[test]
     fn emphasized_passes_through_midpoint() {
-        // 中点 (1/6, 0.4)：两段曲线在该处拼接且取值连续
         assert!(close(EMPHASIZED.sample(0.166_666), 0.4));
         assert!(EMPHASIZED.sample(0.166_666 - 1e-4) < 0.4);
         assert!(EMPHASIZED.sample(0.166_666 + 1e-4) > 0.4);

@@ -1,17 +1,18 @@
-//! 窗口级弹层系统：Snackbar / Menu / Tooltip。
-//!
-//! 架构对应 [m3fx](https://github.com/Glavo/m3fx) 的
-//! `M3OverlayPane` / `M3Snackbar` / `M3Menu` / `M3Tooltip` 及其
-//! presenter（Apache-2.0，© 2026 Glavo）。gpui 没有 Scene 级 popup，
-//! 本模块用"根容器挂载 + window 坐标绝对定位"实现等效机制：
-//!
-//! 1. 应用在窗口根视图挂载 [`host`] 返回的 OverlayHost 实体：
-//!    `div().child(content).child(overlay::host(window, cx))`
-//! 2. 任意事件处理器调用 [`show_snackbar`] / [`show_menu`] /
-//!    [`show_tooltip`]，内容以 window 坐标绝对定位渲染在最上层。
-//!
-//! Snackbar 进入/退出使用 defaultSpatial 弹簧；Menu/Tooltip 首期为
-//! 即时显隐。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/controls/M3OverlayPane.java
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3MenuSkin.java
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3TooltipSkin.java
 
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -28,10 +29,8 @@ use crate::interaction::BoundsHandle;
 use crate::motion::{Animatable, AnimatedComponent, AnimationDriver, MotionRole, lerp_color};
 use crate::theme::{ActiveTheme, Elevation};
 
-/// 动作回调类型。
 type ActionHandler = Rc<dyn Fn(&mut Window, &mut App) + 'static>;
 
-/// 全局弹层注册表：每个窗口一个 OverlayHost。
 #[derive(Default)]
 pub struct OverlayRegistry {
     hosts: HashMap<AnyWindowHandle, Entity<OverlayHostState>>,
@@ -39,10 +38,6 @@ pub struct OverlayRegistry {
 
 impl Global for OverlayRegistry {}
 
-/// 获取（或首次创建）当前窗口的 OverlayHost 实体。
-///
-/// 应用须把返回的实体挂到窗口根视图（作为最后一个子元素），
-/// 否则弹层内容不会显示。
 pub fn host(window: &Window, cx: &mut App) -> Entity<OverlayHostState> {
     if !cx.has_global::<OverlayRegistry>() {
         cx.set_global(OverlayRegistry::default());
@@ -58,9 +53,6 @@ pub fn host(window: &Window, cx: &mut App) -> Entity<OverlayHostState> {
     host
 }
 
-/// 显示 Snackbar。
-///
-/// `duration` 为自动消失时长；传 `None` 使用默认（5 秒）。
 pub fn show_snackbar(
     window: &Window,
     cx: &mut App,
@@ -76,7 +68,6 @@ pub fn show_snackbar(
         cx.notify();
     });
 
-    // 自动消失定时器
     let timer_host = host_entity.clone();
     cx.spawn(async move |cx| {
         cx.background_executor().timer(duration).await;
@@ -87,7 +78,6 @@ pub fn show_snackbar(
     .detach_and_log_err(cx);
 }
 
-/// 在锚点下方显示菜单。
 pub fn show_menu(window: &Window, cx: &mut App, menu: Entity<MenuState>, anchor: Bounds<Pixels>) {
     let host_entity = host(window, cx);
     host_entity.update(cx, |host, cx| {
@@ -96,7 +86,6 @@ pub fn show_menu(window: &Window, cx: &mut App, menu: Entity<MenuState>, anchor:
     });
 }
 
-/// 关闭当前菜单。
 pub fn close_menu(window: &Window, cx: &mut App) {
     let host_entity = host(window, cx);
     host_entity.update(cx, |host, cx| {
@@ -105,7 +94,6 @@ pub fn close_menu(window: &Window, cx: &mut App) {
     });
 }
 
-/// 在锚点下方显示工具提示（每个窗口同时只有一个）。
 pub fn show_tooltip(
     window: &Window,
     cx: &mut App,
@@ -123,7 +111,6 @@ pub fn show_tooltip(
     });
 }
 
-/// 在锚点下方显示带标题的 RichTooltip。
 pub fn show_rich_tooltip(
     window: &Window,
     cx: &mut App,
@@ -142,7 +129,6 @@ pub fn show_rich_tooltip(
     });
 }
 
-/// 关闭工具提示。
 pub fn close_tooltip(window: &Window, cx: &mut App) {
     let host_entity = host(window, cx);
     host_entity.update(cx, |host, cx| {
@@ -151,7 +137,6 @@ pub fn close_tooltip(window: &Window, cx: &mut App) {
     });
 }
 
-/// OverlayHost 的有状态部分：持有当前窗口全部弹层。
 #[derive(Default)]
 pub struct OverlayHostState {
     next_id: u64,
@@ -161,10 +146,8 @@ pub struct OverlayHostState {
     driver: AnimationDriver,
 }
 
-/// AndroidX SnackbarHost 对应的窗口级通知宿主。
 pub type SnackbarHost = OverlayHostState;
 
-/// AndroidX TooltipBox 对应的悬停提示容器。
 #[derive(IntoElement)]
 pub struct TooltipBox {
     id: ElementId,
@@ -174,7 +157,6 @@ pub struct TooltipBox {
 }
 
 impl TooltipBox {
-    /// 创建带纯文本工具提示的锚点。
     pub fn new(
         id: impl Into<ElementId>,
         anchor: impl IntoElement,
@@ -188,12 +170,10 @@ impl TooltipBox {
         }
     }
 
-    /// 创建由 PlainTooltip 内容描述的悬停容器。
     pub fn plain(id: impl Into<ElementId>, anchor: impl IntoElement, tip: PlainTooltip) -> Self {
         Self::new(id, anchor, tip.text)
     }
 
-    /// 创建由 RichTooltip 内容描述的悬停容器。
     pub fn rich(id: impl Into<ElementId>, anchor: impl IntoElement, tip: RichTooltip) -> Self {
         let mut box_element = Self::new(id, anchor, tip.text);
         box_element.title = Some(tip.title);
@@ -201,26 +181,22 @@ impl TooltipBox {
     }
 }
 
-/// AndroidX PlainTooltip 对应的纯文本提示内容。
 pub struct PlainTooltip {
     text: SharedString,
 }
 
 impl PlainTooltip {
-    /// 创建纯文本提示内容。
     pub fn new(text: impl Into<SharedString>) -> Self {
         Self { text: text.into() }
     }
 }
 
-/// AndroidX RichTooltip 对应的标题与正文提示内容。
 pub struct RichTooltip {
     title: SharedString,
     text: SharedString,
 }
 
 impl RichTooltip {
-    /// 创建带标题和正文的提示内容。
     pub fn new(title: impl Into<SharedString>, text: impl Into<SharedString>) -> Self {
         Self {
             title: title.into(),
@@ -263,12 +239,11 @@ impl OverlayHostState {
         if let Some(snack) = self.snacks.last_mut() {
             snack.begin_exit(cx);
         }
-        // 移除在 render 的 step 中完成（等待退出动画）
+
         cx.notify();
     }
 }
 
-/// 工具提示数据。
 #[derive(Clone)]
 struct Tooltip {
     title: Option<SharedString>,
@@ -283,7 +258,7 @@ impl AnimatedComponent for OverlayHostState {
             snack.tick(now);
             animating |= snack.is_animating();
         }
-        // 移除已完成退出动画的 snack
+
         self.snacks.retain(|s| !s.removed);
         animating
     }
@@ -295,8 +270,6 @@ impl AnimatedComponent for OverlayHostState {
 
 impl Render for OverlayHostState {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        // render 只读状态:动画推进统一由帧回调里的 step 负责
-        // （与其他组件一致，避免进度依赖 render 频率）
         self.snacks.retain(|snack| !snack.removed);
         if self.snacks.iter().any(SnackState::is_animating) {
             self.schedule_next(window, cx);
@@ -307,7 +280,6 @@ impl Render for OverlayHostState {
         let style = SnackbarStyle::resolve(theme.token_set());
         let tooltip_style = TooltipStyle::resolve(theme.token_set());
 
-        // Snackbar：底部居中（一次显示一条，后进优先）
         let snack_el = self.snacks.last().map(|snack| {
             let p = snack.progress.value() as f32;
             let bottom = style.bottom_offset - px(64.) * (1.0 - p);
@@ -366,7 +338,6 @@ impl Render for OverlayHostState {
                 })
         });
 
-        // Menu：锚点下方
         let menu_el = self.menu.clone().map(|(menu_entity, anchor)| {
             div()
                 .absolute()
@@ -384,7 +355,6 @@ impl Render for OverlayHostState {
                 })
         });
 
-        // Tooltip：锚点下方
         let tooltip_el = self.tooltip.clone().map(|tip| {
             div()
                 .absolute()
@@ -413,8 +383,6 @@ impl Render for OverlayHostState {
                 )
         });
 
-        // 根容器以绝对定位铺满窗口（无背景、自身不拦截点击），
-        // 弹层子元素的百分比/绝对定位以整个窗口为基准
         div()
             .absolute()
             .inset_0()
@@ -425,7 +393,6 @@ impl Render for OverlayHostState {
     }
 }
 
-/// Snackbar 构建器。
 pub struct Snackbar {
     message: SharedString,
     action_label: Option<SharedString>,
@@ -433,7 +400,6 @@ pub struct Snackbar {
 }
 
 impl Snackbar {
-    /// 创建 Snackbar（消息必填）。
     pub fn new(message: impl Into<SharedString>) -> Self {
         Self {
             message: message.into(),
@@ -442,13 +408,11 @@ impl Snackbar {
         }
     }
 
-    /// 动作按钮文本（如 "UNDO"）。
     pub fn action(mut self, label: impl Into<SharedString>) -> Self {
         self.action_label = Some(label.into());
         self
     }
 
-    /// 动作回调。
     pub fn on_action(mut self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
         self.on_action = Some(Rc::new(handler));
         self
@@ -460,7 +424,7 @@ struct SnackState {
     message: SharedString,
     action_label: Option<SharedString>,
     on_action: Option<ActionHandler>,
-    /// 0 = 隐藏，1 = 完全显示；进入/退出共用。
+
     progress: Animatable,
     exiting: bool,
     removed: bool,
@@ -502,7 +466,6 @@ impl SnackState {
     }
 }
 
-/// 菜单项。
 pub struct MenuItem {
     label: SharedString,
     icon: Option<crate::icon::IconName>,
@@ -510,7 +473,6 @@ pub struct MenuItem {
 }
 
 impl MenuItem {
-    /// 创建菜单项。
     pub fn new(label: impl Into<SharedString>) -> Self {
         Self {
             label: label.into(),
@@ -519,37 +481,31 @@ impl MenuItem {
         }
     }
 
-    /// 设置图标。
     pub fn icon(mut self, icon: crate::icon::IconName) -> Self {
         self.icon = Some(icon);
         self
     }
 
-    /// 设置点击回调。
     pub fn on_click(mut self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
         self.on_click = Some(Rc::new(handler));
         self
     }
 }
 
-/// MD3 菜单（经 [`show_menu`] 显示）。
 pub struct MenuState {
     items: Vec<MenuItem>,
 }
 
 impl MenuState {
-    /// 创建菜单。
     pub fn new() -> Self {
         Self { items: Vec::new() }
     }
 
-    /// 追加菜单项。
     pub fn item(mut self, item: MenuItem) -> Self {
         self.items.push(item);
         self
     }
 
-    /// 构建菜单实体（随后经 [`show_menu`] 显示）。
     pub fn build(self, cx: &mut App) -> Entity<MenuState> {
         cx.new(|_| MenuState { items: self.items })
     }
@@ -625,36 +581,34 @@ pub use appearance::{MenuStyle, SnackbarStyle, TooltipStyle};
 mod appearance {
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// Snackbar 样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct SnackbarStyle {
-        /// 容器色。
         pub container_color: Hsla,
-        /// 文本色。
+
         pub text_color: Hsla,
-        /// 动作文本色。
+
         pub action_color: Hsla,
-        /// 最小高度。
+
         pub min_height: Pixels,
-        /// 水平/垂直内边距。
+
         pub padding: (Pixels, Pixels),
-        /// 与窗口底边间距。
+
         pub bottom_offset: Pixels,
-        /// 动作与消息间距。
+
         pub action_gap: Pixels,
-        /// 圆角。
+
         pub corner_radius: Pixels,
-        /// 宽度。
+
         pub width: Pixels,
-        /// 阴影颜色。
+
         pub shadow_color: Hsla,
-        /// 消息字型。
+
         pub text: crate::theme::TypeStyle,
-        /// 动作字型。
+
         pub action: crate::theme::TypeStyle,
     }
     impl SnackbarStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet) -> Self {
             let colors = &tokens.colors;
             let tokens_sb = &tokens.component.snackbar;
@@ -677,38 +631,36 @@ mod appearance {
             }
         }
     }
-    /// 菜单样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct MenuStyle {
-        /// 容器色。
         pub container_color: Hsla,
-        /// 菜单项 hover 状态层不透明度。
+
         pub item_hover_opacity: Hsla,
-        /// 菜单项文本色。
+
         pub item_text_color: Hsla,
-        /// 菜单图标色。
+
         pub item_icon_color: Hsla,
-        /// 菜单项高度。
+
         pub item_height: Pixels,
-        /// 容器垂直内边距。
+
         pub vertical_padding: Pixels,
-        /// 菜单项水平内边距。
+
         pub item_horizontal_padding: Pixels,
-        /// 元素间距。
+
         pub item_gap: Pixels,
-        /// 最小宽度。
+
         pub min_width: Pixels,
-        /// 圆角。
+
         pub corner_radius: Pixels,
-        /// 与锚点间距。
+
         pub anchor_gap: Pixels,
-        /// 阴影颜色。
+
         pub shadow_color: Hsla,
-        /// 菜单项字型。
+
         pub item_text: crate::theme::TypeStyle,
     }
     impl MenuStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet) -> Self {
             let colors = &tokens.colors;
             let menu = &tokens.component.menu;
@@ -729,26 +681,24 @@ mod appearance {
             }
         }
     }
-    /// Tooltip 样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct TooltipStyle {
-        /// 容器色。
         pub container_color: Hsla,
-        /// 文本色。
+
         pub text_color: Hsla,
-        /// 高度。
+
         pub height: Pixels,
-        /// 水平内边距。
+
         pub horizontal_padding: Pixels,
-        /// 与锚点间距。
+
         pub anchor_gap: Pixels,
-        /// 圆角。
+
         pub corner_radius: Pixels,
-        /// 文字字型。
+
         pub text: crate::theme::TypeStyle,
     }
     impl TooltipStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet) -> Self {
             let colors = &tokens.colors;
             let tooltip = &tokens.component.tooltip;

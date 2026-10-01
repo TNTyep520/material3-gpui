@@ -1,11 +1,21 @@
-//! Selection 页：比较选择控件的可交互和禁用状态。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{App, AppContext as _, Context, Entity, IntoElement, Render, WeakEntity, Window};
 use material3_gpui::prelude::*;
 
 use super::{LogErr as _, gallery, showcase_group, specimen};
 
-/// Selection controls 页视图。
 pub struct SelectionPage {
     segmented_single: Entity<SegmentedButtonRowState>,
     segmented_multiple: Entity<SegmentedButtonRowState>,
@@ -21,9 +31,7 @@ pub struct SelectionPage {
 }
 
 impl SelectionPage {
-    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
-        // 设置行开关:翻转即弹出 Snackbar 反馈
         let sw_dicts = Switch::new("sw-dicts")
             .checked(true)
             .on_change(move |checked, window, cx| {
@@ -50,14 +58,12 @@ impl SelectionPage {
             .disabled(true)
             .build(cx);
 
-        // 复选框:收件箱规则两行
         let cb_a = Checkbox::new("cb-a").checked(true).build(cx);
         let cb_disabled = Checkbox::new("cb-dis")
             .checked(true)
             .disabled(true)
             .build(cx);
 
-        // 分段控件
         let segmented_single = SegmentedButtonRow::new("segmented-single")
             .buttons([
                 SegmentedButton::new("Day").selected(true),
@@ -86,7 +92,6 @@ impl SelectionPage {
             ])
             .build(cx);
 
-        // 电台方案:第一档默认选中,第三档禁用;单选组内互斥
         cx.new(|cx| {
             let weak: WeakEntity<Self> = cx.entity().downgrade();
             let radios: Vec<Entity<RadioState>> = (0..3usize)

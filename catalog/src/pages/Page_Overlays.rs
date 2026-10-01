@@ -1,4 +1,15 @@
-//! Overlays 页「Delivery desk」：Snackbar / Menu / Tooltip(经窗口 OverlayHost 渲染)。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{App, Bounds, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px, size};
 use material3_gpui::overlay::{close_tooltip, show_menu, show_snackbar, show_tooltip};
@@ -6,7 +17,6 @@ use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
-/// Overlays 页视图。
 pub struct OverlaysPage {
     b_snack: Entity<ButtonState>,
     b_menu: Entity<ButtonState>,
@@ -14,7 +24,6 @@ pub struct OverlaysPage {
 }
 
 impl OverlaysPage {
-    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
         let b_snack = Button::new("b-snack", "Start download")
             .filled()
@@ -62,7 +71,7 @@ impl OverlaysPage {
                     origin: event.position(),
                     size: size(px(0.), px(0.)),
                 };
-                // 每次点击把菜单交给 overlay 宿主,所以按次克隆
+
                 show_menu(window, cx, menu.clone(), anchor);
             })
             .build(cx);

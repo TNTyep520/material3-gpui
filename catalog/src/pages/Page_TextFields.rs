@@ -1,22 +1,31 @@
-//! Text fields 页：默认、错误和禁用状态，以及动态主题输入。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
 use material3_gpui::prelude::*;
 
 use super::{gallery, palette_strip, showcase_group};
 
-/// Text fields 页视图。
 pub struct TextFieldsPage {
     pub seed_field: Entity<TextFieldState>,
     tf_name: Entity<TextFieldState>,
     tf_error: Entity<TextFieldState>,
     tf_disabled: Entity<TextFieldState>,
-    /// 种子色解析成功回调（由根视图接线；参数为 ARGB 种子色）。
+
     pub(crate) on_seed_changed: Option<super::PageCallback<u32>>,
 }
 
 impl TextFieldsPage {
-    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
         let seed_field = TextField::new("seed-field", "Seed color (hex)")
             .value("6750A4")
@@ -32,7 +41,6 @@ impl TextFieldsPage {
             .build(cx);
 
         cx.new(|cx: &mut gpui::Context<Self>| {
-            // 种子色输入实时应用主题（回调由根视图接线）
             cx.observe(&seed_field, |this: &mut Self, field, cx| {
                 let value = field
                     .read(cx)
@@ -59,7 +67,6 @@ impl TextFieldsPage {
         })
     }
 
-    /// 设置种子色变化回调（根视图首帧接线）。
     pub fn set_on_seed_changed(&mut self, handler: super::PageCallback<u32>) {
         self.on_seed_changed = Some(handler);
     }

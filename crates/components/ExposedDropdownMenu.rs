@@ -1,3 +1,17 @@
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ExposedDropdownMenu.kt
+
 use gpui::{
     AnyElement, App, ElementId, IntoElement, ParentElement, Pixels, RenderOnce, Window, div,
     prelude::*, px,
@@ -9,27 +23,23 @@ type ExpandedChangeHandler = Rc<dyn Fn(bool, &mut Window, &mut App)>;
 use crate::theme::{ActiveTheme, TokenSet};
 use crate::tokens::OutlinedTextFieldTokens;
 
-/// 暴露下拉框样式(由令牌推导)。
 #[derive(Clone, Copy, Debug)]
 pub struct ExposedDropdownMenuStyle {
-    /// 下拉菜单相对字段顶部向下的偏移(字段容器高度)。
     pub menu_top_offset: Pixels,
-    /// 展开时为菜单预留的底部空间。
+
     pub menu_reserved_height: Pixels,
 }
 
 impl ExposedDropdownMenuStyle {
-    /// 由令牌推导默认样式(字段高度取 outlined 文本框令牌)。
     pub fn resolve(_tokens: &TokenSet) -> Self {
         Self {
             menu_top_offset: OutlinedTextFieldTokens::CONTAINER_HEIGHT.pixels(),
-            // 展开预留空间:菜单最大高度约束(gpui 下由外层滚动容器承接溢出)
+
             menu_reserved_height: px(220.),
         }
     }
 }
 
-/// MD3 暴露下拉框:字段 + 展开时悬浮其下的菜单容器。
 #[derive(IntoElement)]
 pub struct ExposedDropdownMenu {
     id: ElementId,
@@ -39,7 +49,6 @@ pub struct ExposedDropdownMenu {
     on_expanded_change: Option<ExpandedChangeHandler>,
 }
 
-/// AndroidX ExposedDropdownMenuBox 对应的锚点与菜单容器。
 pub type ExposedDropdownMenuBox = ExposedDropdownMenu;
 
 impl ExposedDropdownMenu {
@@ -52,18 +61,17 @@ impl ExposedDropdownMenu {
             on_expanded_change: None,
         }
     }
-    /// 展开时悬浮在字段下方的菜单内容。
+
     pub fn menu(mut self, menu: impl IntoElement) -> Self {
         self.menu = Some(menu.into_any_element());
         self
     }
-    /// 展开状态。
+
     pub fn expanded(mut self, expanded: bool) -> Self {
         self.expanded = expanded;
         self
     }
 
-    /// 点击锚点时请求切换展开状态。
     pub fn on_expanded_change(
         mut self,
         handler: impl Fn(bool, &mut Window, &mut App) + 'static,

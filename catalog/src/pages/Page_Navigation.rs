@@ -1,11 +1,21 @@
-//! Navigation 页：字形画廊 + NavigationBar / Rail / Drawer 组件预览。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
 use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
-/// Navigation 页视图。
 pub struct NavigationPage {
     nav_bar: Entity<NavigationBarState>,
     nav_rail: Entity<NavigationRailState>,
@@ -13,7 +23,6 @@ pub struct NavigationPage {
 }
 
 impl NavigationPage {
-    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
         let nav_bar = NavigationBar::new("nav-bar")
             .items([
@@ -54,7 +63,6 @@ impl NavigationPage {
     }
 }
 
-/// 字形画廊:内置码点图标全覆盖。
 fn icon_strip(cx: &App) -> impl IntoElement {
     let color = cx.theme().colors().on_surface_variant;
     div()
@@ -87,7 +95,6 @@ fn icon_strip(cx: &App) -> impl IntoElement {
         )
 }
 
-/// 通勤图组(walk/bike/car,字体连字已在旧版验证)。
 fn commute_strip(cx: &App) -> impl IntoElement {
     let color = cx.theme().colors().on_surface_variant;
     div()

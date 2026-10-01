@@ -1,5 +1,15 @@
-//! 内嵌资源源：Material Symbols Rounded SVG、进度弧及应用图标。
-//! 使用 Md3Assets 注册资源，或通过 with_fallback 与应用自己的资源源组合。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use anyhow::Result;
 use gpui::{AssetSource, SharedString};
@@ -7,14 +17,10 @@ use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
-/// `CircularProgress` 旋转弧 SVG 的资源路径。
 pub const PROGRESS_ARC_SVG_PATH: &str = "md3-icons/progress_arc.svg";
 
-/// Material 站点图标(蓝色圆角方块 + 白圆盘 + M 徽标)的资源路径,
-/// 供自定义标题栏/关于页等以 `img()` 渲染。
 pub const MATERIAL3_FAVICON_SVG_PATH: &str = "md3-icons/material3-favicon.svg";
 
-/// 内部进度图形及应用标识，与 Rounded 图标使用不同资源路径。
 static RESOURCES: &[(&str, &[u8])] = &[
     (
         "md3-icons/progress_arc.svg",
@@ -26,11 +32,9 @@ static RESOURCES: &[(&str, &[u8])] = &[
     ),
 ];
 
-/// material3-gpui 的内嵌资源源
 pub struct Md3Assets;
 
 impl Md3Assets {
-    /// 与另一个 AssetSource 组合：md3 内部资源优先，其余路径回退到 `fallback`。
     pub fn with_fallback(fallback: impl AssetSource) -> CombinedAssets {
         CombinedAssets {
             fallback: Box::new(fallback),
@@ -81,7 +85,6 @@ impl AssetSource for Md3Assets {
     }
 }
 
-/// [`Md3Assets`] 与用户资源源的组合体
 pub struct CombinedAssets {
     fallback: Box<dyn AssetSource>,
 }

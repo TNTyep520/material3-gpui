@@ -1,32 +1,16 @@
-//! MD3 运动（Motion）系统。
-//!
-//! 移植自 [m3fx](https://github.com/Glavo/m3fx) 的 `animation` 包
-//! 与 `internal` 中的动画实现（Apache-2.0，© 2026 Glavo），
-//! 对齐 Compose Material 3 的运动模型。
-//!
-//! - [`scheme::MotionScheme`]：按语义角色（effects/spatial × fast/default/slow）
-//!   归组的运动规格，提供 standard / expressive 两套默认；
-//! - [`easing`]：MD3 全部缓动曲线；
-//! - [`spring`]：阻尼弹簧解析求解器；
-//! - [`duration`]：运动时长令牌；
-//! - [`animatable`]：可重定向弹簧值运行时与组件逐帧驱动器。
-//!
-//! 用法（组件内）：
-//! ```ignore
-//! use material3_gpui::motion::{Animatable, AnimationDriver, AnimatedComponent, MotionRole};
-//!
-//! struct MyControl {
-//!     opacity: Animatable,
-//!     driver: AnimationDriver,
-//! }
-//!
-//! impl AnimatedComponent for MyControl {
-//!     fn step(&mut self, now: Instant) -> bool {
-//!         self.opacity.tick(now)
-//!     }
-//!     fn driver_mut(&mut self) -> &mut AnimationDriver { &mut self.driver }
-//! }
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/animation/M3Motion.java
 
 #[path = "motion/Animatable.rs"]
 pub mod animatable;

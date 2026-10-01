@@ -1,15 +1,16 @@
-//! MD3 Scaffold（对应 compose material3 的 `Scaffold`）
-//!
-//! 页面骨架:顶栏 / 底栏 / FAB 槽位 + 内容区。内容区自动填满剩余空间,
-//! FAB 悬浮于内容区右下(在底栏之上):
-//!
-//! ```ignore
-//! Scaffold::new("scaffold")
-//!     .top_bar(TopAppBar::small("bar").title("Title"))
-//!     .bottom_bar(BottomAppBar)
-//!     .fab(Fab::new("fab", IconName::Add))
-//!     .child(content)
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Scaffold.kt
 
 use gpui::{
     AnyElement, App, ElementId, IntoElement, ParentElement as _, RenderOnce, Styled, Window, div,
@@ -18,7 +19,6 @@ use gpui::{
 
 use crate::prelude::ActiveTheme;
 
-/// MD3 页面骨架。
 #[derive(IntoElement)]
 pub struct Scaffold {
     id: ElementId,
@@ -41,25 +41,21 @@ impl Scaffold {
         }
     }
 
-    /// 顶部应用栏槽位。
     pub fn top_bar(mut self, top_bar: impl IntoElement) -> Self {
         self.top_bar = Some(top_bar.into_any_element());
         self
     }
 
-    /// 底部应用栏槽位。
     pub fn bottom_bar(mut self, bottom_bar: impl IntoElement) -> Self {
         self.bottom_bar = Some(bottom_bar.into_any_element());
         self
     }
 
-    /// 悬浮动作按钮槽位(内容区右下角)。
     pub fn fab(mut self, fab: impl IntoElement) -> Self {
         self.fab = Some(fab.into_any_element());
         self
     }
 
-    /// 设置 SnackbarHost 槽位，显示在内容区底部。
     pub fn snackbar_host(mut self, host: impl IntoElement) -> Self {
         self.snackbar_host = Some(host.into_any_element());
         self

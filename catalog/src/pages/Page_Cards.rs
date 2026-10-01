@@ -1,15 +1,24 @@
-//! Cards 页：使用相同内容比较三种表面变体。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{App, Entity, IntoElement, Render, Window, prelude::*};
 use material3_gpui::prelude::*;
 
 use super::{catalog_card, gallery, showcase_group};
 
-/// Cards 页视图。
 pub struct CardsPage;
 
 impl CardsPage {
-    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
         cx.new(|_| Self)
     }

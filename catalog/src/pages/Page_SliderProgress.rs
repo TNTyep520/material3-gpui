@@ -1,4 +1,15 @@
-//! Slider 与 Progress 对比页，滑块数值驱动确定进度，刷新局限于本页。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{
     App, AppContext as _, Entity, IntoElement, Render, Styled, WeakEntity, Window, div, prelude::*,
@@ -8,7 +19,6 @@ use material3_gpui::prelude::*;
 
 use super::{LogErr as _, gallery, showcase_group};
 
-/// Slider & Progress 页视图。
 pub struct SliderProgressPage {
     weak: WeakEntity<Self>,
     slider: Entity<SliderState>,
@@ -16,12 +26,11 @@ pub struct SliderProgressPage {
 }
 
 impl SliderProgressPage {
-    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
             let weak = cx.entity().downgrade();
             let slider = Slider::new(0., 100., 40.).step(1.).build(cx);
-            // 滑块变化只刷新本页视图
+
             cx.observe(&slider, |_, _, cx| cx.notify()).detach();
             Self {
                 weak,

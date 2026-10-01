@@ -1,4 +1,15 @@
-//! App bars & Scaffold 页：顶栏三档 densities、Badge 与 Scaffold 舞台演示。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{AnyElement, App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
 use material3_gpui::icon::IconName;
@@ -6,21 +17,17 @@ use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
-/// App bars & Scaffold 页视图。
 pub struct AppBarsPage {
-    /// Scaffold 槽位里的 FAB(状态组件,构造期一次 build)。
     fab: Entity<FabState>,
 }
 
 impl AppBarsPage {
-    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
         let fab = Fab::new("scaffold-fab", IconName::Add).build(cx);
         cx.new(|_| Self { fab })
     }
 }
 
-/// 为顶栏变体添加标签，各预览占据完整一行。
 fn bar_row(bar: impl IntoElement, caption: &'static str, cx: &App) -> AnyElement {
     let typography = *cx.theme().typography();
     div()
@@ -45,7 +52,6 @@ impl Render for AppBarsPage {
         let theme = cx.theme();
         let colors = *theme.colors();
 
-        // 带 Badge 的顶栏动作图标(静态预览)
         let bell_with_badge = div().child(badged(
             Icon::new(IconName::Menu)
                 .size(px(24.))

@@ -1,17 +1,17 @@
-//! MD3 TextField / TextInputLayout（对应 material-web 的 `md-outlined-text-field`）。
-//!
-//! 首期提供 Outlined 单行文本框：浮动标签、helper/error 文本、
-//! 聚焦指示条加粗（fastEffects 弹簧）、前后缀图标。
-//!
-//! 文本录入基于按键事件（`on_key_down`），支持字符输入、退格/删除、
-//! 方向键移动光标、Home/End、Enter 提交；IME 组合输入暂不支持。
-//!
-//! ```ignore
-//! TextField::new("name", "Name")
-//!     .helper("Your display name")
-//!     .on_submit(|value, _, _| println!("{value}"))
-//!     .build(cx)   // -> Entity<TextFieldState>
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TextField.kt
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/OutlinedTextField.kt
 
 use std::rc::Rc;
 use std::time::Instant;
@@ -29,7 +29,6 @@ use crate::theme::ActiveTheme;
 type ChangeHandler = Rc<dyn Fn(&str, &mut Window, &mut App) + 'static>;
 type SubmitHandler = Rc<dyn Fn(&str, &mut Window, &mut App) + 'static>;
 
-/// MD3 单行文本框构建器（`.build(cx)` 产出 [`TextFieldState`]）。
 pub struct TextField {
     id: ElementId,
     label: SharedString,
@@ -44,7 +43,6 @@ pub struct TextField {
     on_submit: Option<SubmitHandler>,
 }
 
-/// 文本框的有状态部分：值、光标、焦点与动画。
 pub struct TextFieldState {
     id: ElementId,
     label: SharedString,
@@ -55,10 +53,10 @@ pub struct TextFieldState {
     outlined: bool,
     password: bool,
     value: String,
-    /// 光标位置（UTF-8 字符下标）。
+
     caret: usize,
     focus: FocusHandle,
-    /// 0 = 未聚焦，1 = 聚焦（标签浮动/指示条加粗）。
+
     focus_progress: Animatable,
     on_change: Option<ChangeHandler>,
     on_submit: Option<SubmitHandler>,
@@ -66,7 +64,6 @@ pub struct TextFieldState {
 }
 
 impl TextField {
-    /// 创建文本框构建器。
     pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
         Self {
             id: id.into(),
@@ -83,71 +80,59 @@ impl TextField {
         }
     }
 
-    /// 初始文本。
     pub fn value(mut self, value: impl Into<SharedString>) -> Self {
         self.value = value.into();
         self
     }
 
-    /// 辅助文本（显示在下方；有 error 时被 error 替代）。
     pub fn helper(mut self, helper: impl Into<SharedString>) -> Self {
         self.helper = Some(helper.into());
         self
     }
 
-    /// 错误文本（显示在下方并切换 error 配色）。
     pub fn error(mut self, error: impl Into<SharedString>) -> Self {
         self.error = Some(error.into());
         self
     }
 
-    /// 前导图标。
     pub fn leading_icon(mut self, icon: IconName) -> Self {
         self.leading_icon = Some(icon);
         self
     }
 
-    /// 设置禁用态。
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
 
-    /// 设置 AndroidX 对应的 enabled 状态。
     pub fn enabled(self, enabled: bool) -> Self {
         self.disabled(!enabled)
     }
 
-    /// 使用 AndroidX OutlinedTextField 的全边框外观。
     pub fn outlined(mut self) -> Self {
         self.outlined = true;
         self
     }
 
-    /// 以掩码符号显示输入内容（密码框）。
     pub fn password(mut self, password: bool) -> Self {
         self.password = password;
         self
     }
 
-    /// 文本变化回调。
     pub fn on_change(mut self, handler: impl Fn(&str, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
     }
 
-    /// 设置文本变化回调；参数为新文本。
     pub fn on_value_change(self, handler: impl Fn(&str, &mut Window, &mut App) + 'static) -> Self {
         self.on_change(handler)
     }
 
-    /// Enter 提交回调。
     pub fn on_submit(mut self, handler: impl Fn(&str, &mut Window, &mut App) + 'static) -> Self {
         self.on_submit = Some(Rc::new(handler));
         self
     }
 
-    /// 构建有状态组件实体。
     pub fn build(self, cx: &mut App) -> Entity<TextFieldState> {
         let focus = cx.focus_handle();
         let value = self.value.to_string();
@@ -172,46 +157,38 @@ impl TextField {
     }
 }
 
-/// AndroidX OutlinedTextField 对应的全边框文本输入框。
 pub struct OutlinedTextField(TextField);
 
 impl OutlinedTextField {
-    /// 创建带标签的描边文本框。
     pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
         Self(TextField::new(id, label).outlined())
     }
 
-    /// 设置初始文本。
     pub fn value(mut self, value: impl Into<SharedString>) -> Self {
         self.0 = self.0.value(value);
         self
     }
 
-    /// 设置辅助文本。
     pub fn helper(mut self, helper: impl Into<SharedString>) -> Self {
         self.0 = self.0.helper(helper);
         self
     }
 
-    /// 设置错误文本与错误外观。
     pub fn error(mut self, error: impl Into<SharedString>) -> Self {
         self.0 = self.0.error(error);
         self
     }
 
-    /// 设置前导图标。
     pub fn leading_icon(mut self, icon: IconName) -> Self {
         self.0 = self.0.leading_icon(icon);
         self
     }
 
-    /// 设置启用状态。
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.0 = self.0.enabled(enabled);
         self
     }
 
-    /// 设置文本变化回调。
     pub fn on_value_change(
         mut self,
         handler: impl Fn(&str, &mut Window, &mut App) + 'static,
@@ -220,32 +197,27 @@ impl OutlinedTextField {
         self
     }
 
-    /// 设置提交回调。
     pub fn on_submit(mut self, handler: impl Fn(&str, &mut Window, &mut App) + 'static) -> Self {
         self.0 = self.0.on_submit(handler);
         self
     }
 
-    /// 构建可渲染的文本框实体。
     pub fn build(self, cx: &mut App) -> Entity<TextFieldState> {
         self.0.build(cx)
     }
 }
 
 impl TextFieldState {
-    /// 当前文本。
     pub fn value(&self) -> &str {
         &self.value
     }
 
-    /// 设置文本（光标移到末尾）。
     pub fn set_value(&mut self, value: &str, cx: &mut Context<Self>) {
         self.value = value.to_string();
         self.caret = self.value.chars().count();
         cx.notify();
     }
 
-    /// 是否聚焦（读取焦点句柄）。
     pub fn is_focused(&self, window: &Window) -> bool {
         self.focus.is_focused(window)
     }
@@ -370,14 +342,12 @@ impl Render for TextFieldState {
             colors.primary
         };
 
-        // 边框：未聚焦 1dp outline；聚焦时叠加 2dp accent 描边（透明度随进度）
         let border_color = if self.disabled || has_error {
             style.border_color
         } else {
             lerp_color(style.border_color, accent, p)
         };
 
-        // 浮动标签：聚焦或非空时缩小上浮
         let floating = p > 0.5 || !self.value.is_empty();
         let label_color = if focused {
             style.focused_label_color
@@ -407,14 +377,12 @@ impl Render for TextFieldState {
             .border_color(border_color)
             .bg(style.container_color)
             .when(!self.disabled, |el| el.cursor_text())
-            // 点击聚焦
             .when(!self.disabled, |element| {
                 element.on_mouse_down(gpui::MouseButton::Left, {
                     let focus = self.focus.clone();
                     move |_event, window, _cx| window.focus(&focus)
                 })
             })
-            // 键盘录入
             .on_key_down(move |event, window, cx| {
                 key_entity.update(cx, |state, cx| {
                     let handled = state.handle_key(&event.keystroke, window, cx);
@@ -424,7 +392,6 @@ impl Render for TextFieldState {
                 });
             })
             .track_focus(&self.focus)
-            // 聚焦指示条：叠加的 2dp accent 描边，透明度随弹簧进度
             .when((focused || p > 0.0) && !self.disabled, |el| {
                 el.child(
                     div()
@@ -452,7 +419,6 @@ impl Render for TextFieldState {
                 el.child(Icon::new(icon).size(icon_size).color(style.icon_color))
             })
             .child(
-                // 文本区（占位 + 文本 + 光标）
                 div()
                     .relative()
                     .flex_1()
@@ -478,7 +444,6 @@ impl Render for TextFieldState {
                                 .child(self.label.clone()),
                         )
                     })
-                    // 光标
                     .when(focused, |el| {
                         el.child(
                             div()
@@ -493,7 +458,6 @@ impl Render for TextFieldState {
                     }),
             );
 
-        // 浮动标签（容器顶部）
         let label_el = if floating {
             div()
                 .absolute()
@@ -508,7 +472,6 @@ impl Render for TextFieldState {
             div()
         };
 
-        // helper / error 文本
         let supporting = if let Some(err) = &self.error {
             div()
                 .text_size(label_style.body_small.size)
@@ -544,7 +507,6 @@ impl Render for TextFieldState {
 }
 
 impl TextFieldState {
-    /// 估算光标的 x 坐标（对前缀文本做排版测宽）。
     fn caret_x(&self, display: &str, window: &mut Window, cx: &mut Context<Self>) -> Pixels {
         let theme = cx.theme();
         let prefix: String = display.chars().take(self.caret).collect();
@@ -574,7 +536,6 @@ impl TextFieldState {
         layout.width
     }
 
-    /// 处理按键；返回是否已处理（用于阻断冒泡）。
     fn handle_key(
         &mut self,
         keystroke: &gpui::Keystroke,
@@ -644,57 +605,54 @@ pub use appearance::TextFieldStyle;
 mod appearance {
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// MD3 文本框样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct TextFieldStyle {
-        /// 容器背景色。
         pub container_color: Hsla,
-        /// 未聚焦描边色。
+
         pub border_color: Hsla,
-        /// 聚焦/error 强调色。
+
         pub accent: Hsla,
-        /// 浮动标签色（未聚焦）。
+
         pub label_color: Hsla,
-        /// 浮动标签色（聚焦）。
+
         pub focused_label_color: Hsla,
-        /// 输入文字色。
+
         pub text_color: Hsla,
-        /// 占位文字色。
+
         pub placeholder_color: Hsla,
-        /// helper 文本色。
+
         pub helper_color: Hsla,
-        /// error 文本色。
+
         pub error_color: Hsla,
-        /// 前导图标色。
+
         pub icon_color: Hsla,
-        /// 禁用容器色。
+
         pub disabled_container_color: Hsla,
-        /// 最小高度。
+
         pub min_height: Pixels,
-        /// 圆角。
+
         pub corner_radius: Pixels,
-        /// 水平内边距。
+
         pub horizontal_padding: Pixels,
-        /// 垂直内边距。
+
         pub vertical_padding: Pixels,
-        /// helper/error 文本与输入区间距。
+
         pub supporting_gap: Pixels,
-        /// 图标尺寸。
+
         pub icon_size: Pixels,
-        /// 输入文字字型。
+
         pub text: crate::theme::TypeStyle,
-        /// 浮动标签字型。
+
         pub floating_label: crate::theme::TypeStyle,
-        /// 支撑文本字型。
+
         pub supporting_text: crate::theme::TypeStyle,
     }
     impl TextFieldStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet, error: bool, disabled: bool) -> Self {
             Self::resolve_for_variant(tokens, error, disabled, false)
         }
 
-        /// 按填充或描边变体解析样式。
         pub fn resolve_for_variant(
             tokens: &TokenSet,
             error: bool,

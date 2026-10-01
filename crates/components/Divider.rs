@@ -1,12 +1,21 @@
-//! MD3 Divider（对应 material-web 的 `md-divider`）
-//!
-//! 1dp 分割线，颜色 outline-variant，支持水平/垂直与 inset。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Divider.kt
 
 use gpui::{App, Hsla, IntoElement, Pixels, RenderOnce, Window, div, prelude::*};
 
 use crate::theme::ActiveTheme;
 
-/// MD3 分割线
 #[derive(IntoElement)]
 pub struct Divider {
     vertical: bool,
@@ -15,20 +24,16 @@ pub struct Divider {
     color: Option<Hsla>,
 }
 
-/// AndroidX HorizontalDivider 对应的水平分割线。
 pub type HorizontalDivider = Divider;
 
-/// AndroidX VerticalDivider 对应的垂直分割线。
 #[derive(IntoElement)]
 pub struct VerticalDivider(Divider);
 
 impl Divider {
-    /// 创建默认的水平分割线。
     pub fn new() -> Self {
         Self::horizontal()
     }
 
-    /// 水平分割线
     pub fn horizontal() -> Self {
         Self {
             vertical: false,
@@ -38,7 +43,6 @@ impl Divider {
         }
     }
 
-    /// 垂直分割线
     pub fn vertical() -> Self {
         Self {
             vertical: true,
@@ -48,19 +52,16 @@ impl Divider {
         }
     }
 
-    /// 两端缩进 16dp
     pub fn inset(mut self) -> Self {
         self.inset = true;
         self
     }
 
-    /// 设置线条厚度。
     pub fn thickness(mut self, thickness: Pixels) -> Self {
         self.thickness = Some(thickness);
         self
     }
 
-    /// 设置线条颜色。
     pub fn color(mut self, color: Hsla) -> Self {
         self.color = Some(color);
         self
@@ -74,18 +75,15 @@ impl Default for Divider {
 }
 
 impl VerticalDivider {
-    /// 创建默认的垂直分割线。
     pub fn new() -> Self {
         Self(Divider::vertical())
     }
 
-    /// 设置线条厚度。
     pub fn thickness(mut self, thickness: Pixels) -> Self {
         self.0 = self.0.thickness(thickness);
         self
     }
 
-    /// 设置线条颜色。
     pub fn color(mut self, color: Hsla) -> Self {
         self.0 = self.0.color(color);
         self
@@ -115,7 +113,6 @@ impl RenderOnce for Divider {
         }
         let color = style.color;
         if self.vertical {
-            // 外层占位，内层着色，避免 margin 溢出
             div()
                 .w(style.thickness)
                 .h_full()
@@ -138,18 +135,16 @@ pub use appearance::DividerStyle;
 mod appearance {
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// MD3 分隔线样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct DividerStyle {
-        /// 颜色。
         pub color: Hsla,
-        /// 厚度。
+
         pub thickness: Pixels,
-        /// inset 缩进。
+
         pub inset: Pixels,
     }
     impl DividerStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet, inset: bool) -> Self {
             use crate::tokens::DividerTokens;
             Self {

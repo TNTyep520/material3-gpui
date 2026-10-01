@@ -1,11 +1,21 @@
-//! Lists 页：带前后缀的列表项及分隔线展示。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{AnyElement, App, Entity, IntoElement, Render, Window, div, prelude::*};
 use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
-/// 列表数据:(标题, 副文, 主图标, 尾部字符)。
 const ENTRIES: [(&str, &str, IconName, Option<&str>); 5] = [
     ("Proofs batch", "Jan 9, 2026", IconName::Star, Some("3")),
     (
@@ -24,17 +34,14 @@ const ENTRIES: [(&str, &str, IconName, Option<&str>); 5] = [
     ("Archive", "Last opened in May", IconName::Delete, None),
 ];
 
-/// Lists 页视图。
 pub struct ListsPage;
 
 impl ListsPage {
-    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
         cx.new(|_| Self)
     }
 }
 
-/// 单个列表行(一条数据 → ListItem)。
 fn inbox_row(
     ix: usize,
     title: &'static str,

@@ -1,7 +1,18 @@
-// Windows 下隐藏随 GUI 程序弹出的控制台窗口
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #![windows_subsystem = "windows"]
 
-//! material3-gpui 组件展厅入口。
 mod pages;
 mod titlebar;
 
@@ -16,7 +27,6 @@ use pages::{LogErr as _, Pages, palette_strip};
 
 const DEFAULT_SEED: u32 = 0x6750A4;
 
-/// 页面标识。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum PageId {
     Buttons,
@@ -37,10 +47,9 @@ enum PageId {
     Sheets,
 }
 
-/// 页面元信息：导航和标题使用相同的组件名称。
 pub(crate) struct PageMeta {
     pub(crate) id: PageId,
-    /// 导航与顶栏使用的短标签。
+
     pub(crate) title: &'static str,
     pub(crate) icon: IconName,
 }
@@ -128,7 +137,6 @@ pub(crate) const PAGES: [PageMeta; 16] = [
     },
 ];
 
-/// catalog 根视图。
 struct Catalog {
     dark: bool,
     seed: u32,
@@ -152,7 +160,6 @@ impl Catalog {
         }
     }
 
-    /// 以当前模式/Profile/种子色重建主题并刷新窗口。
     fn apply_theme(&self, cx: &mut App) {
         let mode = if self.dark {
             ThemeMode::Dark
@@ -163,7 +170,6 @@ impl Catalog {
         cx.refresh_windows();
     }
 
-    /// 首帧接线：需要根句柄的回调。
     fn wire(&mut self, cx: &mut Context<Self>) {
         if self.wired {
             return;
@@ -180,7 +186,6 @@ impl Catalog {
             });
         });
 
-        // Bottom sheet 页:打开按钮与 scrim 关闭回调
         let open_button = self.pages.sheets.read(cx).open_button.clone();
         let sheets_weak = self.pages.sheets.downgrade();
         open_button.update(cx, |button, _| {
@@ -206,7 +211,6 @@ impl Catalog {
             });
         });
 
-        // 种子色实时应用动态色
         let this = cx.entity();
         self.pages.text_fields.update(cx, |page, _| {
             page.set_on_seed_changed(std::rc::Rc::new(move |seed, cx| {
@@ -219,7 +223,6 @@ impl Catalog {
             }));
         });
 
-        // Dialogs 页：打开对话框 + 对话框按钮
         let this = cx.entity();
         let dialogs_page = self.pages.dialogs.clone();
         let handle = this.clone();
@@ -288,7 +291,6 @@ impl Render for Catalog {
         let page = self.page;
         let dialog_open = self.dialog_open;
 
-        // 当前页面视图（页面只在自身状态变化时重渲染）
         let page_view: AnyView = match self.page {
             PageId::Buttons => self.pages.buttons.clone().into(),
             PageId::Additional => self.pages.additional.clone().into(),
@@ -308,7 +310,7 @@ impl Render for Catalog {
             PageId::Sheets => self.pages.sheets.clone().into(),
         };
         let meta = &PAGES[PAGES.iter().position(|p| p.id == page).unwrap_or(0)];
-        // 对话框按钮实体属于 Dialogs 页(由其构造期创建)
+
         let dialogs = self.pages.dialogs.read(cx);
         let dlg_cancel = dialogs.dlg_cancel.clone();
         let dlg_ok = dialogs.dlg_ok.clone();
@@ -463,9 +465,7 @@ impl Render for Catalog {
             .bg(colors.surface)
             .font_family(font_family)
             .text_color(colors.on_surface)
-            // 自定义标题栏(隐藏系统标题栏后的窗体框架)
             .child(titlebar::CustomTitleBar)
-            // 双栏:左导航抽屉 + 右组件详情(横屏固定布局)
             .child(
                 div()
                     .flex_1()
@@ -475,7 +475,6 @@ impl Render for Catalog {
                     .child(rail_pane)
                     .child(content),
             )
-            // 窗口级弹层宿主：Snackbar / Menu / Tooltip
             .child(host(window, cx))
             .when(dialog_open, |el| {
                 let close = {
@@ -508,7 +507,7 @@ fn main() {
         .with_assets(Md3Assets)
         .run(|cx: &mut App| {
             material3_gpui::init(cx);
-            // 横屏尺寸对齐资源管理器 tokens 窗口实测(996×621)
+
             let initial = size(px(996.), px(621.));
             let min_size = size(px(996.), px(621.));
             let bounds = Bounds::centered(None, initial, cx);
@@ -517,10 +516,9 @@ fn main() {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     titlebar: Some(TitlebarOptions {
                         title: Some("material3-gpui".into()),
-                        // 隐藏系统标题栏,由 catalog 自绘(Windows;macOS 红绿灯仍在)
+
                         appears_transparent: true,
-                        // macOS 红绿灯显式定位:系统默认按 28dp 标题栏摆放,
-                        // 在自绘 40dp 栏里会偏上;按钮高 16,12 使其在 40dp 内垂直居中
+
                         traffic_light_position: Some(point(px(9.), px(24.))),
                     }),
                     window_min_size: Some(min_size),
@@ -533,12 +531,6 @@ fn main() {
         });
 }
 
-/// 隐藏 macOS 红绿灯中的绿色最大化按钮(仅保留关闭与最小化)。
-///
-/// gpui 公开 API 只能整体定位红绿灯(`traffic_light_position`),不提供
-/// 单个灯的显隐;此处经 AppKit 遍历本应用全部窗口,把 zoom 标准按钮隐藏。
-/// AppKit 在窗口样式变化时可能重建标准按钮(如进出全屏),故随每帧重设。
-/// objc2 绑定均为安全方法,主线程约束由 `MainThreadMarker` 保证。
 #[cfg(target_os = "macos")]
 fn hide_maximize_buttons() {
     use objc2::MainThreadMarker;

@@ -1,7 +1,15 @@
-//! Lab bench 页：浮动工具栏、拾取器、搜索、扩展 FAB 与滚动条等补充组件。
-//!
-//! 所有有状态组件实体在构造期创建一次；交互回调经 [`WeakEntity`]
-//! 回写页面状态，避免渲染期重建导致焦点与动画状态丢失。
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{
     App, AppContext as _, Context, Entity, IntoElement, Render, WeakEntity, Window, div,

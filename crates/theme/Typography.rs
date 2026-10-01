@@ -1,28 +1,33 @@
-//! MD3 字体排印比例（Type Scale）令牌。
-//!
-//! 对应 [m3fx](https://github.com/Glavo/m3fx) 的 `M3TypographyTokens`
-//! （Apache-2.0，© 2026 Glavo），数值与 Compose Material 3 一致；
-//! 同时兼容 material-web 的 `md-sys-typescale` 令牌命名。
-//! 参考: <https://m3.material.io/styles/typography/type-scale-tokens>
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/tokens/M3TypographyTokens.java
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/tokens/M3TextStyle.java
 
 use crate::tokens::TypographyTokens;
 use gpui::{FontWeight, Pixels, Styled, px};
 
-/// 单个字体样式令牌。
 #[derive(Clone, Copy, Debug)]
 pub struct TypeStyle {
-    /// 字号。
     pub size: Pixels,
-    /// 行高。
+
     pub line_height: Pixels,
-    /// 字重。
+
     pub weight: FontWeight,
-    /// 字距（px）。gpui 暂不支持字距渲染，此字段为令牌数据预留。
+
     pub tracking: f32,
 }
 
 impl TypeStyle {
-    /// 创建字体样式令牌（tracking 默认为 0）。
     pub const fn new(size: f32, line_height: f32, weight: FontWeight) -> Self {
         Self {
             size: px(size),
@@ -32,7 +37,6 @@ impl TypeStyle {
         }
     }
 
-    /// 创建带字距的字体样式令牌。
     pub const fn with_tracking(
         size: f32,
         line_height: f32,
@@ -47,9 +51,6 @@ impl TypeStyle {
         }
     }
 
-    /// 把该字体令牌应用到任意 Styled 元素上。
-    ///
-    /// 注意：gpui 暂不支持字距，`tracking` 不参与渲染。
     pub fn apply<E: Styled>(&self, el: E) -> E {
         el.text_size(self.size)
             .line_height(self.line_height)
@@ -57,7 +58,6 @@ impl TypeStyle {
     }
 }
 
-/// MD3 完整 Type Scale（display / headline / title / body / label × large / medium / small）。
 #[derive(Clone, Copy, Debug)]
 pub struct TypeScale {
     pub body_large_emphasized: TypeStyle,
@@ -75,47 +75,45 @@ pub struct TypeScale {
     pub title_large_emphasized: TypeStyle,
     pub title_medium_emphasized: TypeStyle,
     pub title_small_emphasized: TypeStyle,
-    /// display-large。
+
     pub display_large: TypeStyle,
-    /// display-medium。
+
     pub display_medium: TypeStyle,
-    /// display-small。
+
     pub display_small: TypeStyle,
-    /// headline-large。
+
     pub headline_large: TypeStyle,
-    /// headline-medium。
+
     pub headline_medium: TypeStyle,
-    /// headline-small。
+
     pub headline_small: TypeStyle,
-    /// title-large。
+
     pub title_large: TypeStyle,
-    /// title-medium。
+
     pub title_medium: TypeStyle,
-    /// title-small。
+
     pub title_small: TypeStyle,
-    /// body-large。
+
     pub body_large: TypeStyle,
-    /// body-medium。
+
     pub body_medium: TypeStyle,
-    /// body-small。
+
     pub body_small: TypeStyle,
-    /// label-large。
+
     pub label_large: TypeStyle,
-    /// label-medium。
+
     pub label_medium: TypeStyle,
-    /// label-small。
+
     pub label_small: TypeStyle,
 }
 
 impl Default for TypeScale {
-    /// 2021 基线字型比例（与 material-web `md-sys-typescale` 一致）。
     fn default() -> Self {
         Self::baseline()
     }
 }
 
 impl TypeScale {
-    /// 基线（2021）字型比例。
     pub fn baseline() -> Self {
         Self {
             body_large_emphasized: TypographyTokens::BODY_LARGE_EMPHASIZED.type_style(1.0),
@@ -163,7 +161,7 @@ mod tests {
         assert_eq!(t.display_large.size, px(57.));
         assert_eq!(t.label_large.size, px(14.));
         assert_eq!(t.label_large.weight, FontWeight::MEDIUM);
-        // m3fx：titleSmall 与 labelLarge 同值（14/20/500/0.10）
+
         assert_eq!(t.title_small.size, t.label_large.size);
         assert_eq!(t.title_small.line_height, t.label_large.line_height);
     }

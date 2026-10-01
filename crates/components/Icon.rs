@@ -1,28 +1,33 @@
-//! Material Symbols Rounded SVG 图标，默认使用 24px、400 字重和非填充变体。
-//! 应用需通过 Md3Assets 或其 with_fallback 组合注册内嵌资源。
-//!
-//!     use material3_gpui::icon::{Icon, IconName, materialsymbolsrounded::Home};
-//!
-//!     let home = Icon::new(Home);
-//!     let favorite = Icon::new(IconName::Favorite);
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use gpui::{App, Hsla, IntoElement, Pixels, RenderOnce, SharedString, Styled, Window, px, svg};
 
 macro_rules! material_symbols_rounded {
     ($($variant:ident => $name:literal,)*) => {
-        /// 内嵌的 Rounded 图标名称；Custom 按官方名称查找同一套 SVG。
+
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
         pub enum IconName {
             $(
                 #[doc = $name]
                 $variant,
             )*
-            /// 官方图标名称；未知名称没有对应资源，不会回退到字体。
+
             Custom(&'static str),
         }
 
         impl IconName {
-            /// 返回官方名称，不包含资源路径或文件扩展名。
+
             pub const fn name(self) -> &'static str {
                 match self {
                     $(Self::$variant => $name,)*
@@ -30,7 +35,6 @@ macro_rules! material_symbols_rounded {
                 }
             }
 
-            /// 按官方名称查找内嵌图标；未知名称返回 None。
             pub fn from_name(name: &str) -> Option<Self> {
                 match name {
                     $($name => Some(Self::$variant),)*
@@ -39,7 +43,6 @@ macro_rules! material_symbols_rounded {
             }
         }
 
-        /// 全部内嵌图标，按官方名称排序；不包含 Custom。
         pub const ALL_ICONS: &[IconName] = &[$(IconName::$variant,)*];
     };
 }
@@ -4197,27 +4200,22 @@ material_symbols_rounded! {
     ZoomOutMap => "zoom_out_map",
 }
 
-/// 内嵌 Rounded 图标的数量。
 pub const ICON_COUNT: usize = ALL_ICONS.len();
 
-/// 直接导入 Rounded 图标枚举项，例如 materialsymbolsrounded::Home。
 pub mod materialsymbolsrounded {
     pub use super::IconName::*;
 }
 
 impl IconName {
-    /// 返回官方名称；保留旧接口，但渲染不再使用字体连字。
     pub const fn ligature(&self) -> &'static str {
         self.name()
     }
 
-    /// 返回 Md3Assets 提供的 SVG 资源路径。
     pub fn path(self) -> SharedString {
         format!("md3-icons/materialsymbolsrounded/{}.svg", self.name()).into()
     }
 }
 
-/// SVG 图标元素；默认 24dp，未指定颜色时继承父元素文字颜色。
 #[derive(IntoElement)]
 pub struct Icon {
     name: IconName,
@@ -4226,7 +4224,6 @@ pub struct Icon {
 }
 
 impl Icon {
-    /// 创建图标；资源由应用注册的 Md3Assets 提供。
     pub fn new(name: IconName) -> Self {
         Self {
             name,
@@ -4235,18 +4232,15 @@ impl Icon {
         }
     }
 
-    /// 按官方名称创建 SVG 图标，兼容旧接口；不接受字体码点。
     pub fn ligature(name: &'static str) -> Self {
         Self::new(IconName::Custom(name))
     }
 
-    /// 设置图标的正方形尺寸，默认 24dp。
     pub fn size(mut self, size: Pixels) -> Self {
         self.size = size;
         self
     }
 
-    /// 设置图标颜色；省略时继承父元素文字颜色。
     pub fn color(mut self, color: Hsla) -> Self {
         self.color = Some(color);
         self

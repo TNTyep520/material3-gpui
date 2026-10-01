@@ -1,17 +1,16 @@
-//! MD3 Radio（对应 material-web 的 `md-radio`）。
-//!
-//! 规格：外圈 20dp、边框 2dp、选中内点 10dp；40dp 圆形触摸目标 + 状态层。
-//!
-//! 交互动画移植自 [m3fx](https://github.com/Glavo/m3fx) 的
-//! `M3RadioButtonSkin`（Apache-2.0，© 2026 Glavo）：内点缩放由弹簧
-//! （defaultEffects）驱动；选择控件只有状态层、无涟漪。
-//!
-//! ```ignore
-//! RadioButton::new("plan-basic")
-//!     .selected(plan == Plan::Basic)
-//!     .on_select(|_, _| {})
-//!     .build(cx)   // -> Entity<RadioState>
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/Glavo/m3fx/blob/main/src/main/java/org/glavo/m3fx/skins/M3RadioButtonSkin.java
 
 use std::rc::Rc;
 use std::time::Instant;
@@ -28,7 +27,6 @@ use crate::theme::ActiveTheme;
 
 type SelectHandler = Rc<dyn Fn(&mut Window, &mut App) + 'static>;
 
-/// MD3 单选按钮构建器（`.build(cx)` 产出 [`RadioState`]）。
 pub struct RadioButton {
     id: ElementId,
     selected: bool,
@@ -36,19 +34,17 @@ pub struct RadioButton {
     on_select: Option<SelectHandler>,
 }
 
-/// 单选按钮的有状态部分。
 pub struct RadioState {
     id: ElementId,
     selected: bool,
     disabled: bool,
     on_select: Option<SelectHandler>,
-    /// 0 = 未选中，1 = 选中（内点缩放）。
+
     progress: Animatable,
     surface: InteractiveSurface,
 }
 
 impl RadioButton {
-    /// 创建单选按钮构建器。
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
@@ -58,30 +54,25 @@ impl RadioButton {
         }
     }
 
-    /// 初始选中态。
     pub fn selected(mut self, selected: bool) -> Self {
         self.selected = selected;
         self
     }
 
-    /// 设置禁用态。
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
 
-    /// 设置 AndroidX 对应的 enabled 状态。
     pub fn enabled(self, enabled: bool) -> Self {
         self.disabled(!enabled)
     }
 
-    /// 被点击（选中）时触发。
     pub fn on_select(mut self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
         self.on_select = Some(Rc::new(handler));
         self
     }
 
-    /// 构建有状态组件实体。
     pub fn build(self, cx: &mut App) -> Entity<RadioState> {
         let selected = self.selected;
         cx.new(|_| RadioState {
@@ -96,12 +87,10 @@ impl RadioButton {
 }
 
 impl RadioState {
-    /// 当前选中态。
     pub fn selected(&self) -> bool {
         self.selected
     }
 
-    /// 设置选中态（带动画）。
     pub fn set_selected(&mut self, selected: bool, window: &mut Window, cx: &mut Context<Self>) {
         if self.selected == selected {
             return;
@@ -231,32 +220,30 @@ pub use appearance::RadioStyle;
 mod appearance {
     use crate::theme::TokenSet;
     use gpui::{Hsla, Pixels, px};
-    /// MD3 RadioButton 样式。
+
     #[derive(Clone, Copy, Debug)]
     pub struct RadioStyle {
-        /// 未选中外圈色。
         pub ring_off: Hsla,
-        /// 选中外圈色。
+
         pub ring_on: Hsla,
-        /// 内点色。
+
         pub dot: Hsla,
-        /// 外圈直径。
+
         pub ring_size: Pixels,
-        /// 边框宽度。
+
         pub border_width: Pixels,
-        /// 内点直径。
+
         pub dot_size: Pixels,
-        /// 触摸目标边长。
+
         pub touch_target: Pixels,
-        /// 状态层基色。
+
         pub state_layer_color: Hsla,
-        /// 按压档状态层不透明度。
+
         pub state_layer_opacity: f32,
-        /// 禁用态内容色。
+
         pub disabled_content: Hsla,
     }
     impl RadioStyle {
-        /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet, disabled: bool) -> Self {
             let colors = &tokens.colors;
             let state = &tokens.state_layer;

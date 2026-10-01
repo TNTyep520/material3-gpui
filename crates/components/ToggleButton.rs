@@ -1,16 +1,16 @@
-//! MD3 ToggleButton（Expressive 带标签切换按钮）。
-//!
-//! 规格:高度 40dp、全圆角、图标 + 标签;选中态与文字色绑定
-//! FilledTonal 图标按钮令牌,未选中文字色绑定 Standard 图标按钮令牌。
-//! 交互(涟漪/弹簧)与 [`IconButton`](crate::components::IconButton) 一致。
-//!
-//! ```ignore
-//! ToggleButton::new("bold", "Bold")
-//!     .icon(IconName::Edit)
-//!     .checked(self.bold)
-//!     .on_change(|checked, _, cx| { /* ... */ })
-//!     .build(cx)   // -> Entity<ToggleButtonState>
-//! ```
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt
 
 use std::rc::Rc;
 use std::time::Instant;
@@ -30,48 +30,42 @@ use crate::tokens::SmallIconButtonTokens;
 type ChangeHandler = Rc<dyn Fn(bool, &mut Window, &mut App) + 'static>;
 type StyleOverride = Rc<dyn Fn(&mut ToggleButtonStyle)>;
 
-/// AndroidX 带标签切换按钮的外观变体。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ToggleButtonVariant {
-    /// 默认实心变体。
     #[default]
     Filled,
-    /// 浮起变体。
+
     Elevated,
-    /// 次级色调变体。
+
     FilledTonal,
-    /// 描边变体。
+
     Outlined,
 }
 
-/// 切换按钮样式(由令牌推导,可用 [`ToggleButton::style`] 覆盖)。
 #[derive(Clone, Debug)]
 pub struct ToggleButtonStyle {
-    /// 容器色(`None` 为透明,未选中态)。
     pub container_color: Option<Hsla>,
-    /// 描边颜色；仅描边变体使用。
+
     pub outline_color: Option<Hsla>,
-    /// 内容(图标/标签)色。
+
     pub content_color: Hsla,
-    /// 容器高度。
+
     pub height: Pixels,
-    /// 左右内边距。
+
     pub horizontal_padding: Pixels,
-    /// 图标与标签间距。
+
     pub gap: Pixels,
-    /// 圆角(全圆胶囊)。
+
     pub corner_radius: Pixels,
-    /// 图标尺寸。
+
     pub icon_size: Pixels,
 }
 
 impl ToggleButtonStyle {
-    /// 由令牌推导默认样式。`checked` 为选中态。
     pub fn resolve(tokens: &TokenSet, checked: bool) -> Self {
         Self::resolve_variant(tokens, ToggleButtonVariant::Filled, checked)
     }
 
-    /// 按 AndroidX 变体和 checked 状态解析颜色与形状。
     pub fn resolve_variant(tokens: &TokenSet, variant: ToggleButtonVariant, checked: bool) -> Self {
         let colors = &tokens.colors;
         let (container_color, content_color, outline_color) = match (variant, checked) {
@@ -115,17 +109,16 @@ impl ToggleButtonStyle {
             outline_color,
             content_color,
             height: SmallIconButtonTokens::CONTAINER_HEIGHT.pixels(),
-            // 带标签形态的小尺寸留白(图标按钮令牌的 Leading/Trailing 只覆盖纯图标形态)
+
             horizontal_padding: px(16.),
             gap: px(8.),
             corner_radius: tokens.shapes.full,
-            // 带标签形态图标小于纯图标按钮的 24dp
+
             icon_size: px(18.),
         }
     }
 }
 
-/// MD3 带标签切换按钮。
 pub struct ToggleButton {
     id: ElementId,
     label: SharedString,
@@ -137,7 +130,6 @@ pub struct ToggleButton {
     style_override: Option<StyleOverride>,
 }
 
-/// 切换按钮的实体状态。
 pub struct ToggleButtonState {
     id: ElementId,
     label: SharedString,
@@ -164,42 +156,35 @@ impl ToggleButton {
         }
     }
 
-    /// 可选前置图标。
     pub fn icon(mut self, icon: IconName) -> Self {
         self.icon = Some(icon);
         self
     }
 
-    /// 初始选中态。
     pub fn checked(mut self, checked: bool) -> Self {
         self.checked = checked;
         self
     }
 
-    /// 设置禁用态。
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
 
-    /// 设置 AndroidX 对应的 enabled 状态。
     pub fn enabled(self, enabled: bool) -> Self {
         self.disabled(!enabled)
     }
 
-    /// 设置 AndroidX 切换按钮变体。
     pub fn variant(mut self, variant: ToggleButtonVariant) -> Self {
         self.variant = variant;
         self
     }
 
-    /// 切换回调(携带新选中态)。
     pub fn on_change(mut self, handler: impl Fn(bool, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
     }
 
-    /// 设置切换回调；传递新的 checked 值。
     pub fn on_checked_change(
         self,
         handler: impl Fn(bool, &mut Window, &mut App) + 'static,
@@ -207,13 +192,11 @@ impl ToggleButton {
         self.on_change(handler)
     }
 
-    /// 覆盖样式。
     pub fn style(mut self, style_override: impl Fn(&mut ToggleButtonStyle) + 'static) -> Self {
         self.style_override = Some(Rc::new(style_override));
         self
     }
 
-    /// 构建有状态组件实体。
     pub fn build(self, cx: &mut App) -> Entity<ToggleButtonState> {
         cx.new(|_| ToggleButtonState {
             id: self.id,
@@ -235,30 +218,25 @@ macro_rules! toggle_button_variant {
         pub struct $name(ToggleButton);
 
         impl $name {
-            /// 创建带文字内容的切换按钮。
             pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
                 Self(ToggleButton::new(id, label).variant(ToggleButtonVariant::$variant))
             }
 
-            /// 设置图标。
             pub fn icon(mut self, icon: IconName) -> Self {
                 self.0 = self.0.icon(icon);
                 self
             }
 
-            /// 设置选中状态。
             pub fn checked(mut self, checked: bool) -> Self {
                 self.0 = self.0.checked(checked);
                 self
             }
 
-            /// 设置启用状态。
             pub fn enabled(mut self, enabled: bool) -> Self {
                 self.0 = self.0.enabled(enabled);
                 self
             }
 
-            /// 设置选中变化回调。
             pub fn on_checked_change(
                 mut self,
                 handler: impl Fn(bool, &mut Window, &mut App) + 'static,
@@ -267,7 +245,6 @@ macro_rules! toggle_button_variant {
                 self
             }
 
-            /// 创建可渲染的切换按钮实体。
             pub fn build(self, cx: &mut App) -> Entity<ToggleButtonState> {
                 self.0.build(cx)
             }
@@ -280,12 +257,10 @@ toggle_button_variant!(FilledTonalToggleButton, FilledTonal);
 toggle_button_variant!(OutlinedToggleButton, Outlined);
 
 impl ToggleButtonState {
-    /// 当前选中态。
     pub fn checked(&self) -> bool {
         self.checked
     }
 
-    /// 以编程方式设置选中态(不触发切换回调)。
     pub fn set_checked(&mut self, checked: bool, cx: &mut Context<Self>) {
         if self.checked != checked {
             self.checked = checked;
