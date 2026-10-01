@@ -3,56 +3,58 @@
 
 # material3-gpui
 
-Based on [GPUI](https://github.com/zed-industries/zed/tree/main/crates/gpui), the GPU-accelerated UI framework from Zed, this is a **Material Design 3** component library. Component specs follow Google’s [material-web](https://github.com/material-components/material-web); the token, motion and theme architecture is ported from [m3fx](https://github.com/Glavo/m3fx) (Apache-2.0).
+基于 [GPUI](https://docs.rs/gpui)（Zed 的 GPU 加速 UI 框架）的 **Material Design 3** 组件库，并已移植 **Material Design 3 Expressive** 的核心组件。纯 gpui 实现，无中间层渲染依赖。
 
-Pure gpui implementation for rendering; dynamic color uses the `mcu-*` algorithm crates (Material color utilities).
+- 令牌（tokens）、运动（motion）与主题架构移植自 [m3fx](https://github.com/Glavo/m3fx)（Apache-2.0）
+- Expressive 组件（加载指示器、波浪进度条等）对齐 [androidx compose material3](https://github.com/androidx/androidx/tree/androidx-main/compose/material3/material3) 的同名组件；组件令牌值直接取自其 `Tokens.kt`
+- 动态色使用 `mcu-*` 系列算法库（material-color-utilities 的 Rust 实现，HCT 色彩空间）
 
-## Features
+## 特性
 
-- **m3fx token system** (`Profile` × `TokenSet`)
-  - `TokenSet`: color / typography / shape / elevation / motion / state-layer / component token groups with builder-level overrides
-  - `Profile::Baseline2021` (baseline shape scale, type scale and motion scheme)
-  - Dynamic color: `Theme::from_seed(seed, mode, profile)` via material-color-utilities (HCT), reproducing the material-web baseline palette
-- **m3fx motion system** (`material3_gpui::motion`)
-  - `MotionScheme`: six semantic roles (fast/default/slow × effects/spatial), standard preset
-  - Closed-form damped spring solver with retargetable `Animatable` values (velocity-preserving retargeting)
-  - 13 MD3 easing curves incl. the three-segment emphasized curve; `reduce_motion` support
-- **m3fx interaction behaviors**: spring-animated state layers, pointer ripples, spring-driven switch / checkbox / radio / tab-indicator animations
-- **Window-level overlay system** (`material3_gpui::overlay`): `OverlayHost` + `show_snackbar` / `show_menu` / `show_tooltip`
-- **Font-glyph icons** (m3fx `M3Icon` style): `Icon` renders Material Symbols **Rounded ligature names**; the bundled Regular-weight TTF carries the full 2500+ glyph set, so any icon works via `Icon::new(IconName::Custom("bolt"))` with no subsetting or extra downloads
-- **Component style layer** (`material3_gpui::styles`): one `XxxStyle` struct per component (geometry, shape, colors, typography) with token-derived defaults — renders consume styles instead of hardcoding them; entity components accept `.style(|s| …)` instance overrides
-- **Components** (aligned with material-web component specs)
+- **令牌系统**（`Profile` × `TokenSet`）
+  - `TokenSet`：颜色 / 字体排印 / 形状 / 阴影 / 运动 / 状态层 / 组件令牌组，支持 builder 级覆盖
+  - `Profile::Baseline2021`：基线形状、字阶与运动方案
+  - 动态色：`Theme::from_seed(seed, mode, profile)`，完整复现 MD3 基线调色板
+- **运动系统**（`material3_gpui::motion`）
+  - `MotionScheme`：六种语义角色（fast/default/slow × effects/spatial），内置 `standard()` 与 `expressive()` 两套预设
+  - 解析闭式阻尼弹簧求解器，支持保速度重定向的 `Animatable` 值
+  - 13 条 MD3 缓动曲线（含三段式 emphasized 曲线），支持 `reduce_motion`
+- **交互行为**：弹簧驱动的状态层（hover/press）、指针涟漪、开关 / 复选框 / 单选 / 标签指示器动画
+- **窗口级弹层系统**（`material3_gpui::overlay`）：`OverlayHost` + `show_snackbar` / `show_menu` / `show_tooltip`
+- **字体字形图标**：`Icon` 渲染 Material Symbols Rounded 连字名，内嵌完整字重（2500+ 图标，无需额外下载）
+- **样式层**（`material3_gpui::styles`）：每个组件一个 `XxxStyle` 结构（几何、形状、颜色、字型），默认值由令牌推导
+- **MD3 Expressive 组件**：
+  - `LoadingIndicator`：7 形状连续变形动画（expressive default spatial 缓动 + sin² 呼吸缩放），支持 `CONTAINED` 变体
+  - `LinearWavyProgressIndicator` / `CircularWavyProgressIndicator`：确定性（相位 1λ/s 推进）与不确定性（1750ms 双段扫掠 / 6000ms 旋转扫掠）波浪进度
+  - `FabMenu`：展开 / 收起弹簧动画（defaultSpatial / fastSpatial）的 FAB 菜单，内置 Add/Close 切换钮
+  - `FloatingToolbar`：standard / vibrant 双配色浮动工具栏（横向 / 纵向，48dp 槽位）
+  - `Carousel`：multi-browse 排布轮播（选中 large / 相邻 medium / 其余 small）
+  - `MediumFlexibleTopAppBar` / `LargeFlexibleTopAppBar`：可折叠弹性应用栏
+- **基准 MD3 组件**：
 
-  | Category | Components |
+  | 分类 | 组件 |
   |---|---|
-  | Buttons | `Button` (filled / tonal / elevated / outlined / text), `IconButton` (4 variants + toggle), `Fab` (3 sizes / 4 colors / extended) |
-  | Selection | `Checkbox`, `RadioButton`, `Switch`, `Slider` (M3 refreshed visuals), `Chip` (assist / filter / input / suggestion) |
-  | Containers | `Card` (elevated / filled / outlined), `Dialog`, `List` / `ListItem`, `Divider` |
-  | Navigation | `TabBar` / `Tab` (spring-sliding indicator), `TopAppBar`, `NavigationBar`, `NavigationRail`, `NavigationDrawer` (+ sections), `NavigationItemSpec` |
-  | Input | `TextField` (outlined, floating label, helper/error text, focus morph) |
-  | Overlays | `Snackbar`, `Menu`, `Tooltip` (via `overlay::host`) |
-  | Progress | `LinearProgress` (determinate / indeterminate), `CircularProgress` |
+  | 按钮 | `Button`（filled / tonal / elevated / outlined / text）、`ToggleButton`、`SplitButton`、`ButtonGroup`、`IconButton`（4 变体 + 开关型）、`Fab`（3 尺寸 / 4 配色 / 扩展型） |
+  | 选择 | `Checkbox`、`RadioButton`、`Switch`、`Slider`（含纵向与区间 `RangeSlider`）、`Chip`（assist / filter / input / suggestion）、`SegmentedButton` |
+  | 容器 | `Card`（elevated / filled / outlined）、`Dialog`、`List` / `ListItem`、`Divider`、`Scaffold` |
+  | 导航 | `TabBar` / `TabRow`（primary / secondary / scrollable）、`TopAppBar`（5 变体 + flexible）、`BottomAppBar`、`NavigationBar`、`NavigationRail`、`NavigationDrawer`、`WideNavigationRail` |
+  | 输入 | `TextField`（outlined、浮动标签、helper/error）、`SecureTextField`、`SearchBar`、`ExposedDropdownMenu` |
+  | 弹层 | `Snackbar`、`Menu`、`Tooltip`（经窗口 `overlay::host`）、`ModalBottomSheet`、`BottomSheetScaffold` |
+  | 进度 | `LinearProgress`、`CircularProgress`、波浪进度（见上） |
+  | 其他 | `Badge` / `BadgedBox`、`DatePicker`、`TimePicker`、`TimeInput`、`SwipeToDismissBox`、`Scrollbar` |
 
-- Embedded Material Symbols icon subset (`Icon` / `IconName`, Apache-2.0)
+## 快速开始
 
-## Quick Start
+`Cargo.toml`（需要 Rust 1.85+，edition 2024）：
 
 ```toml
 [dependencies]
-gpui = { git = "https://github.com/zed-industries/zed" }
-material3-gpui = { path = "../material3-gpui" }
-
-# The application entry point also needs a platform layer:
-gpui_platform = { git = "https://github.com/zed-industries/zed", features = [
-    "font-kit", "x11", "wayland", "runtime_shaders",
-] }
+gpui = "0.2"
+material3-gpui = "0.1"
 ```
-
-> Note: zed does not tag gpui releases. It is recommended to pin the same `rev = "<commit>"` for both `gpui` and `gpui_platform` in your `Cargo.toml`.
 
 ```rust
 use gpui::*;
-use gpui_platform::application;
 use material3_gpui::prelude::*;
 
 struct MyApp;
@@ -71,16 +73,16 @@ impl Render for MyApp {
                     .filled()
                     .leading_icon(IconName::Favorite)
                     .on_click(|_, _, _| println!("clicked!"))
-                    .build(cx), // Entity components: build once, keep the handle
+                    .build(cx), // 实体组件：构建一次，长期持有句柄
             )
     }
 }
 
 fn main() {
-    application()
-        .with_assets(Md3Assets)   // Icon assets (use Md3Assets::with_fallback if you already have your own AssetSource)
-        .run(|cx| {
-            material3_gpui::init(cx);   // Install the default light theme
+    Application::new()
+        .with_assets(Md3Assets) // 安装内嵌图标资源
+        .run(|cx: &mut App| {
+            material3_gpui::init(cx); // 注册内嵌字体并安装默认（亮色）主题
             cx.open_window(WindowOptions::default(), |_, cx| cx.new(|_| MyApp))
                 .unwrap();
             cx.activate(true);
@@ -88,95 +90,89 @@ fn main() {
 }
 ```
 
-## Run the demo
+## 运行组件展厅（catalog）
 
 ```bash
-cargo run --example demo
+cargo run -p catalog
 ```
 
-The demo window shows all components; the header switch toggles light/dark (exact MD3 baseline dark palette), and the text-field page applies a live dynamic-color seed. It also demonstrates spring ripples, state layers, tab-indicator motion and the overlay system.
+catalog 覆盖全部组件的变体与状态对比，包含 MD3 Expressive 页（变形加载指示器、波浪进度、FabMenu、浮动工具栏、轮播等），支持亮 / 暗主题切换与种子色实时动态色。
 
-> On the first build, cargo will fetch and compile the full gpui repository (a large dependency). This may take a while.
+> 首次构建需要编译 gpui 及其依赖，耗时较长。
 
-## Theme customization
+## 主题定制
 
 ```rust
 use material3_gpui::prelude::*;
 
-// Baseline light/dark (seed #6750A4, Baseline2021)
+// 基线亮 / 暗色（种子色 #6750A4）
 Theme::set(cx, Theme::dark());
 
-// Dynamic color from a seed
+// 由种子色生成动态色
 Theme::set(cx, Theme::from_seed(0x006A6A, ThemeMode::Light, Profile::Baseline2021));
 
-// Override whole token groups via the builder
+// 经 builder 覆盖令牌组；切换到 Expressive 运动方案
 let tokens = TokenSet::builder(Profile::Baseline2021, cx.theme().colors().clone())
-    .with_motion(MotionScheme::standard())
+    .with_motion(MotionScheme::expressive())
     .build();
 let mut theme = Theme::light();
 theme.set_token_set(tokens);
 Theme::set(cx, theme);
 ```
 
-Components read the global theme from `cx.theme()` during `render` (`theme.colors()`, `theme.typography()`, `theme.shapes()`, `theme.motion()`, ...). After replacing the theme, trigger a redraw with `cx.refresh_windows()`.
+组件在 `render` 时经 `cx.theme()` 读取全局主题（`theme.colors()`、`theme.typography()`、`theme.shapes()`、`theme.motion()` 等）。替换主题后调用 `cx.refresh_windows()` 触发重绘。
 
-## Stateful components
+## 有状态组件
 
-Interactive components own their animation state, so they are entities created once and kept:
+交互组件自带动画状态，属于实体（Entity），构建一次并长期持有：
 
 ```rust
-// Create (in new(), or the first render — never every frame):
+// 创建（在 new() 或首次 render，切勿每帧构建）
 let checkbox = Checkbox::new("agree").build(cx);
 let switch = Switch::new("wifi").on_change(|checked, _, _| {}).build(cx);
+let fab_menu = FabMenu::new("menu").action(fab).build(cx); // -> Entity<FabMenuState>
 
-// Render: entity handles are elements
+// 渲染：实体句柄即元素
 div().child(checkbox.clone()).child(switch.clone())
 ```
 
-Simple containers (`Card`, `Divider`, `List` / `ListItem`, `Dialog`, progress indicators) remain stateless `RenderOnce` elements.
+简单容器（`Card`、`Divider`、`List` / `ListItem`、`Dialog`、进度指示器、`Carousel` 等）保持无状态 `RenderOnce`。
 
-## Design mapping
+## 字体（内嵌 TTF，应用侧零配置）
 
-| material3-gpui | material-web | Key specs |
-|---|---|---|
-| `Button` | `md-filled-button`, etc. | 40dp height, capsule shape, label-large, 24dp horizontal padding |
-| `IconButton` | `md-icon-button`, etc. | 40dp container, 24dp icon |
-| `Fab` | `md-fab` | 40 / 56 / 96dp, 12 / 16 / 28dp corner radius, Level3 shadow |
-| `Checkbox` | `md-checkbox` | 18dp box, 2dp corner radius, 40dp touch target |
-| `RadioButton` | `md-radio` | 20dp outer ring, 10dp inner dot |
-| `Switch` | `md-switch` | 52×32dp track, 16 / 24dp thumb |
-| `Slider` | `md-slider` | M3 refreshed: 16dp track + 4×44dp thumb |
-| `Chip` | `md-*-chip` | 32dp height, 8dp corner radius |
-| `Card` | labs card | 12dp corner radius, elevated uses Level1 shadow |
-| `Dialog` | `md-dialog` | 280–560dp width, 28dp corners, Level3, 32% scrim |
-| `ListItem` | `md-list-item` | single line 56dp / two-line 72dp |
-| `TabBar` | `md-tabs` | 48dp height (64dp with icon), 3dp indicator |
-| `LinearProgress` | `md-linear-progress` | 4dp track |
+`material3_gpui::init()` 自动注册内嵌字体：
 
-## Fonts (embedded TTF, zero app code)
+- **Roboto** Regular / Medium（Apache-2.0）
+- **Material Symbols Rounded** Regular 字重实例（约 1.2 MB，Apache-2.0，按官方自托管参数 `opsz,wght,FILL,GRAD@24,400,0,0` 实例化，含完整字形集）
 
-`material3_gpui::init()` registers the bundled fonts automatically — plain **TTF**, no compression or subsetting:
+图标经字体连字渲染，任意图标可用 `Icon::new(IconName::Custom("bolt"))` 使用。非拉丁文字回退到系统字体（MD3 推荐 Noto 系列）。
 
-- **Roboto** Regular / Medium (Apache-2.0)
-- **Material Symbols Rounded**, Regular weight instance (~1.2 MB, Apache-2.0) — full glyph set, instantiated per the official Material Symbols self-hosting guide (`opsz,wght,FILL,GRAD@24,400,0,0`)
+## 项目结构
 
-Icon rendering uses font glyphs (ligature names, m3fx `M3Icon` style). Any of the 2500+ icons works via `Icon::new(IconName::Custom("bolt"))` since the bundled font carries the full glyph set.
+```
+crates/                  库源码（[lib] path = crates/material3_gpui.rs）
+  components/            组件实现（含 Expressive.rs —— MD3 Expressive 组件）
+  tokens/                组件令牌（对齐 compose material3 Tokens.kt）
+  motion/                运动系统（弹簧 / 缓动 / 运动方案）
+  theme/                 主题（颜色方案 / 令牌集 / 字阶 / 形状 / 动态色）
+  overlay（components）   窗口级弹层宿主
+catalog/                 组件展厅应用（16+ 演示页）
+```
 
-Note: only Regular/Medium weights of Roboto are bundled — text styled at 600/700 falls back to the nearest available weight. Non-Latin scripts fall back to system fonts (MD3 recommends the Noto collection).
+## 已知限制 / 路线图
 
-## Known limitations / roadmap
+- [ ] 键盘焦点环与无障碍（focus-visible 状态层、键盘激活）
+- [ ] `TextField` 的 IME 组合输入；`Menu` 键盘导航
+- [ ] `Carousel` 吸附与排布插值动画；`LoadingIndicator` 的角特征级 morph（当前为角度采样近似）
+- [ ] `SplitButton` / `ButtonGroup` 的 Expressive 内角形变
+- [ ] 其余组件的样式层（`XxxStyle`）迁移
 
-- [ ] Keyboard focus ring and accessibility (focus-visible state layers, keyboard activation)
-- [ ] IME / marked-text input in `TextField`; keyboard navigation for `Menu`
-- [ ] Remaining m3fx families: segmented buttons, badges / avatars, color pickers, date & time pickers, TableView / TreeView / Carousel, SearchBar
-- [ ] Style-layer migration for the remaining components (Style structs exist; Button/Switch consume them today, migrate the rest)
-- [ ] Navigation indicator cross-item slide (currently centered on the selected item; see `TabBar` for the sliding pattern)
-- [ ] Per-component token coverage beyond the first-phase subset
-- [ ] Determinate mode for CircularProgress
-- [ ] Menu / tooltip flip-over when exceeding window bounds
-- [ ] Roboto SemiBold (600) is not registered by the demo (classic Roboto ships 400/500/700); 600-weight text snaps to the nearest available weight
-- [ ] The `check` glyph's optical center sits ~1.8px above the geometric em center (Material Symbols design, same on Android/m3fx)
+## 许可证
 
-## License
+Apache-2.0。内嵌图标来自 [Material Symbols](https://fonts.google.com/icons)（Apache-2.0）。
 
-Apache-2.0. Embedded icons are from [Material Symbols](https://fonts.google.com/icons) (Apache-2.0).
+### 致谢
+
+- [m3fx](https://github.com/Glavo/m3fx)（Apache-2.0）—— 令牌、运动与交互行为
+- [androidx compose material3](https://github.com/androidx/androidx/tree/androidx-main/compose/material3/material3)（Apache-2.0）—— 组件令牌值与 Expressive 组件规格
+- [material color utilities](https://github.com/material-foundation/material-color-utilities)（经 `mcu-*` crate）—— 动态色算法
