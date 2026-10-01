@@ -140,7 +140,7 @@ impl RenderOnce for Dialog {
             .shadow(style.elevation.shadows(style.shadow_color))
             .p(style.padding)
             .gap(style.gap)
-            .when_some(self.icon, |el, icon| {
+            .when_some(self.icon.clone(), |el, icon| {
                 el.child(
                     div()
                         .flex()

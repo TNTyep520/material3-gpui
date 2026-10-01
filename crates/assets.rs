@@ -14,8 +14,7 @@
 use anyhow::Result;
 use gpui::{AssetSource, SharedString};
 use std::borrow::Cow;
-use std::collections::BTreeMap;
-use std::sync::OnceLock;
+use std::path::PathBuf;
 
 pub const PROGRESS_ARC_SVG_PATH: &str = "md3-icons/progress_arc.svg";
 
@@ -32,73 +31,114 @@ static RESOURCES: &[(&str, &[u8])] = &[
     ),
 ];
 
-pub struct Md3Assets;
+pub struct Md3Assets {
+    icon_dirs: Vec<PathBuf>,
+}
+
+impl Default for Md3Assets {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl Md3Assets {
-    pub fn with_fallback(fallback: impl AssetSource) -> CombinedAssets {
+    pub fn new() -> Self {
+        Self {
+            icon_dirs: Vec::new(),
+        }
+    }
+
+    pub fn with_icon_dir(mut self, dir: impl Into<PathBuf>) -> Self {
+        self.icon_dirs.push(dir.into());
+        self
+    }
+
+    pub fn with_fallback(self, fallback: impl AssetSource + 'static) -> CombinedAssets {
         CombinedAssets {
+            inner: self,
             fallback: Box::new(fallback),
         }
     }
 
-    fn find(path: &str) -> Option<&'static [u8]> {
-        RESOURCES
-            .iter()
-            .find(|(name, _)| *name == path)
-            .map(|(_, bytes)| *bytes)
-            .or_else(|| {
-                let name = path
-                    .strip_prefix("md3-icons/materialsymbolsrounded/")?
-                    .strip_suffix(".svg")?;
-                rounded_resources().get(name).map(|svg| svg.as_bytes())
-            })
+    fn icon_file_name(path: &str) -> Option<&str> {
+        let name = path.strip_prefix("md3-icons/")?.strip_suffix(".svg")?;
+        if name.is_empty() || name.contains("..") || name.contains('/') || name.contains('\\') {
+            return None;
+        }
+        Some(name)
     }
 
-    fn paths(path: &str) -> Vec<SharedString> {
-        RESOURCES
+    fn find(&self, path: &str) -> Option<Cow<'static, [u8]>> {
+        if let Some((_, bytes)) = RESOURCES.iter().find(|(name, _)| *name == path) {
+            return Some(Cow::Borrowed(bytes));
+        }
+        let name = Self::icon_file_name(path)?;
+        for dir in &self.icon_dirs {
+            let candidate = dir.join(format!("{name}.svg"));
+            match std::fs::read(&candidate) {
+                Ok(bytes) => return Some(Cow::Owned(bytes)),
+                Err(err) if err.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(err) => {
+                    eprintln!("material3-gpui: failed to read icon {candidate:?}: {err}");
+                }
+            }
+        }
+        None
+    }
+
+    fn paths(&self, prefix: &str) -> Vec<SharedString> {
+        let mut out: Vec<SharedString> = RESOURCES
             .iter()
             .map(|(name, _)| SharedString::from(*name))
-            .chain(rounded_resources().keys().map(|name| {
-                SharedString::from(format!("md3-icons/materialsymbolsrounded/{name}.svg"))
-            }))
-            .filter(|name| name.starts_with(path))
-            .collect()
+            .filter(|name| name.starts_with(prefix))
+            .collect();
+        for dir in &self.icon_dirs {
+            let Ok(entries) = std::fs::read_dir(dir) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                let file_name = entry.file_name();
+                let Some(name) = file_name.to_str() else {
+                    continue;
+                };
+                if !name.ends_with(".svg") {
+                    continue;
+                }
+                let path = SharedString::from(format!("md3-icons/{name}"));
+                if path.starts_with(prefix) {
+                    out.push(path);
+                }
+            }
+        }
+        out
     }
 }
 
-fn rounded_resources() -> &'static BTreeMap<&'static str, &'static str> {
-    static SYMBOLS: OnceLock<BTreeMap<&'static str, &'static str>> = OnceLock::new();
-    SYMBOLS.get_or_init(|| {
-        include_str!("assets/material-symbols-rounded.data")
-            .lines()
-            .filter_map(|line| line.split_once('\t'))
-            .collect()
-    })
-}
 impl AssetSource for Md3Assets {
     fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
-        Ok(Md3Assets::find(path).map(Cow::Borrowed))
+        Ok(self.find(path))
     }
 
     fn list(&self, path: &str) -> Result<Vec<SharedString>> {
-        Ok(Md3Assets::paths(path))
+        Ok(self.paths(path))
     }
 }
 
 pub struct CombinedAssets {
+    inner: Md3Assets,
     fallback: Box<dyn AssetSource>,
 }
 
 impl AssetSource for CombinedAssets {
     fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
-        if let Some(bytes) = Md3Assets::find(path) {
-            return Ok(Some(Cow::Borrowed(bytes)));
+        if let Some(bytes) = self.inner.find(path) {
+            return Ok(Some(bytes));
         }
         self.fallback.load(path)
     }
 
     fn list(&self, path: &str) -> Result<Vec<SharedString>> {
-        let mut out = Md3Assets::paths(path);
+        let mut out = self.inner.paths(path);
         out.extend(self.fallback.list(path)?);
         Ok(out)
     }
@@ -107,49 +147,38 @@ impl AssetSource for CombinedAssets {
 #[cfg(test)]
 mod tests {
     use std::borrow::Cow;
-    use std::str::from_utf8;
 
     use anyhow::Result;
     use gpui::{AssetSource, SharedString};
-    use usvg::{Options, Tree};
 
-    use super::{Md3Assets, PROGRESS_ARC_SVG_PATH, rounded_resources};
-    use crate::icon::{ALL_ICONS, ICON_COUNT, IconName};
+    use super::{MATERIAL3_FAVICON_SVG_PATH, Md3Assets, PROGRESS_ARC_SVG_PATH};
 
     #[test]
-    fn every_icon_has_a_matching_embedded_svg() -> Result<()> {
-        assert_eq!(rounded_resources().len(), ICON_COUNT);
-        assert_eq!(
-            include_str!("assets/material-symbols-rounded.data")
-                .lines()
-                .count(),
-            ICON_COUNT
-        );
-        let assets = Md3Assets;
-        let listed = assets.list("md3-icons/materialsymbolsrounded/")?;
-        assert_eq!(listed.len(), ICON_COUNT);
-        for &icon in ALL_ICONS {
-            let path = icon.path();
-            let data = assets.load(&path)?.expect("embedded SVG");
-            let svg = from_utf8(&data)?;
-            let tree = Tree::from_data(&data, &Options::default())?;
-            assert!(tree.size().width() > 0.);
-            assert!(svg.starts_with("<svg "));
-            assert!(svg.ends_with("</svg>"));
-            assert!(listed.contains(&path));
-        }
+    fn embedded_resources_load() -> Result<()> {
+        let assets = Md3Assets::new();
         assert!(assets.load(PROGRESS_ARC_SVG_PATH)?.is_some());
+        assert!(assets.load(MATERIAL3_FAVICON_SVG_PATH)?.is_some());
+        assert!(assets.load("md3-icons/not_embedded.svg")?.is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn icon_dirs_load_on_demand_and_reject_traversal() -> Result<()> {
+        let dir = std::env::temp_dir().join(format!("md3-gpui-icons-{}", std::process::id()));
+        std::fs::create_dir_all(&dir)?;
+        std::fs::write(dir.join("bolt.svg"), "<svg></svg>")?;
+
+        let assets = Md3Assets::new().with_icon_dir(&dir);
+        let loaded = assets.load("md3-icons/bolt.svg")?;
+        assert_eq!(loaded.map(Cow::into_owned), Some(b"<svg></svg>".to_vec()));
+        assert!(assets.load("md3-icons/missing.svg")?.is_none());
+        assert!(assets.load("md3-icons/../bolt.svg")?.is_none());
         assert!(
             assets
-                .load("md3-icons/materialsymbolsrounded/not_an_icon.svg")?
-                .is_none()
+                .list("md3-icons/")?
+                .contains(&SharedString::from("md3-icons/bolt.svg"))
         );
-        assert!(
-            assets
-                .load("md3-icons/materialsymbolsrounded/../home.svg")?
-                .is_none()
-        );
-        assert!(assets.list("application/")?.is_empty());
+        std::fs::remove_dir_all(&dir)?;
         Ok(())
     }
 
@@ -171,16 +200,11 @@ mod tests {
 
     #[test]
     fn combined_assets_preserve_priority_and_fallback() -> Result<()> {
-        let assets = Md3Assets::with_fallback(Fallback);
-        let home = assets.load(&IconName::Home.path())?.expect("home SVG");
-        assert!(home.starts_with(b"<svg "));
+        let assets = Md3Assets::new().with_fallback(Fallback);
+        assert!(assets.load(PROGRESS_ARC_SVG_PATH)?.is_some());
         assert_eq!(
             assets.load("application/icon.svg")?.as_deref(),
             Some(b"fallback".as_slice())
-        );
-        assert_eq!(
-            assets.list("md3-icons/materialsymbolsrounded/")?.len(),
-            ICON_COUNT
         );
         assert_eq!(
             assets.list("application/")?,

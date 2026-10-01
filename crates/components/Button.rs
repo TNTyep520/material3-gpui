@@ -308,11 +308,11 @@ impl Render for ButtonState {
             base
         };
 
-        base.when_some(self.leading_icon, |el, icon| {
+        base.when_some(self.leading_icon.clone(), |el, icon| {
             el.child(Icon::new(icon).size(icon_size))
         })
         .child(self.label.clone())
-        .when_some(self.trailing_icon, |el, icon| {
+        .when_some(self.trailing_icon.clone(), |el, icon| {
             el.child(Icon::new(icon).size(icon_size))
         })
     }

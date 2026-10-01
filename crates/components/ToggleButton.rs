@@ -361,7 +361,7 @@ impl Render for ToggleButtonState {
             })
         };
 
-        base.when_some(self.icon, |el, icon| {
+        base.when_some(self.icon.clone(), |el, icon| {
             el.child(Icon::new(icon).size(style.icon_size))
         })
         .child(self.label.clone())

@@ -40,30 +40,31 @@ impl ButtonsExtendedPage {
         cx.new(|cx| {
             let weak = cx.entity().downgrade();
 
-            let menu =
-                MenuState::new()
-                    .item(MenuItem::new("Save as copy").icon(IconName::Edit).on_click(
-                        |window, cx| {
+            let menu = MenuState::new()
+                .item(
+                    MenuItem::new("Save as copy")
+                        .icon(IconName::new("edit"))
+                        .on_click(|window, cx| {
                             close_menu(window, cx);
                             show_snackbar(window, cx, Snackbar::new("Copied to drafts"), None);
-                        },
-                    ))
-                    .item(MenuItem::new("Duplicate row").icon(IconName::Add))
-                    .item(
-                        MenuItem::new("Discard")
-                            .icon(IconName::Delete)
-                            .on_click(|window, cx| {
-                                close_menu(window, cx);
-                                show_snackbar(window, cx, Snackbar::new("Discarded"), None);
-                            }),
-                    )
-                    .build(cx);
+                        }),
+                )
+                .item(MenuItem::new("Duplicate row").icon(IconName::new("add")))
+                .item(
+                    MenuItem::new("Discard")
+                        .icon(IconName::new("delete"))
+                        .on_click(|window, cx| {
+                            close_menu(window, cx);
+                            show_snackbar(window, cx, Snackbar::new("Discarded"), None);
+                        }),
+                )
+                .build(cx);
 
             let toggle_a = ToggleButton::new("toggle-bold", "Emphasis")
-                .icon(IconName::Star)
+                .icon(IconName::new("star"))
                 .build(cx);
             let toggle_b = ToggleButton::new("toggle-favorite", "Starred")
-                .icon(IconName::Favorite)
+                .icon(IconName::new("favorite"))
                 .checked(true)
                 .build(cx);
             let toggle_disabled = ToggleButton::new("toggle-disabled", "Locked")

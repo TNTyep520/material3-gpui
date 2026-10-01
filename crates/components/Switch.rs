@@ -338,7 +338,7 @@ impl Render for SwitchState {
 
         let (displayed_icon, icon_color) = if p >= 0.5 {
             (
-                IconName::Check,
+                IconName::new("check"),
                 if disabled {
                     colors.disabled_content(&state_layer)
                 } else {
@@ -347,7 +347,7 @@ impl Render for SwitchState {
             )
         } else {
             (
-                IconName::Close,
+                IconName::new("close"),
                 if disabled {
                     colors
                         .surface_container_highest

@@ -27,7 +27,7 @@ pub mod tokens;
 
 pub use assets::Md3Assets;
 pub use components::*;
-pub use icon::{ALL_ICONS, ICON_COUNT, Icon, IconName, materialsymbolsrounded};
+pub use icon::{Icon, IconName};
 pub use theme::{ActiveTheme, Theme, ThemeMode};
 
 use gpui::App;
@@ -45,7 +45,7 @@ pub mod prelude {
     pub use crate::assets::Md3Assets;
     pub use crate::components::*;
     pub use crate::fonts::TEXT_FONT_FAMILY;
-    pub use crate::icon::{ALL_ICONS, ICON_COUNT, Icon, IconName, materialsymbolsrounded};
+    pub use crate::icon::{Icon, IconName};
     pub use crate::motion::{
         Animatable, AnimatedComponent, AnimationDriver, Easing, MotionRole, MotionScheme,
         MotionSpec, SpringParameters,

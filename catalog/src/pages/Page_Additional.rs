@@ -42,32 +42,32 @@ impl AdditionalPage {
         cx.new(|cx| {
             let weak = cx.entity().downgrade();
 
-            let toolbar_add = IconButton::new("tool-add", IconName::Add)
+            let toolbar_add = IconButton::new("tool-add", IconName::new("add"))
                 .on_click(|_, window, cx| {
                     show_snackbar(window, cx, Snackbar::new("Toolbar: add"), None);
                 })
                 .build(cx);
-            let toolbar_edit = IconButton::new("tool-edit", IconName::Edit)
+            let toolbar_edit = IconButton::new("tool-edit", IconName::new("edit"))
                 .on_click(|_, window, cx| {
                     show_snackbar(window, cx, Snackbar::new("Toolbar: edit"), None);
                 })
                 .build(cx);
 
-            let fab_action_add = Fab::new("fab-action-add", IconName::Add)
+            let fab_action_add = Fab::new("fab-action-add", IconName::new("add"))
                 .color(FabColor::Secondary)
                 .on_click(|_, window, cx| {
                     show_snackbar(window, cx, Snackbar::new("Menu: new item"), None);
                 })
                 .build(cx);
-            let fab_action_settings = Fab::new("fab-action-settings", IconName::Settings)
+            let fab_action_settings = Fab::new("fab-action-settings", IconName::new("settings"))
                 .color(FabColor::Secondary)
                 .on_click(|_, window, cx| {
                     show_snackbar(window, cx, Snackbar::new("Menu: settings"), None);
                 })
                 .build(cx);
             let fab_menu = FabMenu::new("fab-menu")
-                .action(fab_action_add.clone())
-                .action(fab_action_settings.clone())
+                .action(fab_action_add)
+                .action(fab_action_settings)
                 .build(cx);
 
             let rail_home = Button::new("rail-home", "Home").text().build(cx);
@@ -76,7 +76,7 @@ impl AdditionalPage {
             let search_field = {
                 let weak = weak.clone();
                 TextField::new("search-query", "Search")
-                    .leading_icon(IconName::Search)
+                    .leading_icon(IconName::new("search"))
                     .on_value_change(move |value, _, cx| {
                         weak.update(cx, |page: &mut Self, cx: &mut Context<Self>| {
                             if page.query != value {

@@ -44,21 +44,21 @@ impl OverlaysPage {
         let menu = MenuState::new()
             .item(
                 MenuItem::new("Refresh the queue")
-                    .icon(IconName::ProgressActivity)
+                    .icon(IconName::new("progress_activity"))
                     .on_click(|window, cx| {
                         show_snackbar(window, cx, Snackbar::new("Queue refreshed"), None);
                     }),
             )
             .item(
                 MenuItem::new("Report a delivery")
-                    .icon(IconName::Info)
+                    .icon(IconName::new("info"))
                     .on_click(|window, cx| {
                         show_snackbar(window, cx, Snackbar::new("Thanks for the report!"), None);
                     }),
             )
             .item(
                 MenuItem::new("Open tracking sheet")
-                    .icon(IconName::Menu)
+                    .icon(IconName::new("menu"))
                     .on_click(|window, cx| {
                         show_snackbar(window, cx, Snackbar::new("Sheet opened"), None);
                     }),

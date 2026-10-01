@@ -536,7 +536,7 @@ impl Render for MenuState {
                     .flex_col()
                     .children(self.items.iter().enumerate().map(|(ix, item)| {
                         let label = item.label.clone();
-                        let icon = item.icon;
+                        let icon = item.icon.clone();
                         let handler = item.on_click.clone();
                         div()
                             .id(("menu-item", ix))

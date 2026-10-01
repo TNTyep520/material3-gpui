@@ -415,7 +415,7 @@ impl Render for TextFieldState {
             .px(px(tokens.horizontal_padding))
             .py(px(tokens.top_padding));
         let row = row
-            .when_some(self.leading_icon, |el, icon| {
+            .when_some(self.leading_icon.clone(), |el, icon| {
                 el.child(Icon::new(icon).size(icon_size).color(style.icon_color))
             })
             .child(

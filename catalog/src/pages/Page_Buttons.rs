@@ -40,13 +40,13 @@ impl ButtonsPage {
         let b_outlined = OutlinedButton::new("b-outlined", "Compare fares").build(cx);
         let b_text = TextButton::new("b-text", "Skip").build(cx);
         let b_icon = Button::new("b-icon", "Add itinerary")
-            .leading_icon(IconName::Add)
+            .leading_icon(IconName::new("add"))
             .build(cx);
         let b_disabled = FilledTonalButton::new("b-disabled", "Sold out")
             .enabled(false)
             .build(cx);
         let b_trailing = Button::new("b-trailing", "Continue")
-            .trailing_icon(IconName::ArrowForward)
+            .trailing_icon(IconName::new("arrow_forward"))
             .build(cx);
 
         cx.new(|_| Self {

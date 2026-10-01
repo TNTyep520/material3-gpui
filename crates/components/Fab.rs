@@ -275,7 +275,7 @@ impl Render for FabState {
             base
         };
 
-        base.child(Icon::new(self.icon).size(icon_size))
+        base.child(Icon::new(self.icon.clone()).size(icon_size))
             .when_some(self.label.clone(), |el, label| el.child(label))
     }
 }

@@ -33,15 +33,16 @@ pub struct IconButtonsFabPage {
 
 impl IconButtonsFabPage {
     pub fn new(cx: &mut App) -> Entity<Self> {
-        let ib_standard = IconButton::new("ib-standard", IconName::Favorite)
+        let ib_standard = IconButton::new("ib-standard", IconName::new("favorite"))
             .on_click(|_, window, cx| {
                 show_snackbar(window, cx, Snackbar::new("Favorite set"), None);
             })
             .build(cx);
-        let ib_filled = FilledIconButton::new("ib-filled", IconName::Edit).build(cx);
-        let ib_tonal = FilledTonalIconButton::new("ib-tonal", IconName::Settings).build(cx);
-        let ib_outlined = OutlinedIconButton::new("ib-outlined", IconName::MoreVert).build(cx);
-        let ib_toggle = IconToggleButton::new("ib-toggle", IconName::Favorite)
+        let ib_filled = FilledIconButton::new("ib-filled", IconName::new("edit")).build(cx);
+        let ib_tonal = FilledTonalIconButton::new("ib-tonal", IconName::new("settings")).build(cx);
+        let ib_outlined =
+            OutlinedIconButton::new("ib-outlined", IconName::new("more_vert")).build(cx);
+        let ib_toggle = IconToggleButton::new("ib-toggle", IconName::new("favorite"))
             .on_checked_change(|checked, window, cx| {
                 let message = if checked {
                     "Favorite set"
@@ -51,40 +52,44 @@ impl IconButtonsFabPage {
                 show_snackbar(window, cx, Snackbar::new(message), None);
             })
             .build(cx);
-        let ib_toggle_selected = FilledIconToggleButton::new("ib-toggle-selected", IconName::Star)
-            .checked(true)
-            .on_checked_change(|checked, window, cx| {
-                let message = if checked { "Starred" } else { "Unstarred" };
-                show_snackbar(window, cx, Snackbar::new(message), None);
-            })
-            .build(cx);
-        let ib_disabled = OutlinedIconButton::new("ib-disabled", IconName::Edit)
+        let ib_toggle_selected =
+            FilledIconToggleButton::new("ib-toggle-selected", IconName::new("star"))
+                .checked(true)
+                .on_checked_change(|checked, window, cx| {
+                    let message = if checked { "Starred" } else { "Unstarred" };
+                    show_snackbar(window, cx, Snackbar::new(message), None);
+                })
+                .build(cx);
+        let ib_disabled = OutlinedIconButton::new("ib-disabled", IconName::new("edit"))
             .enabled(false)
             .build(cx);
-        let ib_large_square = FilledTonalIconButton::new("ib-large-square", IconName::Settings)
-            .size(IconButtonSize::Medium)
-            .shape(IconButtonShape::Square)
-            .build(cx);
+        let ib_large_square =
+            FilledTonalIconButton::new("ib-large-square", IconName::new("settings"))
+                .size(IconButtonSize::Medium)
+                .shape(IconButtonShape::Square)
+                .build(cx);
 
-        let fab_small = Fab::new("fab-small", IconName::Edit)
+        let fab_small = Fab::new("fab-small", IconName::new("edit"))
             .size(FabSize::Small)
             .on_click(|_, window, cx| {
                 show_snackbar(window, cx, Snackbar::new("Small FAB: quick note"), None);
             })
             .build(cx);
-        let fab_std = Fab::new("fab-std", IconName::Add)
+        let fab_std = Fab::new("fab-std", IconName::new("add"))
             .on_click(|_, window, cx| {
                 show_snackbar(window, cx, Snackbar::new("Draft started"), None);
             })
             .build(cx);
-        let fab_ext = Fab::new("fab-ext", IconName::Add)
+        let fab_ext = Fab::new("fab-ext", IconName::new("add"))
             .color(FabColor::Tertiary)
             .label("Compose")
             .on_click(|_, window, cx| {
                 show_snackbar(window, cx, Snackbar::new("Compose from anywhere"), None);
             })
             .build(cx);
-        let fab_low = Fab::new("fab-low", IconName::Star).lowered(true).build(cx);
+        let fab_low = Fab::new("fab-low", IconName::new("star"))
+            .lowered(true)
+            .build(cx);
 
         cx.new(|_| Self {
             ib_standard,

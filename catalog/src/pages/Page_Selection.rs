@@ -75,11 +75,11 @@ impl SelectionPage {
             .selection_mode(SegmentedButtonSelectionMode::Multiple)
             .buttons([
                 SegmentedButton::new("Walk")
-                    .icon(IconName::Custom("directions_walk"))
+                    .icon(IconName::new("directions_walk"))
                     .selected(true),
-                SegmentedButton::new("Bike").icon(IconName::Custom("directions_bike")),
+                SegmentedButton::new("Bike").icon(IconName::new("directions_bike")),
                 SegmentedButton::new("Drive")
-                    .icon(IconName::Custom("directions_car"))
+                    .icon(IconName::new("directions_car"))
                     .selected(true),
             ])
             .build(cx);

@@ -16,22 +16,17 @@ use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
-const ENTRIES: [(&str, &str, IconName, Option<&str>); 5] = [
-    ("Proofs batch", "Jan 9, 2026", IconName::Star, Some("3")),
+const ENTRIES: [(&str, &str, &str, Option<&str>); 5] = [
+    ("Proofs batch", "Jan 9, 2026", "star", Some("3")),
     (
         "Field recordings",
         "Updated yesterday",
-        IconName::Favorite,
+        "favorite",
         Some("12"),
     ),
-    ("Riso calendar", "Drafting", IconName::Edit, None),
-    (
-        "Cutting mats",
-        "Restock requested",
-        IconName::Settings,
-        None,
-    ),
-    ("Archive", "Last opened in May", IconName::Delete, None),
+    ("Riso calendar", "Drafting", "edit", None),
+    ("Cutting mats", "Restock requested", "settings", None),
+    ("Archive", "Last opened in May", "delete", None),
 ];
 
 pub struct ListsPage;
@@ -46,12 +41,12 @@ fn inbox_row(
     ix: usize,
     title: &'static str,
     supporting: &'static str,
-    icon: IconName,
+    icon: &'static str,
     trailing: Option<&'static str>,
 ) -> AnyElement {
     let mut item = ListItem::new(("studio-inbox", ix), title)
         .supporting_text(supporting)
-        .leading_icon(icon)
+        .leading_icon(IconName::new(icon))
         .on_click(move |_, window, cx| {
             show_snackbar(
                 window,
@@ -63,7 +58,7 @@ fn inbox_row(
     if let Some(text) = trailing {
         item = item.trailing_text(text);
     } else {
-        item = item.trailing_icon(IconName::ChevronRight);
+        item = item.trailing_icon(IconName::new("chevron_right"));
     }
     div().child(item).into_any_element()
 }
@@ -74,7 +69,7 @@ impl Render for ListsPage {
             .iter()
             .enumerate()
             .flat_map(|(ix, (title, supporting, icon, trailing))| {
-                let row = inbox_row(ix, title, supporting, *icon, *trailing);
+                let row = inbox_row(ix, title, supporting, icon, *trailing);
                 if ix + 1 < ENTRIES.len() {
                     vec![row, Divider::horizontal().inset().into_any_element()]
                 } else {

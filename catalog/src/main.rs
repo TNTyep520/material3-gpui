@@ -51,89 +51,89 @@ pub(crate) struct PageMeta {
     pub(crate) id: PageId,
 
     pub(crate) title: &'static str,
-    pub(crate) icon: IconName,
+    pub(crate) icon: &'static str,
 }
 
 pub(crate) const PAGES: [PageMeta; 16] = [
     PageMeta {
         id: PageId::Buttons,
         title: "Buttons",
-        icon: IconName::Star,
+        icon: "star",
     },
     PageMeta {
         id: PageId::Additional,
         title: "Additional",
-        icon: IconName::Settings,
+        icon: "settings",
     },
     PageMeta {
         id: PageId::IconButtonsFab,
         title: "Icon buttons & FAB",
-        icon: IconName::Favorite,
+        icon: "favorite",
     },
     PageMeta {
         id: PageId::ButtonsExtended,
         title: "Toggle & split",
-        icon: IconName::MoreVert,
+        icon: "more_vert",
     },
     PageMeta {
         id: PageId::Selection,
         title: "Selection",
-        icon: IconName::Check,
+        icon: "check",
     },
     PageMeta {
         id: PageId::Chips,
         title: "Chips",
-        icon: IconName::Info,
+        icon: "info",
     },
     PageMeta {
         id: PageId::SliderProgress,
         title: "Slider & progress",
-        icon: IconName::ProgressActivity,
+        icon: "progress_activity",
     },
     PageMeta {
         id: PageId::Tabs,
         title: "Tabs",
-        icon: IconName::Menu,
+        icon: "menu",
     },
     PageMeta {
         id: PageId::TextFields,
         title: "Text fields",
-        icon: IconName::Edit,
+        icon: "edit",
     },
     PageMeta {
         id: PageId::Overlays,
         title: "Overlays",
-        icon: IconName::MoreVert,
+        icon: "more_vert",
     },
     PageMeta {
         id: PageId::Navigation,
         title: "Navigation",
-        icon: IconName::Menu,
+        icon: "menu",
     },
     PageMeta {
         id: PageId::Cards,
         title: "Cards",
-        icon: IconName::Star,
+        icon: "star",
     },
     PageMeta {
         id: PageId::Lists,
         title: "Lists",
-        icon: IconName::Person,
+        icon: "person",
     },
     PageMeta {
         id: PageId::Dialogs,
         title: "Dialogs",
-        icon: IconName::Delete,
+        icon: "delete",
     },
     PageMeta {
         id: PageId::AppBars,
         title: "App bars",
-        icon: IconName::Home,
+        icon: "home",
     },
     PageMeta {
         id: PageId::Sheets,
         title: "Bottom sheet",
-        icon: IconName::Menu,
+        icon: "menu",
     },
 ];
 
@@ -488,7 +488,7 @@ impl Render for Catalog {
                 };
                 el.child(
                     Dialog::new("catalog-dialog")
-                        .icon(IconName::Delete)
+                        .icon(IconName::new("delete"))
                         .title("Delete 3 recordings?")
                         .child(
                             "The recordings and their transcripts will be removed from \
@@ -504,7 +504,9 @@ impl Render for Catalog {
 
 fn main() {
     gpui::Application::new()
-        .with_assets(Md3Assets)
+        .with_assets(
+            Md3Assets::new().with_icon_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/symbols_icons")),
+        )
         .run(|cx: &mut App| {
             material3_gpui::init(cx);
 

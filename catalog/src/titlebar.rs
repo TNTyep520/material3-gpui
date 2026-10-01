@@ -150,9 +150,13 @@ fn window_button(
     };
 
     let icon = if id == "titlebar-close" {
-        Icon::new(IconName::Close).size(px(20.)).color(icon_color)
+        Icon::new(IconName::new("close"))
+            .size(px(20.))
+            .color(icon_color)
     } else {
-        Icon::new(IconName::Remove).size(px(20.)).color(icon_color)
+        Icon::new(IconName::new("remove"))
+            .size(px(20.))
+            .color(icon_color)
     };
     base.child(icon)
 }

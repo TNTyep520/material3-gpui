@@ -16,21 +16,21 @@ use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
-const LIBRARY: [(&str, &str, IconName); 3] = [
+const LIBRARY: [(&str, &str, &str); 3] = [
     (
         "Home recordings",
         "Studio takes from the milk crate: 84 items, 3.2 GB.",
-        IconName::Home,
+        "home",
     ),
     (
         "Field notes",
         "Scratchy zoom mics and wind from the coast: 37 items.",
-        IconName::Search,
+        "search",
     ),
     (
         "Releases",
         "Everything pressed, posted or shipped: 12 items.",
-        IconName::Person,
+        "person",
     ),
 ];
 
@@ -41,9 +41,9 @@ pub struct TabsPage {
 impl TabsPage {
     pub fn new(cx: &mut App) -> Entity<Self> {
         let tabbar = TabBar::new("tabs")
-            .tab(Tab::new("Home").icon(IconName::Home))
-            .tab(Tab::new("Search").icon(IconName::Search))
-            .tab(Tab::new("Profile").icon(IconName::Person))
+            .tab(Tab::new("Home").icon(IconName::new("home")))
+            .tab(Tab::new("Search").icon(IconName::new("search")))
+            .tab(Tab::new("Profile").icon(IconName::new("person")))
             .selected(0)
             .build(cx);
         cx.new(|cx| {
@@ -60,6 +60,7 @@ impl Render for TabsPage {
         let typography = *theme.typography();
         let selected_tab = self.tabbar.read(cx).selected();
         let (title, caption, icon) = LIBRARY[selected_tab.min(LIBRARY.len() - 1)];
+        let icon = IconName::new(icon);
 
         gallery([showcase_group(
             cx,

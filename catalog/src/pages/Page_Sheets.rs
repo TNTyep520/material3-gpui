@@ -44,11 +44,11 @@ impl SheetsPage {
     }
 }
 
-const SHARE_ACTIONS: [(&str, IconName); 4] = [
-    ("Send to proof readers", IconName::Menu),
-    ("Copy poster link", IconName::Info),
-    ("Edit title", IconName::Edit),
-    ("Delete", IconName::Delete),
+const SHARE_ACTIONS: [(&str, &str); 4] = [
+    ("Send to proof readers", "menu"),
+    ("Copy poster link", "info"),
+    ("Edit title", "edit"),
+    ("Delete", "delete"),
 ];
 
 impl Render for SheetsPage {
@@ -107,7 +107,7 @@ impl Render for SheetsPage {
                                     SHARE_ACTIONS.into_iter().enumerate().map(
                                         |(ix, (title, icon))| {
                                             material3_gpui::ListItem::new(("sheet-item", ix), title)
-                                                .leading_icon(icon)
+                                                .leading_icon(IconName::new(icon))
                                         },
                                     ),
                                 ))

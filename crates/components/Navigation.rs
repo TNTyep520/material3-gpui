@@ -196,7 +196,7 @@ fn navigation_item<T: NavSelection>(
                             style.bg(icon_color.opacity(pressed))
                         }),
                 )
-                .when_some(spec.icon, |el, icon| {
+                .when_some(spec.icon.clone(), |el, icon| {
                     el.child(Icon::new(icon).size(item.icon_size).color(icon_color))
                 }),
         )
@@ -732,7 +732,7 @@ impl Render for NavigationDrawerState {
                             el.hover(move |s| s.bg(icon_color.opacity(hover)))
                         })
                         .active(move |s| s.bg(icon_color.opacity(pressed)))
-                        .when_some(spec.icon, |el, icon| {
+                        .when_some(spec.icon.clone(), |el, icon| {
                             el.child(
                                 div()
                                     .flex_none()

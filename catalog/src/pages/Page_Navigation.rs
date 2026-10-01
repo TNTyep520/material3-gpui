@@ -26,32 +26,32 @@ impl NavigationPage {
     pub fn new(cx: &mut App) -> Entity<Self> {
         let nav_bar = NavigationBar::new("nav-bar")
             .items([
-                NavigationItemSpec::new("Home", IconName::Home),
-                NavigationItemSpec::new("Search", IconName::Search),
-                NavigationItemSpec::new("Profile", IconName::Person),
-                NavigationItemSpec::new("Settings", IconName::Settings),
+                NavigationItemSpec::new("Home", IconName::new("home")),
+                NavigationItemSpec::new("Search", IconName::new("search")),
+                NavigationItemSpec::new("Profile", IconName::new("person")),
+                NavigationItemSpec::new("Settings", IconName::new("settings")),
             ])
             .selected(0)
             .build(cx);
         let nav_rail = NavigationRail::new("nav-rail")
             .header(
-                Fab::new("rail-fab", IconName::Add)
+                Fab::new("rail-fab", IconName::new("add"))
                     .size(FabSize::Small)
                     .build(cx),
             )
             .items([
-                NavigationItemSpec::new("Inbox", IconName::Info),
-                NavigationItemSpec::new("Starred", IconName::Star),
-                NavigationItemSpec::new("Sent", IconName::Edit),
+                NavigationItemSpec::new("Inbox", IconName::new("info")),
+                NavigationItemSpec::new("Starred", IconName::new("star")),
+                NavigationItemSpec::new("Sent", IconName::new("edit")),
             ])
             .selected(0)
             .build(cx);
         let nav_drawer = NavigationDrawer::new("nav-drawer")
-            .item(NavigationItemSpec::new("Inbox", IconName::Info).badge("24"))
-            .item(NavigationItemSpec::new("Starred", IconName::Star))
+            .item(NavigationItemSpec::new("Inbox", IconName::new("info")).badge("24"))
+            .item(NavigationItemSpec::new("Starred", IconName::new("star")))
             .section("Labels")
-            .item(NavigationItemSpec::new("Work", IconName::Edit))
-            .item(NavigationItemSpec::new("Personal", IconName::Person))
+            .item(NavigationItemSpec::new("Work", IconName::new("edit")))
+            .item(NavigationItemSpec::new("Personal", IconName::new("person")))
             .selected(0)
             .build(cx);
 
@@ -72,23 +72,23 @@ fn icon_strip(cx: &App) -> impl IntoElement {
         .gap(px(16.))
         .children(
             [
-                IconName::Home,
-                IconName::Search,
-                IconName::Settings,
-                IconName::Favorite,
-                IconName::Star,
-                IconName::Person,
-                IconName::Edit,
-                IconName::Delete,
-                IconName::Info,
-                IconName::Menu,
-                IconName::MoreVert,
-                IconName::Check,
-                IconName::Close,
-                IconName::Add,
-                IconName::ArrowBack,
-                IconName::ChevronRight,
-                IconName::ProgressActivity,
+                IconName::new("home"),
+                IconName::new("search"),
+                IconName::new("settings"),
+                IconName::new("favorite"),
+                IconName::new("star"),
+                IconName::new("person"),
+                IconName::new("edit"),
+                IconName::new("delete"),
+                IconName::new("info"),
+                IconName::new("menu"),
+                IconName::new("more_vert"),
+                IconName::new("check"),
+                IconName::new("close"),
+                IconName::new("add"),
+                IconName::new("arrow_back"),
+                IconName::new("chevron_right"),
+                IconName::new("progress_activity"),
             ]
             .into_iter()
             .map(|name| Icon::new(name).size(px(24.)).color(color)),
@@ -103,13 +103,13 @@ fn commute_strip(cx: &App) -> impl IntoElement {
         .items_center()
         .gap(px(16.))
         .children([
-            Icon::new(IconName::Custom("directions_walk"))
+            Icon::new(IconName::new("directions_walk"))
                 .size(px(24.))
                 .color(color),
-            Icon::new(IconName::Custom("directions_bike"))
+            Icon::new(IconName::new("directions_bike"))
                 .size(px(24.))
                 .color(color),
-            Icon::new(IconName::Custom("directions_car"))
+            Icon::new(IconName::new("directions_car"))
                 .size(px(24.))
                 .color(color),
         ])

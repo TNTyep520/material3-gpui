@@ -378,9 +378,9 @@ impl Render for SegmentedButtonRowState {
                     });
             }
             let icon = if button.selected {
-                Some(IconName::Check)
+                Some(IconName::new("check"))
             } else {
-                button.icon
+                button.icon.clone()
             };
             content = style
                 .label

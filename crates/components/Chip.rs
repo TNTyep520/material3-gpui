@@ -284,9 +284,9 @@ impl Render for ChipState {
         let bg = style.container_color;
 
         let leading = if self.variant == ChipVariant::Filter && selected {
-            Some(IconName::Check)
+            Some(IconName::new("check"))
         } else {
-            self.leading_icon
+            self.leading_icon.clone()
         };
 
         let has_leading = leading.is_some();
@@ -382,7 +382,11 @@ impl Render for ChipState {
                             cx.stop_propagation();
                             handler(event, window, cx)
                         })
-                        .child(Icon::new(IconName::Close).size(style.close_size).color(fg)),
+                        .child(
+                            Icon::new(IconName::new("close"))
+                                .size(style.close_size)
+                                .color(fg),
+                        ),
                 )
             },
         )

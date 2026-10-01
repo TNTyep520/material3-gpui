@@ -28,7 +28,7 @@ impl ChipsPage {
     pub fn new(cx: &mut App) -> Entity<Self> {
         let chip_assist = Chip::new("chip-assist", "Draft reply")
             .assist()
-            .leading_icon(IconName::Edit)
+            .leading_icon(IconName::new("edit"))
             .on_click(|_, window, cx| {
                 show_snackbar(window, cx, Snackbar::new("Reply drafted"), None);
             })

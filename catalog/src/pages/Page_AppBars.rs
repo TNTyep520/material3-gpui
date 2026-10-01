@@ -23,7 +23,7 @@ pub struct AppBarsPage {
 
 impl AppBarsPage {
     pub fn new(cx: &mut App) -> Entity<Self> {
-        let fab = Fab::new("scaffold-fab", IconName::Add).build(cx);
+        let fab = Fab::new("scaffold-fab", IconName::new("add")).build(cx);
         cx.new(|_| Self { fab })
     }
 }
@@ -53,7 +53,7 @@ impl Render for AppBarsPage {
         let colors = *theme.colors();
 
         let bell_with_badge = div().child(badged(
-            Icon::new(IconName::Menu)
+            Icon::new(IconName::new("menu"))
                 .size(px(24.))
                 .color(colors.on_surface_variant),
             Badge::new("appbar-bell-badge").label("3"),
@@ -68,13 +68,13 @@ impl Render for AppBarsPage {
                         TopAppBar::small("bar-small")
                             .title("Small")
                             .leading(
-                                Icon::new(IconName::ArrowBack)
+                                Icon::new(IconName::new("arrow_back"))
                                     .size(px(24.))
                                     .color(colors.on_surface),
                             )
                             .action(bell_with_badge)
                             .action(
-                                Icon::new(IconName::MoreVert)
+                                Icon::new(IconName::new("more_vert"))
                                     .size(px(24.))
                                     .color(colors.on_surface_variant),
                             ),
@@ -85,12 +85,12 @@ impl Render for AppBarsPage {
                         TopAppBar::medium("bar-medium")
                             .title("Medium")
                             .leading(
-                                Icon::new(IconName::ArrowBack)
+                                Icon::new(IconName::new("arrow_back"))
                                     .size(px(24.))
                                     .color(colors.on_surface),
                             )
                             .action(
-                                Icon::new(IconName::MoreVert)
+                                Icon::new(IconName::new("more_vert"))
                                     .size(px(24.))
                                     .color(colors.on_surface_variant),
                             ),
@@ -101,12 +101,12 @@ impl Render for AppBarsPage {
                         TopAppBar::large("bar-large")
                             .title("Large")
                             .leading(
-                                Icon::new(IconName::ArrowBack)
+                                Icon::new(IconName::new("arrow_back"))
                                     .size(px(24.))
                                     .color(colors.on_surface),
                             )
                             .action(
-                                Icon::new(IconName::MoreVert)
+                                Icon::new(IconName::new("more_vert"))
                                     .size(px(24.))
                                     .color(colors.on_surface_variant),
                             ),
@@ -123,13 +123,13 @@ impl Render for AppBarsPage {
                     .items_center()
                     .gap(px(32.))
                     .child(badged(
-                        Icon::new(IconName::Menu)
+                        Icon::new(IconName::new("menu"))
                             .size(px(24.))
                             .color(colors.on_surface_variant),
                         Badge::new("badge-bell-count").label("9"),
                     ))
                     .child(badged(
-                        Icon::new(IconName::Info)
+                        Icon::new(IconName::new("info"))
                             .size(px(24.))
                             .color(colors.on_surface_variant),
                         Badge::new("badge-inbox-dot"),
@@ -151,7 +151,7 @@ impl Render for AppBarsPage {
                                 TopAppBar::small("scaffold-bar")
                                     .title("Kiln report")
                                     .action(
-                                        Icon::new(IconName::MoreVert)
+                                        Icon::new(IconName::new("more_vert"))
                                             .size(px(24.))
                                             .color(colors.on_surface_variant),
                                     ),

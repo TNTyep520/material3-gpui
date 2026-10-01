@@ -309,9 +309,9 @@ impl Render for CheckboxState {
                 .when_some(mark_color.filter(|_| p > 0.0), |el, color| {
                     el.child(
                         Icon::new(if self.indeterminate {
-                            IconName::Remove
+                            IconName::new("remove")
                         } else {
-                            IconName::Check
+                            IconName::new("check")
                         })
                         .size(style.mark_size)
                         .color(color.opacity(p)),

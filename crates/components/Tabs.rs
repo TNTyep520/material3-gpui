@@ -324,7 +324,7 @@ impl Render for TabBarState {
                             });
                         })
                     })
-                    .when_some(tab.icon, |el, icon| {
+                    .when_some(tab.icon.clone(), |el, icon| {
                         el.child(Icon::new(icon).size(style.icon_size))
                     });
                 let tab_el = label_style.apply(tab_el).child(tab.label.clone());

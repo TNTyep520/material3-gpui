@@ -56,7 +56,7 @@ impl SplitButton {
             id: id.into(),
             label: label.into(),
             variant: ButtonVariant::Filled,
-            trailing: IconName::ChevronRight,
+            trailing: IconName::new("chevron_right"),
             on_click: None,
             on_trailing_click: None,
             menu: None,

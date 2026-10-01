@@ -56,7 +56,7 @@ impl FabMenu {
     pub fn build(self, cx: &mut App) -> Entity<FabMenuState> {
         cx.new(|cx| {
             let weak: WeakEntity<FabMenuState> = cx.entity().downgrade();
-            let toggle_add = Fab::new((self.id.clone(), "toggle-add"), IconName::Add)
+            let toggle_add = Fab::new((self.id.clone(), "toggle-add"), IconName::new("add"))
                 .on_click({
                     let weak = weak.clone();
                     move |_, window, cx| {
@@ -68,7 +68,7 @@ impl FabMenu {
                     }
                 })
                 .build(cx);
-            let toggle_close = Fab::new((self.id.clone(), "toggle-close"), IconName::Close)
+            let toggle_close = Fab::new((self.id.clone(), "toggle-close"), IconName::new("close"))
                 .on_click(move |_, window, cx| {
                     if let Err(err) =
                         weak.update(cx, |menu, cx| menu.set_expanded(false, window, cx))

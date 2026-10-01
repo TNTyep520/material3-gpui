@@ -512,7 +512,7 @@ impl Render for IconButtonState {
             base
         };
 
-        base.child(Icon::new(self.icon).size(style.icon_size))
+        base.child(Icon::new(self.icon.clone()).size(style.icon_size))
     }
 }
 
