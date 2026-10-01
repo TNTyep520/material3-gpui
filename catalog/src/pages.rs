@@ -25,6 +25,23 @@ use gpui::{AnyElement, App, Entity, IntoElement, Styled, div, prelude::*, px};
 // 页面间回调类型（页 → 根）。
 pub type PageCallback<A> = std::rc::Rc<dyn Fn(A, &mut App)>;
 
+/// 实体更新失败的兜底(窗口/页面已释放等场景):输出到 stderr 后放行。
+pub(crate) trait LogErr<T, E: std::fmt::Display> {
+    fn log_err(self) -> Option<T>;
+}
+
+impl<T, E: std::fmt::Display> LogErr<T, E> for Result<T, E> {
+    fn log_err(self) -> Option<T> {
+        match self {
+            Ok(value) => Some(value),
+            Err(err) => {
+                eprintln!("catalog: {err}");
+                None
+            }
+        }
+    }
+}
+
 use material3_gpui::prelude::*;
 
 /// 页面集合：根视图持有并按导航切换。

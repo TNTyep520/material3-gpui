@@ -12,26 +12,9 @@ use gpui::{
 
 use material3_gpui::overlay::host;
 use material3_gpui::prelude::*;
-use pages::{Pages, palette_strip};
+use pages::{LogErr as _, Pages, palette_strip};
 
 const DEFAULT_SEED: u32 = 0x6750A4;
-
-/// 实体更新失败的兜底(窗口/页面已释放等场景):输出到 stderr 后放行。
-pub(crate) trait LogErr<T> {
-    fn log_err(self) -> Option<T>;
-}
-
-impl<T, E: std::fmt::Display> LogErr<T> for Result<T, E> {
-    fn log_err(self) -> Option<T> {
-        match self {
-            Ok(value) => Some(value),
-            Err(err) => {
-                eprintln!("catalog: {err}");
-                None
-            }
-        }
-    }
-}
 
 /// 页面标识。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -39,6 +39,7 @@ pub struct TextField {
     leading_icon: Option<IconName>,
     disabled: bool,
     outlined: bool,
+    password: bool,
     on_change: Option<ChangeHandler>,
     on_submit: Option<SubmitHandler>,
 }
@@ -52,6 +53,7 @@ pub struct TextFieldState {
     leading_icon: Option<IconName>,
     disabled: bool,
     outlined: bool,
+    password: bool,
     value: String,
     /// 光标位置（UTF-8 字符下标）。
     caret: usize,
@@ -75,6 +77,7 @@ impl TextField {
             leading_icon: None,
             disabled: false,
             outlined: false,
+            password: false,
             on_change: None,
             on_submit: None,
         }
@@ -121,6 +124,12 @@ impl TextField {
         self
     }
 
+    /// 以掩码符号显示输入内容（密码框）。
+    pub fn password(mut self, password: bool) -> Self {
+        self.password = password;
+        self
+    }
+
     /// 文本变化回调。
     pub fn on_change(mut self, handler: impl Fn(&str, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
@@ -151,6 +160,7 @@ impl TextField {
             leading_icon: self.leading_icon,
             disabled: self.disabled,
             outlined: self.outlined,
+            password: self.password,
             value,
             caret,
             focus,
@@ -331,8 +341,13 @@ impl Render for TextFieldState {
 
         let focused = !self.disabled && self.focus.is_focused(window);
         self.sync_focus(focused, window, cx);
+        let display: SharedString = if self.password {
+            "•".repeat(self.value.chars().count()).into()
+        } else {
+            self.value.clone().into()
+        };
         let caret_x = if focused {
-            f32::from(self.caret_x(window, cx))
+            f32::from(self.caret_x(&display, window, cx))
         } else {
             0.0
         };
@@ -451,7 +466,7 @@ impl Render for TextFieldState {
                             .text_size(label_style.body_large.size)
                             .line_height(label_style.body_large.line_height)
                             .text_color(style.text_color)
-                            .child(SharedString::from(self.value.clone())),
+                            .child(display),
                     )
                     .when(self.value.is_empty() && !floating, |el| {
                         el.child(
@@ -530,9 +545,9 @@ impl Render for TextFieldState {
 
 impl TextFieldState {
     /// 估算光标的 x 坐标（对前缀文本做排版测宽）。
-    fn caret_x(&self, window: &mut Window, cx: &mut Context<Self>) -> Pixels {
+    fn caret_x(&self, display: &str, window: &mut Window, cx: &mut Context<Self>) -> Pixels {
         let theme = cx.theme();
-        let prefix: String = self.value.chars().take(self.caret).collect();
+        let prefix: String = display.chars().take(self.caret).collect();
         if prefix.is_empty() {
             return px(0.);
         }

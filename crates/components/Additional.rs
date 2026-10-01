@@ -9,7 +9,7 @@ use std::rc::Rc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 type RangeChangeHandler = Rc<dyn Fn((f32, f32), &mut Window, &mut App)>;
-type QueryChangeHandler = Rc<dyn Fn(&str, &mut Window, &mut App)>;
+type ChangeHandler = Rc<dyn Fn(&str, &mut Window, &mut App)>;
 
 #[derive(IntoElement)]
 pub struct LoadingIndicator {
@@ -271,11 +271,12 @@ impl RenderOnce for Scrollbar {
     }
 }
 
-#[derive(IntoElement)]
 pub struct SecureTextField {
     id: ElementId,
     label: SharedString,
     value: SharedString,
+    enabled: bool,
+    on_value_change: Option<ChangeHandler>,
 }
 impl SecureTextField {
     pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
@@ -283,68 +284,57 @@ impl SecureTextField {
             id: id.into(),
             label: label.into(),
             value: SharedString::default(),
+            enabled: true,
+            on_value_change: None,
         }
     }
     pub fn value(mut self, v: impl Into<SharedString>) -> Self {
         self.value = v.into();
         self
     }
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+    pub fn on_value_change(
+        mut self,
+        handler: impl Fn(&str, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.on_value_change = Some(Rc::new(handler));
+        self
+    }
 }
-impl RenderOnce for SecureTextField {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        let c = cx.theme().colors();
-        div()
-            .id(self.id)
-            .h(px(56.))
-            .w_full()
-            .rounded(px(4.))
-            .border_1()
-            .border_color(c.outline)
-            .px(px(16.))
-            .flex()
-            .items_center()
-            .text_color(c.on_surface)
-            .child(if self.value.is_empty() {
-                self.label
-            } else {
-                "••••••••".into()
-            })
+impl SecureTextField {
+    pub fn build(self, cx: &mut App) -> Entity<TextFieldState> {
+        let mut field = TextField::new(self.id, self.label)
+            .password(true)
+            .value(self.value)
+            .enabled(self.enabled);
+        if let Some(handler) = self.on_value_change {
+            field = field.on_value_change(move |value, window, cx| handler(value, window, cx));
+        }
+        field.build(cx)
     }
 }
 
 #[derive(IntoElement)]
 pub struct SearchBar {
     id: ElementId,
-    query: SharedString,
+    field: Entity<TextFieldState>,
     expanded: bool,
     suggestions: Vec<gpui::AnyElement>,
-    on_query_change: Option<QueryChangeHandler>,
 }
 impl SearchBar {
-    pub fn new(id: impl Into<ElementId>) -> Self {
+    pub fn new(id: impl Into<ElementId>, field: Entity<TextFieldState>) -> Self {
         Self {
             id: id.into(),
-            query: SharedString::default(),
+            field,
             expanded: false,
             suggestions: Vec::new(),
-            on_query_change: None,
         }
-    }
-    pub fn query(mut self, q: impl Into<SharedString>) -> Self {
-        self.query = q.into();
-        self
     }
     pub fn expanded(mut self, e: bool) -> Self {
         self.expanded = e;
-        self
-    }
-
-    /// 设置查询变化回调；调用者应保存新查询并重新渲染。
-    pub fn on_query_change(
-        mut self,
-        handler: impl Fn(&str, &mut Window, &mut App) + 'static,
-    ) -> Self {
-        self.on_query_change = Some(Rc::new(handler));
         self
     }
 }
@@ -357,10 +347,6 @@ impl ParentElement for SearchBar {
 impl RenderOnce for SearchBar {
     fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         let c = cx.theme().colors();
-        let mut field = TextField::new((self.id.clone(), "query"), "Search").value(self.query);
-        if let Some(handler) = self.on_query_change {
-            field = field.on_value_change(move |value, window, cx| handler(value, window, cx));
-        }
         div()
             .id(self.id)
             .w_full()
@@ -372,7 +358,7 @@ impl RenderOnce for SearchBar {
             .flex()
             .flex_col()
             .text_color(c.on_surface)
-            .child(field.build(cx))
+            .child(self.field)
             .when(self.expanded, |el| el.children(self.suggestions))
     }
 }

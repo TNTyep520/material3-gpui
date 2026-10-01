@@ -33,11 +33,21 @@ impl IconButtonsFabPage {
         let ib_tonal = FilledTonalIconButton::new("ib-tonal", IconName::Settings).build(cx);
         let ib_outlined = OutlinedIconButton::new("ib-outlined", IconName::MoreVert).build(cx);
         let ib_toggle = IconToggleButton::new("ib-toggle", IconName::Favorite)
-            .on_checked_change(|_, _, _| {})
+            .on_checked_change(|checked, window, cx| {
+                let message = if checked {
+                    "Favorite set"
+                } else {
+                    "Favorite removed"
+                };
+                show_snackbar(window, cx, Snackbar::new(message), None);
+            })
             .build(cx);
         let ib_toggle_selected = FilledIconToggleButton::new("ib-toggle-selected", IconName::Star)
             .checked(true)
-            .on_checked_change(|_, _, _| {})
+            .on_checked_change(|checked, window, cx| {
+                let message = if checked { "Starred" } else { "Unstarred" };
+                show_snackbar(window, cx, Snackbar::new(message), None);
+            })
             .build(cx);
         let ib_disabled = OutlinedIconButton::new("ib-disabled", IconName::Edit)
             .enabled(false)

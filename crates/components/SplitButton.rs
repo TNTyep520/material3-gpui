@@ -1,10 +1,11 @@
+use crate::components::overlay::show_menu;
 use crate::components::{Button, ButtonVariant, IconButton, IconButtonVariant};
 use crate::icon::IconName;
 use crate::theme::{ActiveTheme, TokenSet};
 use crate::tokens::SplitButtonSmallTokens;
 use gpui::{
-    AnyElement, App, ClickEvent, ElementId, IntoElement, ParentElement, Pixels, RenderOnce,
-    SharedString, Window, div, prelude::*,
+    App, ClickEvent, ElementId, Entity, IntoElement, Pixels, RenderOnce, SharedString, Window, div,
+    prelude::*, px, size,
 };
 
 type ClickHandler = Box<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
@@ -34,7 +35,7 @@ pub struct SplitButton {
     trailing: IconName,
     on_click: Option<ClickHandler>,
     on_trailing_click: Option<ClickHandler>,
-    menu: Option<AnyElement>,
+    menu: Option<Entity<crate::components::overlay::MenuState>>,
 }
 
 /// AndroidX SplitButtonLayout 对应的双操作按钮布局。
@@ -85,8 +86,9 @@ impl SplitButton {
         self.on_trailing_click = Some(Box::new(handler));
         self
     }
-    pub fn menu(mut self, menu: impl IntoElement) -> Self {
-        self.menu = Some(menu.into_any_element());
+    /// 设置尾部按钮展开的下拉菜单;点击尾部按钮时经窗口 OverlayHost 弹出。
+    pub fn menu(mut self, menu: Entity<crate::components::overlay::MenuState>) -> Self {
+        self.menu = Some(menu);
         self
     }
 }
@@ -102,9 +104,20 @@ impl RenderOnce for SplitButton {
         let primary = primary.build(cx);
         let mut trailing =
             IconButton::new((self.id, "menu"), self.trailing).variant(IconButtonVariant::Standard);
-        if let Some(handler) = self.on_trailing_click {
-            trailing = trailing.on_click(handler);
-        }
+        let menu = self.menu;
+        let on_trailing_click = self.on_trailing_click;
+        trailing = trailing.on_click(move |event, window, cx| {
+            if let Some(handler) = &on_trailing_click {
+                handler(event, window, cx);
+            }
+            if let Some(menu) = &menu {
+                let anchor = gpui::Bounds {
+                    origin: event.position(),
+                    size: size(px(0.), px(0.)),
+                };
+                show_menu(window, cx, menu.clone(), anchor);
+            }
+        });
         let trailing = trailing.build(cx);
         div()
             .flex()
@@ -112,6 +125,5 @@ impl RenderOnce for SplitButton {
             .gap(style.between_space)
             .child(primary)
             .child(trailing)
-            .when_some(self.menu, |el, menu| el.child(menu))
     }
 }

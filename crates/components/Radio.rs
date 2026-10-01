@@ -192,7 +192,7 @@ impl Render for RadioState {
             let select_entity = entity;
             base.on_click(move |_event, window, cx| {
                 select_entity.update(cx, |state, cx| {
-                    state.set_selected(!state.selected, window, cx);
+                    state.set_selected(true, window, cx);
                     if let Some(handler) = state.on_select.clone() {
                         handler(window, cx);
                     }

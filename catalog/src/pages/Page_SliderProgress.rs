@@ -1,23 +1,33 @@
 //! Slider 与 Progress 对比页，滑块数值驱动确定进度，刷新局限于本页。
 
-use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
+use gpui::{
+    App, AppContext as _, Entity, IntoElement, Render, Styled, WeakEntity, Window, div, prelude::*,
+    px,
+};
 use material3_gpui::prelude::*;
 
-use super::{gallery, showcase_group};
+use super::{LogErr as _, gallery, showcase_group};
 
 /// Slider & Progress 页视图。
 pub struct SliderProgressPage {
+    weak: WeakEntity<Self>,
     slider: Entity<SliderState>,
+    range: (f32, f32),
 }
 
 impl SliderProgressPage {
     /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
-        let slider = Slider::new(0., 100., 40.).step(1.).build(cx);
         cx.new(|cx| {
+            let weak = cx.entity().downgrade();
+            let slider = Slider::new(0., 100., 40.).step(1.).build(cx);
             // 滑块变化只刷新本页视图
             cx.observe(&slider, |_, _, cx| cx.notify()).detach();
-            Self { slider }
+            Self {
+                weak,
+                slider,
+                range: (0.2, 0.78),
+            }
         })
     }
 }
@@ -89,7 +99,18 @@ impl Render for SliderProgressPage {
                 cx,
                 "Range & indeterminate",
                 [
-                    material3_gpui::RangeSlider::new("range", 0.2, 0.78).into_any_element(),
+                    material3_gpui::RangeSlider::new("range", self.range.0, self.range.1)
+                        .on_value_change({
+                            let weak = self.weak.clone();
+                            move |next, _, cx| {
+                                weak.update(cx, |page, cx| {
+                                    page.range = next;
+                                    cx.notify();
+                                })
+                                .log_err();
+                            }
+                        })
+                        .into_any_element(),
                     div()
                         .w_full()
                         .min_w_0()
