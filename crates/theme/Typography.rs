@@ -116,10 +116,10 @@ impl Default for TypeScale {
 impl TypeScale {
     pub fn expressive() -> Self {
         let emphasized = |style: TypeStyle| TypeStyle {
-            weight: match style.weight {
-                FontWeight::NORMAL => FontWeight::SEMIBOLD,
-                FontWeight::MEDIUM => FontWeight::BOLD,
-                other => other,
+            weight: if style.weight == FontWeight::NORMAL {
+                FontWeight::SEMIBOLD
+            } else {
+                FontWeight::BOLD
             },
             ..style
         };
