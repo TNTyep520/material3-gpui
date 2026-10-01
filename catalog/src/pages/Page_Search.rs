@@ -32,6 +32,7 @@ impl SearchPage {
             let search_field = {
                 let weak = weak.clone();
                 TextField::new("search-query", "Search")
+                    .plain(true)
                     .leading_icon(IconName::new("search"))
                     .on_value_change(move |value, _, cx| {
                         weak.update(cx, |page: &mut Self, cx: &mut Context<Self>| {
@@ -46,6 +47,7 @@ impl SearchPage {
             };
             let expanded_field = {
                 TextField::new("search-expanded", "Recent searches")
+                    .plain(true)
                     .leading_icon(IconName::new("search"))
                     .on_value_change(move |value, _, cx| {
                         weak.update(cx, |page: &mut Self, cx: &mut Context<Self>| {

@@ -39,6 +39,7 @@ pub struct TextField {
     disabled: bool,
     outlined: bool,
     password: bool,
+    plain: bool,
     on_change: Option<ChangeHandler>,
     on_submit: Option<SubmitHandler>,
 }
@@ -52,6 +53,7 @@ pub struct TextFieldState {
     disabled: bool,
     outlined: bool,
     password: bool,
+    plain: bool,
     value: String,
 
     caret: usize,
@@ -75,6 +77,7 @@ impl TextField {
             disabled: false,
             outlined: false,
             password: false,
+            plain: false,
             on_change: None,
             on_submit: None,
         }
@@ -119,6 +122,11 @@ impl TextField {
         self
     }
 
+    pub fn plain(mut self, plain: bool) -> Self {
+        self.plain = plain;
+        self
+    }
+
     pub fn on_change(mut self, handler: impl Fn(&str, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
@@ -146,6 +154,7 @@ impl TextField {
             disabled: self.disabled,
             outlined: self.outlined,
             password: self.password,
+            plain: self.plain,
             value,
             caret,
             focus,
@@ -348,7 +357,7 @@ impl Render for TextFieldState {
             lerp_color(style.border_color, accent, p)
         };
 
-        let floating = p > 0.5 || !self.value.is_empty();
+        let floating = !self.plain && (p > 0.5 || !self.value.is_empty());
         let label_color = if focused {
             style.focused_label_color
         } else {
@@ -371,11 +380,13 @@ impl Render for TextFieldState {
             .flex()
             .flex_col()
             .justify_center()
-            .rounded(theme.shapes().extra_small)
-            .when(self.outlined, |el| el.border_1())
-            .when(!self.outlined, |el| el.border_b_1())
-            .border_color(border_color)
-            .bg(style.container_color)
+            .when(!self.plain, |el| {
+                el.rounded(theme.shapes().extra_small)
+                    .when(self.outlined, |el| el.border_1())
+                    .when(!self.outlined, |el| el.border_b_1())
+                    .border_color(border_color)
+                    .bg(style.container_color)
+            })
             .when(!self.disabled, |el| el.cursor_text())
             .when(!self.disabled, |element| {
                 element.on_mouse_down(gpui::MouseButton::Left, {
@@ -392,21 +403,24 @@ impl Render for TextFieldState {
                 });
             })
             .track_focus(&self.focus)
-            .when((focused || p > 0.0) && !self.disabled, |el| {
-                el.child(
-                    div()
-                        .absolute()
-                        .inset_0()
-                        .rounded(theme.shapes().extra_small)
-                        .when(self.outlined, |overlay| overlay.border_2())
-                        .when(!self.outlined, |overlay| overlay.border_b_2())
-                        .border_color(if has_error {
-                            colors.error.opacity(p.max(0.001))
-                        } else {
-                            accent.opacity(p.max(0.001))
-                        }),
-                )
-            });
+            .when(
+                !self.plain && (focused || p > 0.0) && !self.disabled,
+                |el| {
+                    el.child(
+                        div()
+                            .absolute()
+                            .inset_0()
+                            .rounded(theme.shapes().extra_small)
+                            .when(self.outlined, |overlay| overlay.border_2())
+                            .when(!self.outlined, |overlay| overlay.border_b_2())
+                            .border_color(if has_error {
+                                colors.error.opacity(p.max(0.001))
+                            } else {
+                                accent.opacity(p.max(0.001))
+                            }),
+                    )
+                },
+            );
 
         let row = div()
             .flex()
@@ -495,14 +509,17 @@ impl Render for TextFieldState {
                     .child(label_el)
                     .child(row),
             )
-            .when(self.error.is_some() || self.helper.is_some(), |el| {
-                el.child(
-                    div()
-                        .px(px(tokens.horizontal_padding))
-                        .mt(gap)
-                        .child(supporting),
-                )
-            })
+            .when(
+                !self.plain && (self.error.is_some() || self.helper.is_some()),
+                |el| {
+                    el.child(
+                        div()
+                            .px(px(tokens.horizontal_padding))
+                            .mt(gap)
+                            .child(supporting),
+                    )
+                },
+            )
     }
 }
 

@@ -3,51 +3,72 @@ const path = require("path");
 
 const iconsDir = path.join("catalog", "src", "symbols_icons");
 const registryPath = path.join("catalog", "src", "icons_registry.rs");
+const poolDir =
+  process.argv[2] || path.join("target", "icon_pool", "catalog", "symbols_icons");
 
-function collectUsedNames() {
+function collectUsedNames(poolNames) {
   const used = new Set();
-  const scan = (file) => {
+  const patterns = [
+    /IconName::new\("([a-z0-9_]+)"\)/g,
+    /Icon::new\("([a-z0-9_]+)"\)/g,
+    /icon: "([a-z0-9_]+)"/g,
+  ];
+  const scan = (file, catalogOnly) => {
     const src = fs.readFileSync(file, "utf8");
-    const re = /IconName::new\("([a-z0-9_]+)"\)/g;
-    let match;
-    while ((match = re.exec(src)) !== null) {
-      used.add(match[1]);
+    for (const re of patterns) {
+      let match;
+      while ((match = re.exec(src)) !== null) {
+        used.add(match[1]);
+      }
+    }
+    if (catalogOnly) {
+      let match;
+      const literal = /"([a-z0-9_]+)"/g;
+      while ((match = literal.exec(src)) !== null) {
+        if (poolNames.has(match[1])) {
+          used.add(match[1]);
+        }
+      }
     }
   };
-  for (const base of ["catalog/src", "crates"]) {
-    if (!fs.existsSync(base)) continue;
-    const walk = (dir) => {
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const p = path.join(dir, entry.name);
-        if (entry.isDirectory()) walk(p);
-        else if (entry.name.endsWith(".rs")) scan(p);
-      }
-    };
-    if (fs.statSync(base).isFile()) scan(base);
-    else walk(base);
-  }
+  const scanTree = (dir, catalogOnly) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, entry.name);
+      if (entry.isDirectory()) scanTree(p, catalogOnly);
+      else if (entry.name.endsWith(".rs")) scan(p, catalogOnly);
+    }
+  };
+  scanTree("catalog/src", true);
+  scanTree("crates", false);
   return [...used].sort();
 }
 
 function main() {
-  const used = collectUsedNames();
+  const poolNames = new Set(
+    fs
+      .readdirSync(poolDir)
+      .filter((name) => name.endsWith(".svg"))
+      .map((name) => name.slice(0, -4))
+  );
+  const used = collectUsedNames(poolNames);
   console.log("used icons:", used.length, "->", used.join(" "));
 
-  const missing = used.filter((name) => !fs.existsSync(path.join(iconsDir, name + ".svg")));
+  const missing = used.filter((name) => !poolNames.has(name));
   if (missing.length) {
-    console.error("MISSING icon files:", missing.join(" "));
+    console.error("MISSING in pool:", missing.join(" "));
     process.exit(1);
   }
 
   const keep = new Set(used.map((name) => name + ".svg"));
-  let removed = 0;
   for (const name of fs.readdirSync(iconsDir)) {
-    if (!keep.has(name)) {
-      fs.rmSync(path.join(iconsDir, name));
-      removed += 1;
-    }
+    if (!keep.has(name)) fs.rmSync(path.join(iconsDir, name));
   }
-  console.log("removed", removed, "unused icons");
+  for (const name of used) {
+    fs.copyFileSync(
+      path.join(poolDir, name + ".svg"),
+      path.join(iconsDir, name + ".svg")
+    );
+  }
 
   const entries = used.map(
     (name) => `    ("${name}", include_bytes!(concat!("symbols_icons/", "${name}", ".svg"))),`
