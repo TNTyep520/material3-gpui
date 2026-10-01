@@ -11,10 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use gpui::{AnyElement, App, Entity, IntoElement, Render, Window, div, prelude::*};
+use gpui::{AnyElement, App, Entity, IntoElement, Render, Window, div, prelude::*, px};
 use material3_gpui::prelude::*;
 
-use super::{gallery, showcase_group};
+use super::{catalog_card, gallery, showcase_group};
 
 const ENTRIES: [(&str, &str, &str, Option<&str>); 5] = [
     ("Proofs batch", "Jan 9, 2026", "star", Some("3")),
@@ -78,14 +78,40 @@ impl Render for ListsPage {
             })
             .collect::<Vec<_>>();
 
-        gallery([showcase_group(
-            cx,
-            "List items & dividers",
-            [div()
-                .w_full()
-                .min_w_0()
-                .child(List::new().children(rows))
+        gallery([
+            showcase_group(
+                cx,
+                "List items & dividers",
+                [div()
+                    .w_full()
+                    .min_w_0()
+                    .child(List::new().children(rows))
+                    .into_any_element()],
+            ),
+            showcase_group(
+                cx,
+                "Swipe to dismiss",
+                [SwipeToDismissBox::new(
+                    "swipe-dismiss",
+                    catalog_card(cx, Card::new().filled(), "Swipe me away"),
+                )
+                .background(div().bg(cx.theme().colors().error_container))
                 .into_any_element()],
-        )])
+            )
+            .into_any_element(),
+            showcase_group(
+                cx,
+                "Scrollbar",
+                [div()
+                    .relative()
+                    .h(px(72.))
+                    .w(px(280.))
+                    .max_w_full()
+                    .child("Scrollable stack")
+                    .child(Scrollbar::new("scrollbar").position(0.35))
+                    .into_any_element()],
+            )
+            .into_any_element(),
+        ])
     }
 }

@@ -30,110 +30,177 @@ const DEFAULT_SEED: u32 = 0x6750A4;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum PageId {
     Buttons,
-    Additional,
     ButtonsExtended,
     IconButtonsFab,
     Selection,
     Chips,
-    SliderProgress,
-    Tabs,
+    Sliders,
+    LoadingIndicators,
+    Progress,
     TextFields,
-    Overlays,
+    Search,
+    Pickers,
+    Tabs,
     Navigation,
+    AppBars,
     Cards,
     Lists,
     Dialogs,
-    AppBars,
     Sheets,
+    Overlays,
+    Toolbars,
+    FabMenu,
+    Carousel,
+    Motion,
 }
 
 pub(crate) struct PageMeta {
     pub(crate) id: PageId,
 
+    pub(crate) section: &'static str,
+
     pub(crate) title: &'static str,
     pub(crate) icon: &'static str,
 }
 
-pub(crate) const PAGES: [PageMeta; 16] = [
+const PAGES: [PageMeta; 23] = [
     PageMeta {
         id: PageId::Buttons,
+        section: "Buttons",
         title: "Buttons",
         icon: "star",
     },
     PageMeta {
-        id: PageId::Additional,
-        title: "Additional",
-        icon: "settings",
+        id: PageId::ButtonsExtended,
+        section: "Buttons",
+        title: "Groups & split",
+        icon: "more_vert",
     },
     PageMeta {
         id: PageId::IconButtonsFab,
+        section: "Buttons",
         title: "Icon buttons & FAB",
         icon: "favorite",
     },
     PageMeta {
-        id: PageId::ButtonsExtended,
-        title: "Toggle & split",
-        icon: "more_vert",
-    },
-    PageMeta {
         id: PageId::Selection,
+        section: "Selection",
         title: "Selection",
         icon: "check",
     },
     PageMeta {
         id: PageId::Chips,
+        section: "Selection",
         title: "Chips",
-        icon: "info",
+        icon: "label",
     },
     PageMeta {
-        id: PageId::SliderProgress,
-        title: "Slider & progress",
+        id: PageId::Sliders,
+        section: "Sliders",
+        title: "Sliders",
+        icon: "tune",
+    },
+    PageMeta {
+        id: PageId::LoadingIndicators,
+        section: "Loading & progress",
+        title: "Loading indicators",
         icon: "progress_activity",
     },
     PageMeta {
-        id: PageId::Tabs,
-        title: "Tabs",
-        icon: "menu",
+        id: PageId::Progress,
+        section: "Loading & progress",
+        title: "Progress",
+        icon: "autorenew",
     },
     PageMeta {
         id: PageId::TextFields,
+        section: "Text fields",
         title: "Text fields",
         icon: "edit",
     },
     PageMeta {
-        id: PageId::Overlays,
-        title: "Overlays",
-        icon: "more_vert",
+        id: PageId::Search,
+        section: "Search",
+        title: "Search",
+        icon: "search",
+    },
+    PageMeta {
+        id: PageId::Pickers,
+        section: "Date & time pickers",
+        title: "Date & time",
+        icon: "calendar_month",
+    },
+    PageMeta {
+        id: PageId::Tabs,
+        section: "Tabs",
+        title: "Tabs",
+        icon: "tab",
     },
     PageMeta {
         id: PageId::Navigation,
+        section: "Navigation",
         title: "Navigation",
         icon: "menu",
     },
     PageMeta {
-        id: PageId::Cards,
-        title: "Cards",
-        icon: "star",
-    },
-    PageMeta {
-        id: PageId::Lists,
-        title: "Lists",
-        icon: "person",
-    },
-    PageMeta {
-        id: PageId::Dialogs,
-        title: "Dialogs",
-        icon: "delete",
-    },
-    PageMeta {
         id: PageId::AppBars,
+        section: "App bars",
         title: "App bars",
         icon: "home",
     },
     PageMeta {
+        id: PageId::Cards,
+        section: "Cards",
+        title: "Cards",
+        icon: "dashboard",
+    },
+    PageMeta {
+        id: PageId::Lists,
+        section: "Lists",
+        title: "Lists",
+        icon: "list",
+    },
+    PageMeta {
+        id: PageId::Dialogs,
+        section: "Dialogs",
+        title: "Dialogs",
+        icon: "delete",
+    },
+    PageMeta {
         id: PageId::Sheets,
+        section: "Sheets",
         title: "Bottom sheet",
-        icon: "menu",
+        icon: "expand_less",
+    },
+    PageMeta {
+        id: PageId::Overlays,
+        section: "Overlays",
+        title: "Overlays",
+        icon: "notifications",
+    },
+    PageMeta {
+        id: PageId::Toolbars,
+        section: "Toolbars",
+        title: "Toolbars",
+        icon: "build",
+    },
+    PageMeta {
+        id: PageId::FabMenu,
+        section: "Toolbars",
+        title: "FAB menu",
+        icon: "add",
+    },
+    PageMeta {
+        id: PageId::Carousel,
+        section: "Additional",
+        title: "Carousel",
+        icon: "view_carousel",
+    },
+    PageMeta {
+        id: PageId::Motion,
+        section: "Additional",
+        title: "Motion",
+        icon: "animation",
     },
 ];
 
@@ -293,21 +360,28 @@ impl Render for Catalog {
 
         let page_view: AnyView = match self.page {
             PageId::Buttons => self.pages.buttons.clone().into(),
-            PageId::Additional => self.pages.additional.clone().into(),
             PageId::ButtonsExtended => self.pages.buttons_extended.clone().into(),
             PageId::IconButtonsFab => self.pages.icon_buttons_fab.clone().into(),
             PageId::Selection => self.pages.selection.clone().into(),
             PageId::Chips => self.pages.chips.clone().into(),
-            PageId::SliderProgress => self.pages.slider_progress.clone().into(),
-            PageId::Tabs => self.pages.tabs.clone().into(),
+            PageId::Sliders => self.pages.sliders.clone().into(),
+            PageId::LoadingIndicators => self.pages.loading_indicators.clone().into(),
+            PageId::Progress => self.pages.progress.clone().into(),
             PageId::TextFields => self.pages.text_fields.clone().into(),
-            PageId::Overlays => self.pages.overlays.clone().into(),
+            PageId::Search => self.pages.search.clone().into(),
+            PageId::Pickers => self.pages.pickers.clone().into(),
+            PageId::Tabs => self.pages.tabs.clone().into(),
             PageId::Navigation => self.pages.navigation.clone().into(),
+            PageId::AppBars => self.pages.app_bars.clone().into(),
             PageId::Cards => self.pages.cards.clone().into(),
             PageId::Lists => self.pages.lists.clone().into(),
             PageId::Dialogs => self.pages.dialogs.clone().into(),
-            PageId::AppBars => self.pages.app_bars.clone().into(),
             PageId::Sheets => self.pages.sheets.clone().into(),
+            PageId::Overlays => self.pages.overlays.clone().into(),
+            PageId::Toolbars => self.pages.toolbars.clone().into(),
+            PageId::FabMenu => self.pages.fab_menu.clone().into(),
+            PageId::Carousel => self.pages.carousel.clone().into(),
+            PageId::Motion => self.pages.motion.clone().into(),
         };
         let meta = &PAGES[PAGES.iter().position(|p| p.id == page).unwrap_or(0)];
 
@@ -340,47 +414,91 @@ impl Render for Catalog {
                     .overflow_y_scroll()
                     .px(px(12.))
                     .pb(px(12.))
-                    .children(PAGES.iter().enumerate().map(|(index, meta)| {
-                        let selected = meta.id == page;
-                        let target = meta.id;
-                        let color = if selected {
-                            colors.on_secondary_container
-                        } else {
-                            colors.on_surface_variant
-                        };
-                        div()
-                            .id(("catalog-page", index))
-                            .focusable()
-                            .tab_stop(true)
-                            .w_full()
-                            .h(px(44.))
-                            .mb(px(4.))
-                            .px(px(12.))
-                            .rounded(px(12.))
-                            .flex()
-                            .items_center()
-                            .gap(px(12.))
-                            .cursor_pointer()
-                            .focus(|style| style.bg(colors.secondary_container))
-                            .text_color(color)
-                            .when(selected, |element| element.bg(colors.secondary_container))
-                            .when(!selected, |element| {
-                                element.hover(move |style| style.bg(colors.surface_container_high))
+                    .children(
+                        PAGES
+                            .iter()
+                            .enumerate()
+                            .filter_map(|(index, meta)| {
+                                let first_of_section =
+                                    index == 0 || PAGES[index - 1].section != meta.section;
+                                first_of_section.then_some((index, meta.section))
                             })
-                            .child(Icon::new(meta.icon).size(px(20.)).color(color))
-                            .child(typography.label_large.apply(div()).child(meta.title))
-                            .on_key_down(cx.listener(move |this, event: &KeyDownEvent, _, cx| {
-                                if matches!(event.keystroke.key.as_str(), "enter" | "space") {
-                                    this.page = target;
-                                    cx.notify();
-                                    cx.stop_propagation();
-                                }
-                            }))
-                            .on_click(cx.listener(move |this, _, _, cx| {
-                                this.page = target;
-                                cx.notify();
-                            }))
-                    })),
+                            .collect::<Vec<_>>()
+                            .into_iter()
+                            .flat_map(|(_section_index, section)| {
+                                let header = typography
+                                    .label_medium
+                                    .apply(div())
+                                    .pt(px(16.))
+                                    .pb(px(8.))
+                                    .px(px(16.))
+                                    .text_color(colors.on_surface_variant)
+                                    .child(section)
+                                    .into_any_element();
+                                let items = PAGES
+                                    .iter()
+                                    .enumerate()
+                                    .filter(|(_, meta)| meta.section == section)
+                                    .map(|(index, meta)| {
+                                        let selected = meta.id == page;
+                                        let target = meta.id;
+                                        let color = if selected {
+                                            colors.on_secondary_container
+                                        } else {
+                                            colors.on_surface
+                                        };
+                                        div()
+                                            .id(("catalog-page", index))
+                                            .focusable()
+                                            .tab_stop(true)
+                                            .w_full()
+                                            .h(px(56.))
+                                            .mb(px(2.))
+                                            .px(px(16.))
+                                            .rounded(px(28.))
+                                            .flex()
+                                            .items_center()
+                                            .gap(px(12.))
+                                            .cursor_pointer()
+                                            .focus(|style| style.bg(colors.secondary_container))
+                                            .text_color(color)
+                                            .when(selected, |element| {
+                                                element.bg(colors.secondary_container)
+                                            })
+                                            .when(!selected, |element| {
+                                                element.hover(move |style| {
+                                                    style.bg(colors.surface_container_high)
+                                                })
+                                            })
+                                            .child(Icon::new(meta.icon).size(px(20.)).color(color))
+                                            .child(
+                                                typography
+                                                    .label_large
+                                                    .apply(div())
+                                                    .child(meta.title),
+                                            )
+                                            .on_key_down(cx.listener(
+                                                move |this, event: &KeyDownEvent, _, cx| {
+                                                    if matches!(
+                                                        event.keystroke.key.as_str(),
+                                                        "enter" | "space"
+                                                    ) {
+                                                        this.page = target;
+                                                        cx.notify();
+                                                        cx.stop_propagation();
+                                                    }
+                                                },
+                                            ))
+                                            .on_click(cx.listener(move |this, _, _, cx| {
+                                                this.page = target;
+                                                cx.notify();
+                                            }))
+                                            .into_any_element()
+                                    })
+                                    .collect::<Vec<_>>();
+                                std::iter::once(header).chain(items)
+                            }),
+                    ),
             );
         let theme_action = div()
             .flex()

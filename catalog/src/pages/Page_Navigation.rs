@@ -20,6 +20,7 @@ pub struct NavigationPage {
     nav_bar: Entity<NavigationBarState>,
     nav_rail: Entity<NavigationRailState>,
     nav_drawer: Entity<NavigationDrawerState>,
+    wide_rail_buttons: Vec<Entity<ButtonState>>,
 }
 
 impl NavigationPage {
@@ -55,10 +56,18 @@ impl NavigationPage {
             .selected(0)
             .build(cx);
 
+        let wide_rail_buttons = vec![
+            Button::new("wide-rail-home", "Home").text().build(cx),
+            Button::new("wide-rail-settings", "Settings")
+                .text()
+                .build(cx),
+        ];
+
         cx.new(|_| Self {
             nav_bar,
             nav_rail,
             nav_drawer,
+            wide_rail_buttons,
         })
     }
 }
@@ -152,6 +161,20 @@ impl Render for NavigationPage {
                         .into_any_element(),
                 ],
             ),
+            showcase_group(
+                cx,
+                "Wide navigation rail",
+                [div()
+                    .h(px(320.))
+                    .flex_none()
+                    .overflow_hidden()
+                    .child(
+                        WideNavigationRail::new("wide-rail")
+                            .children(self.wide_rail_buttons.clone()),
+                    )
+                    .into_any_element()],
+            )
+            .into_any_element(),
         ])
     }
 }

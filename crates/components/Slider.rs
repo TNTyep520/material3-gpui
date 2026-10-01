@@ -271,6 +271,11 @@ impl VerticalSlider {
         self
     }
 
+    pub fn centered(mut self, centered: bool) -> Self {
+        self.0 = self.0.centered(centered);
+        self
+    }
+
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.0 = self.0.enabled(enabled);
         self
