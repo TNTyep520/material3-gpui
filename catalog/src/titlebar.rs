@@ -1,7 +1,6 @@
 //! 组件展厅的紧凑标题栏，保留平台原生窗口操作。
 //!
-//! 应用图标和名称位于左侧，窗口控制按钮位于右侧。
-//! 按钮图标使用 Material Symbols Rounded SVG。
+//! 标题文本位于左侧，窗口控制按钮位于右侧。
 //!
 //! 平台行为:
 //! - **Windows**:整条标题栏标 [`WindowControlArea::Drag`](拖动/双击最大化
@@ -17,17 +16,14 @@ use std::rc::Rc;
 
 use gpui::{
     App, ClickEvent, Hsla, IntoElement, MouseButton, ParentElement as _, RenderOnce, Rgba,
-    StatefulInteractiveElement as _, Styled, Window, WindowControlArea, div, img, prelude::*, px,
+    StatefulInteractiveElement as _, Styled, Window, WindowControlArea, div, prelude::*, px,
 };
-use material3_gpui::assets::MATERIAL3_FAVICON_SVG_PATH;
 use material3_gpui::fonts::TEXT_FONT_FAMILY;
 use material3_gpui::icon::{Icon, IconName};
 use material3_gpui::prelude::ActiveTheme;
 
 /// 标题栏高度。
 const HEIGHT: f32 = 48.0;
-/// 应用图标圆角方块边长。
-const ICON_SIZE: f32 = 28.0;
 /// 窗口按钮的圆形热区边长。
 const BUTTON_SIZE: f32 = 44.0;
 /// 关闭按钮红色(BakaXL 惯例)。
@@ -87,16 +83,10 @@ impl RenderOnce for CustomTitleBar {
                     })
             });
 
-        // 左侧:应用图标(还原站点图标样式;macOS 先避让红绿灯)
-        let title_bar = title_bar
-            .when(is_mac, |el| {
-                el.child(div().flex_none().w(px(MAC_TRAFFIC_LIGHT_INSET)))
-            })
-            .child(
-                img(MATERIAL3_FAVICON_SVG_PATH)
-                    .size(px(ICON_SIZE))
-                    .flex_none(),
-            );
+        // 左侧:标题文本(macOS 先避让红绿灯)
+        let title_bar = title_bar.when(is_mac, |el| {
+            el.child(div().flex_none().w(px(MAC_TRAFFIC_LIGHT_INSET)))
+        });
 
         let title_bar = title_bar.child(
             div()
