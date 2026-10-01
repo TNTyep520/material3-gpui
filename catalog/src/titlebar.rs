@@ -83,14 +83,12 @@ impl RenderOnce for CustomTitleBar {
             el.child(div().flex_none().w(px(MAC_TRAFFIC_LIGHT_INSET)))
         });
 
-        let typography = *cx.theme().typography();
         let title_bar = title_bar.child(
-            typography
-                .title_large
-                .apply(div())
+            div()
                 .flex_1()
                 .min_w_0()
                 .truncate()
+                .text_size(px(14.))
                 .text_color(colors.on_surface)
                 .child("Material 3 · Catalog"),
         );
