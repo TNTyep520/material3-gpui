@@ -18,7 +18,6 @@ use gpui::{
     App, ClickEvent, Hsla, IntoElement, MouseButton, ParentElement as _, RenderOnce, Rgba,
     StatefulInteractiveElement as _, Styled, Window, WindowControlArea, div, prelude::*, px,
 };
-use material3_gpui::fonts::TEXT_FONT_FAMILY;
 use material3_gpui::icon::{Icon, IconName};
 use material3_gpui::prelude::ActiveTheme;
 
@@ -84,15 +83,17 @@ impl RenderOnce for CustomTitleBar {
             el.child(div().flex_none().w(px(MAC_TRAFFIC_LIGHT_INSET)))
         });
 
+        let typography = *cx.theme().typography();
         let title_bar = title_bar.child(
-            div()
-                .text_size(px(14.))
-                .font_family(TEXT_FONT_FAMILY)
+            typography
+                .title_large
+                .apply(div())
+                .flex_1()
+                .min_w_0()
+                .truncate()
                 .text_color(colors.on_surface)
                 .child("Material 3 · Catalog"),
         );
-
-        let title_bar = title_bar.child(div().flex_1());
 
         let controls = if is_mac {
             div()
