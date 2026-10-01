@@ -23,18 +23,15 @@ pub struct AdditionalPage {
     weak: WeakEntity<Self>,
     toolbar_add: Entity<IconButtonState>,
     toolbar_edit: Entity<IconButtonState>,
-    fab_action_add: Entity<FabState>,
-    fab_action_settings: Entity<FabState>,
-    fab_toggle_open: Entity<FabState>,
-    fab_toggle_close: Entity<FabState>,
+    fab_menu: Entity<FabMenuState>,
     rail_home: Entity<ButtonState>,
     rail_settings: Entity<ButtonState>,
     search_field: Entity<TextFieldState>,
     secure_field: Entity<TextFieldState>,
     reset_button: Entity<ButtonState>,
     query: String,
-    fab_menu_expanded: bool,
     dismissed: bool,
+    carousel_selected: usize,
     date: DatePickerState,
     time: TimePickerState,
     range: (f32, f32),
@@ -68,30 +65,10 @@ impl AdditionalPage {
                     show_snackbar(window, cx, Snackbar::new("Menu: settings"), None);
                 })
                 .build(cx);
-            let fab_toggle_open = {
-                let weak = weak.clone();
-                Fab::new("fab-toggle-open", IconName::Add)
-                    .on_click(move |_, _, cx| {
-                        weak.update(cx, |page: &mut Self, cx: &mut Context<Self>| {
-                            page.fab_menu_expanded = true;
-                            cx.notify();
-                        })
-                        .log_err();
-                    })
-                    .build(cx)
-            };
-            let fab_toggle_close = {
-                let weak = weak.clone();
-                Fab::new("fab-toggle-close", IconName::Close)
-                    .on_click(move |_, _, cx| {
-                        weak.update(cx, |page: &mut Self, cx: &mut Context<Self>| {
-                            page.fab_menu_expanded = false;
-                            cx.notify();
-                        })
-                        .log_err();
-                    })
-                    .build(cx)
-            };
+            let fab_menu = FabMenu::new("fab-menu")
+                .action(fab_action_add.clone())
+                .action(fab_action_settings.clone())
+                .build(cx);
 
             let rail_home = Button::new("rail-home", "Home").text().build(cx);
             let rail_settings = Button::new("rail-settings", "Settings").text().build(cx);
@@ -133,18 +110,15 @@ impl AdditionalPage {
                 weak,
                 toolbar_add,
                 toolbar_edit,
-                fab_action_add,
-                fab_action_settings,
-                fab_toggle_open,
-                fab_toggle_close,
+                fab_menu,
                 rail_home,
                 rail_settings,
                 search_field,
                 secure_field,
                 reset_button,
                 query: String::new(),
-                fab_menu_expanded: false,
                 dismissed: false,
+                carousel_selected: 1,
                 date: DatePickerState::today(),
                 time: TimePickerState::new(10, 30),
                 range: (0.2, 0.78),
@@ -162,16 +136,10 @@ impl Render for AdditionalPage {
 
         let toolbar = FloatingToolbar::new("toolbar")
             .children([self.toolbar_add.clone(), self.toolbar_edit.clone()]);
-
-        let fab_menu = FabMenu::new("fab-menu")
-            .expanded(self.fab_menu_expanded)
-            .action(self.fab_action_add.clone())
-            .action(self.fab_action_settings.clone());
-        let fab_toggle = if self.fab_menu_expanded {
-            self.fab_toggle_close.clone()
-        } else {
-            self.fab_toggle_open.clone()
-        };
+        let vibrant_toolbar = FloatingToolbar::new("toolbar-vibrant")
+            .vibrant(true)
+            .state(FloatingToolbarState::new(false))
+            .children([self.toolbar_add.clone(), self.toolbar_edit.clone()]);
 
         let wide_rail = WideNavigationRail::new("wide-rail")
             .children([self.rail_home.clone(), self.rail_settings.clone()]);
@@ -186,22 +154,89 @@ impl Render for AdditionalPage {
             .date
             .selected_day
             .map(|day| format!("{:04}-{:02}-{:02}", self.date.year, self.date.month, day))
-            .unwrap_or_else(|| "Select date".into());
+            .unwrap_or_else(|| "Select date".to_string());
         let time_label = format!("{:02}:{:02}", self.time.hour, self.time.minute);
         let range_label = format!("{:.0}% – {:.0}%", self.range.0 * 100., self.range.1 * 100.);
+        let carousel_label = format!("Selected item {}", self.carousel_selected + 1);
 
         gallery([
             showcase_group(
                 cx,
-                "Indicators",
+                "Loading indicators",
                 [
                     LoadingIndicator::new("loading")
                         .size(px(40.))
                         .into_any_element(),
-                    WavyProgressIndicator::new("wavy")
-                        .value(0.64)
+                    ContainedLoadingIndicator::new("loading-contained")
+                        .size(px(48.))
                         .into_any_element(),
                 ],
+            ),
+            showcase_group(
+                cx,
+                "Wavy progress",
+                [div()
+                    .w_full()
+                    .min_w_0()
+                    .flex()
+                    .flex_col()
+                    .gap(px(16.))
+                    .child(
+                        LinearWavyProgressIndicator::new("wavy-linear")
+                            .value(0.64)
+                            .into_any_element(),
+                    )
+                    .child(
+                        LinearWavyProgressIndicator::new("wavy-linear-indeterminate")
+                            .into_any_element(),
+                    )
+                    .child(
+                        CircularWavyProgressIndicator::new("wavy-circular")
+                            .value(0.64)
+                            .into_any_element(),
+                    )
+                    .child(
+                        CircularWavyProgressIndicator::new("wavy-circular-indeterminate")
+                            .into_any_element(),
+                    )
+                    .into_any_element()],
+            ),
+            showcase_group(
+                cx,
+                "Carousel",
+                [div()
+                    .w_full()
+                    .min_w_0()
+                    .flex()
+                    .flex_col()
+                    .gap(px(8.))
+                    .child(
+                        typography
+                            .body_medium
+                            .apply(div())
+                            .text_color(colors.on_surface_variant)
+                            .child(carousel_label),
+                    )
+                    .child(
+                        Carousel::new("carousel")
+                            .selected(self.carousel_selected)
+                            .on_select({
+                                let weak = weak.clone();
+                                move |index, _, cx| {
+                                    weak.update(cx, |page: &mut Self, cx: &mut Context<Self>| {
+                                        page.carousel_selected = index;
+                                        cx.notify();
+                                    })
+                                    .log_err();
+                                }
+                            })
+                            .child("Alpha")
+                            .child("Bravo")
+                            .child("Charlie")
+                            .child("Delta")
+                            .into_any_element(),
+                    )
+                    .into_any_element()],
             ),
             showcase_group(
                 cx,
@@ -273,14 +308,8 @@ impl Render for AdditionalPage {
                 "Toolbars & navigation",
                 [
                     toolbar.into_any_element(),
-                    div()
-                        .flex()
-                        .flex_col()
-                        .items_end()
-                        .gap(px(8.))
-                        .child(fab_menu)
-                        .child(fab_toggle)
-                        .into_any_element(),
+                    vibrant_toolbar.into_any_element(),
+                    self.fab_menu.clone().into_any_element(),
                     wide_rail.into_any_element(),
                 ],
             ),

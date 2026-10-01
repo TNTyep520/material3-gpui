@@ -16,85 +16,18 @@
 // 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingToolbar.kt
 // 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SwipeToDismissBox.kt
 
-use crate::components::{Fab, FilledIconToggleButton, TextField, TextFieldState};
+use crate::components::{TextField, TextFieldState};
 use crate::theme::ActiveTheme;
 use gpui::{
-    Animation, AnimationExt, AnyElement, App, ElementId, Entity, IntoElement, MouseButton,
-    ParentElement, RenderOnce, SharedString, Styled, Window, div, prelude::*, px, relative,
+    AnyElement, App, ElementId, Entity, IntoElement, MouseButton, ParentElement, RenderOnce,
+    SharedString, Styled, Window, div, prelude::*, px, relative,
 };
 use std::cell::Cell;
 use std::rc::Rc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 type RangeChangeHandler = Rc<dyn Fn((f32, f32), &mut Window, &mut App)>;
 type ChangeHandler = Rc<dyn Fn(&str, &mut Window, &mut App)>;
-
-#[derive(IntoElement)]
-pub struct LoadingIndicator {
-    id: ElementId,
-    size: gpui::Pixels,
-}
-impl LoadingIndicator {
-    pub fn new(id: impl Into<ElementId>) -> Self {
-        Self {
-            id: id.into(),
-            size: px(48.),
-        }
-    }
-    pub fn size(mut self, size: gpui::Pixels) -> Self {
-        self.size = size;
-        self
-    }
-}
-impl RenderOnce for LoadingIndicator {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        let c = cx.theme().colors();
-        div()
-            .id(self.id)
-            .size(self.size)
-            .rounded_full()
-            .border_3()
-            .border_color(c.primary)
-            .text_color(c.primary)
-            .with_animation(
-                "md3-loading",
-                Animation::new(Duration::from_millis(1200)).repeat(),
-                |el, _| el,
-            )
-    }
-}
-
-#[derive(IntoElement)]
-pub struct WavyProgressIndicator {
-    id: ElementId,
-    value: Option<f32>,
-}
-impl WavyProgressIndicator {
-    pub fn new(id: impl Into<ElementId>) -> Self {
-        Self {
-            id: id.into(),
-            value: None,
-        }
-    }
-    pub fn value(mut self, value: f32) -> Self {
-        self.value = Some(value.clamp(0., 1.));
-        self
-    }
-}
-impl RenderOnce for WavyProgressIndicator {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        let c = cx.theme().colors();
-        let v = self.value.unwrap_or(0.35);
-        div()
-            .id(self.id)
-            .h(px(6.))
-            .w_full()
-            .rounded_full()
-            .bg(c.secondary_container)
-            .child(div().h_full().w(relative(v)).rounded_full().bg(c.primary))
-    }
-}
-
 #[derive(IntoElement)]
 pub struct RangeSlider {
     id: ElementId,
@@ -477,147 +410,6 @@ impl RenderOnce for SwipeToDismissBox {
                 self.state.current_value == SwipeToDismissBoxValue::Settled,
                 |el| el.child(self.content),
             )
-    }
-}
-
-#[derive(IntoElement)]
-pub struct FloatingToolbar {
-    id: ElementId,
-    children: Vec<gpui::AnyElement>,
-    vertical: bool,
-    state: FloatingToolbarState,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct FloatingToolbarState {
-    pub expanded: bool,
-}
-
-impl FloatingToolbarState {
-    pub fn new(expanded: bool) -> Self {
-        Self { expanded }
-    }
-
-    pub fn expand(&mut self) {
-        self.expanded = true;
-    }
-
-    pub fn collapse(&mut self) {
-        self.expanded = false;
-    }
-}
-
-impl Default for FloatingToolbarState {
-    fn default() -> Self {
-        Self::new(true)
-    }
-}
-
-pub type HorizontalFloatingToolbar = FloatingToolbar;
-
-#[derive(IntoElement)]
-pub struct VerticalFloatingToolbar(FloatingToolbar);
-
-impl FloatingToolbar {
-    pub fn new(id: impl Into<ElementId>) -> Self {
-        Self {
-            id: id.into(),
-            children: Vec::new(),
-            vertical: false,
-            state: FloatingToolbarState::default(),
-        }
-    }
-
-    pub fn vertical(mut self) -> Self {
-        self.vertical = true;
-        self
-    }
-
-    pub fn state(mut self, state: FloatingToolbarState) -> Self {
-        self.state = state;
-        self
-    }
-}
-
-impl VerticalFloatingToolbar {
-    pub fn new(id: impl Into<ElementId>) -> Self {
-        Self(FloatingToolbar::new(id).vertical())
-    }
-
-    pub fn state(mut self, state: FloatingToolbarState) -> Self {
-        self.0 = self.0.state(state);
-        self
-    }
-}
-
-impl ParentElement for VerticalFloatingToolbar {
-    fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
-        self.0.extend(elements);
-    }
-}
-
-impl RenderOnce for VerticalFloatingToolbar {
-    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        self.0.render(window, cx)
-    }
-}
-impl ParentElement for FloatingToolbar {
-    fn extend(&mut self, e: impl IntoIterator<Item = gpui::AnyElement>) {
-        self.children.extend(e)
-    }
-}
-impl RenderOnce for FloatingToolbar {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        div()
-            .id(self.id)
-            .flex()
-            .when(self.vertical, |el| el.flex_col())
-            .gap(px(8.))
-            .p(px(8.))
-            .rounded_full()
-            .bg(cx.theme().colors().surface_container_high)
-            .when(self.state.expanded, |el| el.children(self.children))
-    }
-}
-
-#[derive(IntoElement)]
-pub struct FabMenu {
-    id: ElementId,
-    expanded: bool,
-    actions: Vec<gpui::AnyElement>,
-}
-
-pub type FloatingActionButtonMenu = FabMenu;
-
-pub type FloatingActionButtonMenuItem = Fab;
-
-pub type ToggleFloatingActionButton = FilledIconToggleButton;
-impl FabMenu {
-    pub fn new(id: impl Into<ElementId>) -> Self {
-        Self {
-            id: id.into(),
-            expanded: false,
-            actions: Vec::new(),
-        }
-    }
-    pub fn expanded(mut self, e: bool) -> Self {
-        self.expanded = e;
-        self
-    }
-    pub fn action(mut self, a: impl IntoElement) -> Self {
-        self.actions.push(a.into_any_element());
-        self
-    }
-}
-impl RenderOnce for FabMenu {
-    fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
-        div()
-            .id(self.id)
-            .flex()
-            .flex_col()
-            .items_end()
-            .gap(px(8.))
-            .when(self.expanded, |el| el.children(self.actions))
     }
 }
 

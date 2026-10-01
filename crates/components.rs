@@ -33,6 +33,8 @@ mod dialog;
 mod divider;
 #[path = "components/ExposedDropdownMenu.rs"]
 mod exposed_dropdown_menu;
+#[path = "components/Expressive.rs"]
+mod expressive;
 #[path = "components/Fab.rs"]
 mod fab;
 #[path = "components/IconButton.rs"]
@@ -84,12 +86,16 @@ pub use exposed_dropdown_menu::{
 };
 
 pub use additional::{
-    DatePicker, DatePickerState, ExposedDatePicker, ExposedTimePicker, FabMenu,
+    DatePicker, DatePickerState, ExposedDatePicker, ExposedTimePicker, RangeSlider, Scrollbar,
+    SearchBar, SecureTextField, SwipeToDismissBox, SwipeToDismissBoxState, SwipeToDismissBoxValue,
+    TimeInput, TimePicker, TimePickerState, WideNavigationRail,
+};
+pub use expressive::{
+    Carousel, CircularWavyProgressIndicator, ContainedLoadingIndicator, FabMenu, FabMenuState,
     FloatingActionButtonMenu, FloatingActionButtonMenuItem, FloatingToolbar, FloatingToolbarState,
-    HorizontalFloatingToolbar, LoadingIndicator, RangeSlider, Scrollbar, SearchBar,
-    SecureTextField, SwipeToDismissBox, SwipeToDismissBoxState, SwipeToDismissBoxValue, TimeInput,
-    TimePicker, TimePickerState, ToggleFloatingActionButton, VerticalFloatingToolbar,
-    WavyProgressIndicator, WideNavigationRail,
+    HorizontalFloatingToolbar, LinearWavyProgressIndicator, LoadingIndicator,
+    LoadingIndicatorVariant, ToggleFloatingActionButton, VerticalFloatingToolbar,
+    WavyCircularProgressIndicator, WavyProgressIndicator,
 };
 pub use fab::{
     ExtendedFloatingActionButton, Fab, FabColor, FabSize, FabState, FloatingActionButton,
