@@ -1,0 +1,55 @@
+// Copyright (c) 2026 TNTyep520
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+use gpui::{
+    App, ElementId, IntoElement, RenderOnce, Styled, Window, div, prelude::*, px, relative,
+};
+
+use crate::theme::ActiveTheme;
+
+#[derive(IntoElement)]
+pub struct Scrollbar {
+    id: ElementId,
+    position: f32,
+    thickness: gpui::Pixels,
+}
+impl Scrollbar {
+    pub fn new(id: impl Into<ElementId>) -> Self {
+        Self {
+            id: id.into(),
+            position: 0.,
+            thickness: px(4.),
+        }
+    }
+    pub fn position(mut self, p: f32) -> Self {
+        self.position = p.clamp(0., 1.);
+        self
+    }
+    pub fn thickness(mut self, t: gpui::Pixels) -> Self {
+        self.thickness = t;
+        self
+    }
+}
+impl RenderOnce for Scrollbar {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+        div()
+            .id(self.id)
+            .absolute()
+            .right_0()
+            .top(relative(self.position))
+            .w(self.thickness)
+            .h(px(48.))
+            .rounded_full()
+            .bg(cx.theme().colors().on_surface_variant.opacity(0.5))
+    }
+}

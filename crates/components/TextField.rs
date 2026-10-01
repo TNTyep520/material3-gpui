@@ -718,3 +718,49 @@ mod appearance {
         }
     }
 }
+
+pub struct SecureTextField {
+    id: ElementId,
+    label: SharedString,
+    value: SharedString,
+    enabled: bool,
+    on_value_change: Option<ChangeHandler>,
+}
+impl SecureTextField {
+    pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
+        Self {
+            id: id.into(),
+            label: label.into(),
+            value: SharedString::default(),
+            enabled: true,
+            on_value_change: None,
+        }
+    }
+    pub fn value(mut self, v: impl Into<SharedString>) -> Self {
+        self.value = v.into();
+        self
+    }
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+    pub fn on_value_change(
+        mut self,
+        handler: impl Fn(&str, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.on_value_change = Some(Rc::new(handler));
+        self
+    }
+}
+impl SecureTextField {
+    pub fn build(self, cx: &mut App) -> Entity<TextFieldState> {
+        let mut field = TextField::new(self.id, self.label)
+            .password(true)
+            .value(self.value)
+            .enabled(self.enabled);
+        if let Some(handler) = self.on_value_change {
+            field = field.on_value_change(move |value, window, cx| handler(value, window, cx));
+        }
+        field.build(cx)
+    }
+}

@@ -12,13 +12,15 @@
 // limitations under the License.
 // 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Slider.kt
 
+use std::cell::Cell;
 use std::rc::Rc;
 
 use gpui::prelude::FluentBuilder as _;
 use gpui::{
-    App, AppContext as _, Bounds, Context, DispatchPhase, Entity, InteractiveElement as _,
-    IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement as _,
-    Pixels, Render, Styled, Window, canvas, div, px,
+    App, AppContext as _, Bounds, Context, DispatchPhase, ElementId, Entity,
+    InteractiveElement as _, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent,
+    MouseUpEvent, ParentElement as _, Pixels, Render, RenderOnce, Styled, Window, canvas, div, px,
+    relative,
 };
 
 use crate::theme::ActiveTheme;
@@ -453,5 +455,162 @@ mod appearance {
                 container_height: px(44.),
             }
         }
+    }
+}
+
+type RangeChangeHandler = Rc<dyn Fn((f32, f32), &mut Window, &mut App)>;
+
+#[derive(IntoElement)]
+pub struct RangeSlider {
+    id: ElementId,
+    start: f32,
+    end: f32,
+    enabled: bool,
+    on_value_change: Option<RangeChangeHandler>,
+}
+impl RangeSlider {
+    pub fn new(id: impl Into<ElementId>, start: f32, end: f32) -> Self {
+        Self {
+            id: id.into(),
+            start: start.clamp(0., 1.).min(end.clamp(0., 1.)),
+            end: end.clamp(0., 1.).max(start.clamp(0., 1.)),
+            enabled: true,
+            on_value_change: None,
+        }
+    }
+    pub fn range(mut self, start: f32, end: f32) -> Self {
+        self.start = start.clamp(0., 1.).min(end.clamp(0., 1.));
+        self.end = end.clamp(0., 1.).max(self.start);
+        self
+    }
+
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+
+    pub fn on_value_change(
+        mut self,
+        handler: impl Fn((f32, f32), &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.on_value_change = Some(Rc::new(handler));
+        self
+    }
+}
+impl RenderOnce for RangeSlider {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+        let c = cx.theme().colors();
+        let bounds = crate::interaction::BoundsHandle::new();
+        let values = Rc::new(Cell::new((self.start, self.end)));
+        let active_start = Rc::new(Cell::new(None::<bool>));
+        let on_mouse_down = {
+            let bounds = bounds.clone();
+            let values = values.clone();
+            let active_start = active_start.clone();
+            let callback = self.on_value_change.clone();
+            move |event: &gpui::MouseDownEvent, window: &mut Window, cx: &mut App| {
+                let rect = bounds.get();
+                let width = f32::from(rect.size.width);
+                if width <= 0. {
+                    return;
+                }
+                let fraction = (f32::from(event.position.x - rect.origin.x) / width).clamp(0., 1.);
+                let (start, end) = values.get();
+                let is_start = (fraction - start).abs() <= (fraction - end).abs();
+                active_start.set(Some(is_start));
+                let next = if is_start {
+                    (fraction.min(end), end)
+                } else {
+                    (start, fraction.max(start))
+                };
+                values.set(next);
+                if let Some(handler) = &callback {
+                    handler(next, window, cx);
+                }
+            }
+        };
+        let on_mouse_move = {
+            let bounds = bounds.clone();
+            let active_start = active_start.clone();
+            let callback = self.on_value_change;
+            move |event: &gpui::MouseMoveEvent, window: &mut Window, cx: &mut App| {
+                let Some(is_start) = active_start.get() else {
+                    return;
+                };
+                if event.pressed_button != Some(MouseButton::Left) {
+                    return;
+                }
+                let rect = bounds.get();
+                let width = f32::from(rect.size.width);
+                if width <= 0. {
+                    return;
+                }
+                let fraction = (f32::from(event.position.x - rect.origin.x) / width).clamp(0., 1.);
+                let (start, end) = values.get();
+                let next = if is_start {
+                    (fraction.min(end), end)
+                } else {
+                    (start, fraction.max(start))
+                };
+                if next != (start, end) {
+                    values.set(next);
+                    if let Some(handler) = &callback {
+                        handler(next, window, cx);
+                    }
+                }
+            }
+        };
+        div()
+            .id(self.id)
+            .relative()
+            .h(px(44.))
+            .w_full()
+            .when(self.enabled, |el| {
+                el.cursor_pointer()
+                    .on_mouse_down(MouseButton::Left, on_mouse_down)
+                    .on_mouse_move(on_mouse_move)
+                    .on_mouse_up(MouseButton::Left, move |_, _, _| active_start.set(None))
+            })
+            .child(
+                div()
+                    .absolute()
+                    .top(px(20.))
+                    .h(px(4.))
+                    .w_full()
+                    .rounded_full()
+                    .bg(c.secondary_container),
+            )
+            .child(
+                div()
+                    .absolute()
+                    .top(px(20.))
+                    .left(relative(self.start))
+                    .right(relative(1. - self.end))
+                    .h(px(4.))
+                    .bg(c.primary),
+            )
+            .child(
+                div()
+                    .absolute()
+                    .top_0()
+                    .left(relative(self.start))
+                    .ml(px(-2.))
+                    .w(px(4.))
+                    .h(px(44.))
+                    .rounded_full()
+                    .bg(c.primary),
+            )
+            .child(
+                div()
+                    .absolute()
+                    .top_0()
+                    .left(relative(self.end))
+                    .ml(px(-2.))
+                    .w(px(4.))
+                    .h(px(44.))
+                    .rounded_full()
+                    .bg(c.primary),
+            )
+            .child(bounds.capture_element())
     }
 }

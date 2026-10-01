@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[path = "components/Additional.rs"]
-mod additional;
 #[path = "components/Badge.rs"]
 mod badge;
 #[path = "components/BottomSheet.rs"]
@@ -23,24 +21,32 @@ mod button;
 mod button_group;
 #[path = "components/Card.rs"]
 mod card;
+#[path = "components/Carousel.rs"]
+mod carousel;
 #[path = "components/Checkbox.rs"]
 mod checkbox;
 #[path = "components/Chip.rs"]
 mod chip;
+#[path = "components/DatePicker.rs"]
+mod date_picker;
 #[path = "components/Dialog.rs"]
 mod dialog;
 #[path = "components/Divider.rs"]
 mod divider;
 #[path = "components/ExposedDropdownMenu.rs"]
 mod exposed_dropdown_menu;
-#[path = "components/Expressive.rs"]
-mod expressive;
 #[path = "components/Fab.rs"]
 mod fab;
+#[path = "components/FabMenu.rs"]
+mod fab_menu;
+#[path = "components/FloatingToolbar.rs"]
+mod floating_toolbar;
 #[path = "components/IconButton.rs"]
 mod icon_button;
 #[path = "components/List.rs"]
 mod list;
+#[path = "components/LoadingIndicator.rs"]
+mod loading_indicator;
 #[path = "components/Navigation.rs"]
 mod navigation;
 #[path = "components/Progress.rs"]
@@ -49,18 +55,26 @@ mod progress;
 mod radio;
 #[path = "components/Scaffold.rs"]
 mod scaffold;
+#[path = "components/Scrollbar.rs"]
+mod scrollbar;
+#[path = "components/SearchBar.rs"]
+mod search_bar;
 #[path = "components/SegmentedButton.rs"]
 mod segmented_button;
 #[path = "components/Slider.rs"]
 mod slider;
 #[path = "components/SplitButton.rs"]
 mod split_button;
+#[path = "components/SwipeToDismissBox.rs"]
+mod swipe_to_dismiss_box;
 #[path = "components/Switch.rs"]
 mod switch;
 #[path = "components/Tabs.rs"]
 mod tabs;
 #[path = "components/TextField.rs"]
 mod text_field;
+#[path = "components/TimePicker.rs"]
+mod time_picker;
 #[path = "components/ToggleButton.rs"]
 mod toggle_button;
 #[path = "components/TopAppBar.rs"]
@@ -74,34 +88,30 @@ pub use button::{
 };
 pub use button_group::{ButtonGroup, ButtonGroupMenuState, ButtonGroupStyle};
 pub use card::{Card, CardVariant, ElevatedCard, OutlinedCard};
+pub use carousel::Carousel;
 pub use checkbox::{Checkbox, CheckboxState, ToggleableState, TriStateCheckbox};
 pub use chip::{
     AssistChip, Chip, ChipState, ChipVariant, ElevatedAssistChip, ElevatedFilterChip,
     ElevatedSuggestionChip, FilterChip, InputChip, SuggestionChip,
 };
+pub use date_picker::{DatePicker, DatePickerState, ExposedDatePicker};
 pub use dialog::{AlertDialog, BasicAlertDialog, DatePickerDialog, Dialog, TimePickerDialog};
 pub use divider::{Divider, HorizontalDivider, VerticalDivider};
 pub use exposed_dropdown_menu::{
     ExposedDropdownMenu, ExposedDropdownMenuBox, ExposedDropdownMenuStyle,
-};
-
-pub use additional::{
-    DatePicker, DatePickerState, ExposedDatePicker, ExposedTimePicker, RangeSlider, Scrollbar,
-    SearchBar, SecureTextField, SwipeToDismissBox, SwipeToDismissBoxState, SwipeToDismissBoxValue,
-    TimeInput, TimePicker, TimePickerState, WideNavigationRail,
-};
-pub use expressive::{
-    Carousel, CircularWavyProgressIndicator, ContainedLoadingIndicator, FabMenu, FabMenuState,
-    FloatingActionButtonMenu, FloatingActionButtonMenuItem, FloatingToolbar, FloatingToolbarState,
-    HorizontalFloatingToolbar, LinearWavyProgressIndicator, LoadingIndicator,
-    LoadingIndicatorVariant, ToggleFloatingActionButton, VerticalFloatingToolbar,
-    WavyCircularProgressIndicator, WavyProgressIndicator,
 };
 pub use fab::{
     ExtendedFloatingActionButton, Fab, FabColor, FabSize, FabState, FloatingActionButton,
     LargeExtendedFloatingActionButton, LargeFloatingActionButton,
     MediumExtendedFloatingActionButton, MediumFloatingActionButton,
     SmallExtendedFloatingActionButton, SmallFloatingActionButton,
+};
+pub use fab_menu::{
+    FabMenu, FabMenuState, FloatingActionButtonMenu, FloatingActionButtonMenuItem,
+    ToggleFloatingActionButton,
+};
+pub use floating_toolbar::{
+    FloatingToolbar, FloatingToolbarState, HorizontalFloatingToolbar, VerticalFloatingToolbar,
 };
 pub use icon_button::{
     FilledIconButton, FilledIconToggleButton, FilledTonalIconButton, FilledTonalIconToggleButton,
@@ -110,29 +120,37 @@ pub use icon_button::{
     OutlinedIconButton, OutlinedIconToggleButton,
 };
 pub use list::{List, ListItem, SegmentedListItem};
+pub use loading_indicator::{ContainedLoadingIndicator, LoadingIndicator, LoadingIndicatorVariant};
 pub use navigation::{
     DismissibleDrawerSheet, DismissibleNavigationDrawer, DrawerEntry, ModalDrawerSheet,
     ModalNavigationDrawer, NavigationBar, NavigationBarItem, NavigationBarState, NavigationDrawer,
     NavigationDrawerItem, NavigationDrawerState, NavigationItemSpec, NavigationRail,
     NavigationRailItem, NavigationRailState, PermanentDrawerSheet, PermanentNavigationDrawer,
+    WideNavigationRail,
 };
 pub use progress::{
-    CircularProgress, CircularProgressIndicator, LinearProgress, LinearProgressIndicator,
+    CircularProgress, CircularProgressIndicator, CircularWavyProgressIndicator, LinearProgress,
+    LinearProgressIndicator, LinearWavyProgressIndicator, WavyCircularProgressIndicator,
+    WavyProgressIndicator,
 };
 pub use radio::{RadioButton, RadioState};
 pub use scaffold::Scaffold;
+pub use scrollbar::Scrollbar;
+pub use search_bar::SearchBar;
 pub use segmented_button::{
     MultiChoiceSegmentedButtonRow, SegmentedButton, SegmentedButtonRow, SegmentedButtonRowState,
     SegmentedButtonSelectionMode, SingleChoiceSegmentedButtonRow,
 };
-pub use slider::{Slider, SliderState, VerticalSlider};
+pub use slider::{RangeSlider, Slider, SliderState, VerticalSlider};
 pub use split_button::{SplitButton, SplitButtonLayout, SplitButtonStyle};
+pub use swipe_to_dismiss_box::{SwipeToDismissBox, SwipeToDismissBoxState, SwipeToDismissBoxValue};
 pub use switch::{Switch, SwitchState};
 pub use tabs::{
     LeadingIconTab, PrimaryScrollableTabRow, PrimaryTabRow, SecondaryScrollableTabRow,
     SecondaryTabRow, Tab, TabBar, TabBarState, TabRow, TabRowVariant,
 };
-pub use text_field::{OutlinedTextField, TextField, TextFieldState};
+pub use text_field::{OutlinedTextField, SecureTextField, TextField, TextFieldState};
+pub use time_picker::{ExposedTimePicker, TimeInput, TimePicker, TimePickerState};
 pub use toggle_button::{
     ElevatedToggleButton, FilledTonalToggleButton, OutlinedToggleButton, ToggleButton,
     ToggleButtonState, ToggleButtonStyle, ToggleButtonVariant,

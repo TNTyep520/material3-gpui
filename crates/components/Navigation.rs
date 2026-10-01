@@ -19,8 +19,8 @@ use std::time::Instant;
 
 use gpui::{
     App, AppContext as _, Context, ElementId, Entity, InteractiveElement as _, IntoElement,
-    ParentElement as _, Render, SharedString, StatefulInteractiveElement as _, Styled, Window, div,
-    prelude::FluentBuilder as _, px, relative,
+    ParentElement, Render, RenderOnce, SharedString, StatefulInteractiveElement as _, Styled,
+    Window, div, prelude::FluentBuilder as _, px, relative,
 };
 
 use crate::icon::{Icon, IconName};
@@ -903,5 +903,38 @@ mod appearance {
         pub fn drawer_width(&self, modal: bool) -> Pixels {
             if modal { self.modal_width } else { self.width }
         }
+    }
+}
+
+#[derive(IntoElement)]
+pub struct WideNavigationRail {
+    id: ElementId,
+    children: Vec<gpui::AnyElement>,
+}
+impl WideNavigationRail {
+    pub fn new(id: impl Into<ElementId>) -> Self {
+        Self {
+            id: id.into(),
+            children: Vec::new(),
+        }
+    }
+}
+impl ParentElement for WideNavigationRail {
+    fn extend(&mut self, e: impl IntoIterator<Item = gpui::AnyElement>) {
+        self.children.extend(e)
+    }
+}
+impl RenderOnce for WideNavigationRail {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+        div()
+            .id(self.id)
+            .w(px(256.))
+            .h_full()
+            .flex()
+            .flex_col()
+            .gap(px(8.))
+            .p(px(12.))
+            .bg(cx.theme().colors().surface_container)
+            .children(self.children)
     }
 }
