@@ -146,17 +146,11 @@ div().child(checkbox.clone()).child(switch.clone())
 
 - **Roboto** Regular / Medium（Apache-2.0）——字阶中 title/label 系列使用 Medium(500)；600/700 字重就近回退到 Medium
 
-图标为**按需加载**的 Material Symbols Rounded SVG（Apache-2.0）：
+图标为 Material Symbols Rounded SVG（Apache-2.0），按 Iconify 风格**按名称引用、按需供给**：
 
-```rust
-use material3_gpui::assets::Md3Assets;
-
-// 注册一个或多个图标目录；Icon::new("bolt") 请求 md3-icons/bolt.svg 时
-// 依次在这些目录中查找 {name}.svg 并从磁盘读取
-Md3Assets::new().with_icon_dir("path/to/symbols_icons")
-```
-
-图标名即文件名（snake_case，如 `Icon::new("arrow_forward")`），缺失的图标渲染为空，不 panic。catalog 的 `catalog/symbols_icons/` 收录了完整 4150 个图标可直接复用。非拉丁文字回退到系统字体（MD3 推荐 Noto 系列）。
+- **应用侧自带**：catalog 把实际用到的 26 个图标内嵌进二进制（`catalog/src/symbols_icons/` + 生成的 `icons_registry.rs`，由 `script/generate-catalog-icons.js` 扫描源码生成），构建产物自包含、跨平台一致
+- **库侧按需加载**：库不内嵌图标集；`Md3Assets::new().with_icon_dir(dir)` 注册图标目录，`Icon::new("bolt")` 请求 `md3-icons/bolt.svg` 时按目录从磁盘读取，缺失的图标渲染为空、不 panic
+- 图标名即文件名（snake_case，如 `Icon::new("arrow_forward")`）；非拉丁文字回退到系统字体（MD3 推荐 Noto 系列）
 
 ## 项目结构
 

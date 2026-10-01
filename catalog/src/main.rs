@@ -13,6 +13,7 @@
 
 #![windows_subsystem = "windows"]
 
+mod icons;
 mod pages;
 mod titlebar;
 
@@ -674,9 +675,7 @@ impl Render for Catalog {
 
 fn main() {
     gpui::Application::new()
-        .with_assets(
-            Md3Assets::new().with_icon_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/symbols_icons")),
-        )
+        .with_assets(icons::CatalogAssets)
         .run(|cx: &mut App| {
             material3_gpui::init(cx);
 

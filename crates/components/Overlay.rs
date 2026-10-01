@@ -66,16 +66,15 @@ pub fn show_snackbar(
         host.next_id += 1;
         host.snacks.push(SnackState::new(id, snackbar, cx));
         cx.notify();
-    });
 
-    let timer_host = host_entity.clone();
-    cx.spawn(async move |cx| {
-        cx.background_executor().timer(duration).await;
-        timer_host.update(cx, |host, cx| {
-            host.dismiss_snack_top(cx);
+        cx.spawn(async move |host, cx| {
+            cx.background_executor().timer(duration).await;
+            if let Err(err) = host.update(cx, |host, cx| host.dismiss_snack(id, cx)) {
+                eprintln!("material3-gpui: failed to dismiss snackbar: {err}");
+            }
         })
-    })
-    .detach_and_log_err(cx);
+        .detach();
+    });
 }
 
 pub fn show_menu(window: &Window, cx: &mut App, menu: Entity<MenuState>, anchor: Bounds<Pixels>) {
@@ -235,8 +234,8 @@ impl RenderOnce for TooltipBox {
 }
 
 impl OverlayHostState {
-    fn dismiss_snack_top(&mut self, cx: &mut Context<Self>) {
-        if let Some(snack) = self.snacks.last_mut() {
+    fn dismiss_snack(&mut self, id: u64, cx: &mut Context<Self>) {
+        if let Some(snack) = self.snacks.iter_mut().find(|snack| snack.id == id) {
             snack.begin_exit(cx);
         }
 
@@ -330,7 +329,7 @@ impl Render for OverlayHostState {
                                 }
                                 let host_entity = host(window, cx);
                                 host_entity.update(cx, |h, cx| {
-                                    h.dismiss_snack_top(cx);
+                                    h.dismiss_snack(snack_id, cx);
                                 });
                             })
                             .child(label),

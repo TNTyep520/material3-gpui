@@ -1,0 +1,33 @@
+// 由 script/generate-catalog-icons.js 生成;仅内嵌 catalog 实际使用的图标。
+pub static ICON_SVGS: &[(&str, &[u8])] = &[
+    ("add", include_bytes!(concat!("symbols_icons/", "add", ".svg"))),
+    ("arrow_back", include_bytes!(concat!("symbols_icons/", "arrow_back", ".svg"))),
+    ("arrow_forward", include_bytes!(concat!("symbols_icons/", "arrow_forward", ".svg"))),
+    ("bolt", include_bytes!(concat!("symbols_icons/", "bolt", ".svg"))),
+    ("check", include_bytes!(concat!("symbols_icons/", "check", ".svg"))),
+    ("chevron_right", include_bytes!(concat!("symbols_icons/", "chevron_right", ".svg"))),
+    ("close", include_bytes!(concat!("symbols_icons/", "close", ".svg"))),
+    ("delete", include_bytes!(concat!("symbols_icons/", "delete", ".svg"))),
+    ("directions_bike", include_bytes!(concat!("symbols_icons/", "directions_bike", ".svg"))),
+    ("directions_car", include_bytes!(concat!("symbols_icons/", "directions_car", ".svg"))),
+    ("directions_walk", include_bytes!(concat!("symbols_icons/", "directions_walk", ".svg"))),
+    ("edit", include_bytes!(concat!("symbols_icons/", "edit", ".svg"))),
+    ("favorite", include_bytes!(concat!("symbols_icons/", "favorite", ".svg"))),
+    ("history", include_bytes!(concat!("symbols_icons/", "history", ".svg"))),
+    ("home", include_bytes!(concat!("symbols_icons/", "home", ".svg"))),
+    ("image", include_bytes!(concat!("symbols_icons/", "image", ".svg"))),
+    ("info", include_bytes!(concat!("symbols_icons/", "info", ".svg"))),
+    ("menu", include_bytes!(concat!("symbols_icons/", "menu", ".svg"))),
+    ("more_vert", include_bytes!(concat!("symbols_icons/", "more_vert", ".svg"))),
+    ("person", include_bytes!(concat!("symbols_icons/", "person", ".svg"))),
+    ("progress_activity", include_bytes!(concat!("symbols_icons/", "progress_activity", ".svg"))),
+    ("remove", include_bytes!(concat!("symbols_icons/", "remove", ".svg"))),
+    ("search", include_bytes!(concat!("symbols_icons/", "search", ".svg"))),
+    ("settings", include_bytes!(concat!("symbols_icons/", "settings", ".svg"))),
+    ("star", include_bytes!(concat!("symbols_icons/", "star", ".svg"))),
+    ("visibility", include_bytes!(concat!("symbols_icons/", "visibility", ".svg"))),
+];
+
+pub fn lookup(name: &str) -> Option<&'static [u8]> {
+    ICON_SVGS.iter().find(|(key, _)| *key == name).map(|(_, bytes)| *bytes)
+}

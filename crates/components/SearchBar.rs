@@ -53,6 +53,7 @@ impl RenderOnce for SearchBar {
             .id(self.id)
             .w_full()
             .min_h(px(56.))
+            .pt(px(10.))
             .when(!self.expanded, |el| el.rounded_full())
             .when(self.expanded, |el| el.rounded(px(28.)))
             .bg(c.surface_container_high)
