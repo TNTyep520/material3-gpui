@@ -11,10 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use gpui::{App, AppContext as _, Context, Entity, IntoElement, Render, WeakEntity, Window};
+use gpui::{App, Entity, IntoElement, Render, Window};
 use material3_gpui::prelude::*;
 
-use super::{LogErr as _, gallery, showcase_group, specimen};
+use super::{gallery, showcase_group, specimen};
 
 pub struct SelectionPage {
     segmented_single: Entity<SegmentedButtonRowState>,
@@ -92,47 +92,28 @@ impl SelectionPage {
             ])
             .build(cx);
 
-        cx.new(|cx| {
-            let weak: WeakEntity<Self> = cx.entity().downgrade();
-            let radios: Vec<Entity<RadioState>> = (0..3usize)
-                .map(|ix| {
-                    let weak = weak.clone();
-                    RadioButton::new(("radio-plan", ix))
-                        .selected(ix == 0)
-                        .disabled(ix == 2)
-                        .on_select(move |window, cx| {
-                            weak.update(cx, |page: &mut Self, cx: &mut Context<Self>| {
-                                for (j, other) in page.radios.iter().enumerate() {
-                                    if j != ix {
-                                        other.update(
-                                            cx,
-                                            |radio: &mut RadioState,
-                                             radio_cx: &mut Context<RadioState>| {
-                                                radio.set_selected(false, window, radio_cx);
-                                            },
-                                        );
-                                    }
-                                }
-                            })
-                            .log_err();
-                        })
-                        .build(cx)
-                })
-                .collect();
+        // 电台方案:第一档默认选中,第三档禁用;状态演示样本各自独立,不互斥
+        let radios: Vec<Entity<RadioState>> = (0..3usize)
+            .map(|ix| {
+                RadioButton::new(("radio-plan", ix))
+                    .selected(ix == 0)
+                    .disabled(ix == 2)
+                    .build(cx)
+            })
+            .collect();
 
-            Self {
-                segmented_single,
-                segmented_multiple,
-                segmented_disabled,
-                cb_a,
-                cb_disabled,
-                radios,
-                sw_dicts,
-                sw_sync,
-                sw_quiet,
-                sw_disabled_on,
-                sw_disabled_icon_on,
-            }
+        cx.new(|_| Self {
+            segmented_single,
+            segmented_multiple,
+            segmented_disabled,
+            cb_a,
+            cb_disabled,
+            radios,
+            sw_dicts,
+            sw_sync,
+            sw_quiet,
+            sw_disabled_on,
+            sw_disabled_icon_on,
         })
     }
 }
