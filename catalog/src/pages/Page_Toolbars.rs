@@ -11,37 +11,67 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use gpui::{App, AppContext as _, Entity, IntoElement, Render, Window, div, prelude::*, px};
+use gpui::{
+    App, AppContext as _, Entity, IntoElement, Render, SharedString, Window, div, prelude::*, px,
+};
 use material3_gpui::prelude::*;
 
 use super::{page, showcase_group};
 
 pub struct ToolbarsPage {
-    icons: Vec<Entity<IconButtonState>>,
+    standard_icons: Vec<Entity<IconButtonState>>,
+    collapsed_icons: Vec<Entity<IconButtonState>>,
+    vibrant_icons: Vec<Entity<IconButtonState>>,
+    vertical_icons: Vec<Entity<IconButtonState>>,
 }
 
 impl ToolbarsPage {
     pub fn new(cx: &mut App) -> Entity<Self> {
-        let icon = |cx: &mut App, id: &'static str, name: &'static str, message: &'static str| {
-            IconButton::new(id, IconName::new(name))
-                .on_click(move |_, window, cx| {
-                    show_snackbar(window, cx, Snackbar::new(message), None);
-                })
-                .build(cx)
+        let icons = |cx: &mut App, prefix: &'static str| {
+            let icon =
+                |cx: &mut App, id: SharedString, name: &'static str, message: &'static str| {
+                    IconButton::new(id, IconName::new(name))
+                        .on_click(move |_, window, cx| {
+                            show_snackbar(window, cx, Snackbar::new(message), None);
+                        })
+                        .build(cx)
+                };
+            vec![
+                icon(
+                    cx,
+                    format!("tool-{prefix}-add").into(),
+                    "add",
+                    "Toolbar: add",
+                ),
+                icon(
+                    cx,
+                    format!("tool-{prefix}-edit").into(),
+                    "edit",
+                    "Toolbar: edit",
+                ),
+                icon(
+                    cx,
+                    format!("tool-{prefix}-more").into(),
+                    "more_vert",
+                    "Toolbar: more",
+                ),
+            ]
         };
-        let icons = vec![
-            icon(cx, "tool-add", "add", "Toolbar: add"),
-            icon(cx, "tool-edit", "edit", "Toolbar: edit"),
-            icon(cx, "tool-more", "more_vert", "Toolbar: more"),
-        ];
-        cx.new(|_| Self { icons })
+        let standard_icons = icons(cx, "standard");
+        let collapsed_icons = icons(cx, "collapsed");
+        let vibrant_icons = icons(cx, "vibrant");
+        let vertical_icons = icons(cx, "vertical");
+        cx.new(|_| Self {
+            standard_icons,
+            collapsed_icons,
+            vibrant_icons,
+            vertical_icons,
+        })
     }
 }
 
 impl Render for ToolbarsPage {
     fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        let buttons = self.icons.clone();
-
         page(
             cx,
             "Toolbars",
@@ -51,10 +81,11 @@ impl Render for ToolbarsPage {
                     cx,
                     "Horizontal",
                     [
-                        FloatingToolbar::new("toolbar-standard").children(buttons.clone()),
+                        FloatingToolbar::new("toolbar-standard")
+                            .children(self.standard_icons.clone()),
                         FloatingToolbar::new("toolbar-collapsed")
                             .state(FloatingToolbarState::new(false))
-                            .children(buttons.clone()),
+                            .children(self.collapsed_icons.clone()),
                     ],
                 )
                 .into_any_element(),
@@ -63,7 +94,7 @@ impl Render for ToolbarsPage {
                     "Vibrant",
                     [FloatingToolbar::new("toolbar-vibrant")
                         .vibrant(true)
-                        .children(buttons.clone())],
+                        .children(self.vibrant_icons.clone())],
                 )
                 .into_any_element(),
                 showcase_group(
@@ -72,7 +103,10 @@ impl Render for ToolbarsPage {
                     [div()
                         .h(px(240.))
                         .flex_none()
-                        .child(VerticalFloatingToolbar::new("toolbar-vertical").children(buttons))
+                        .child(
+                            VerticalFloatingToolbar::new("toolbar-vertical")
+                                .children(self.vertical_icons.clone()),
+                        )
                         .into_any_element()],
                 )
                 .into_any_element(),
