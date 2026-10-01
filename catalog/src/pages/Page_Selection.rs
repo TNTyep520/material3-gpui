@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use gpui::{App, Entity, IntoElement, Render, Window};
+use gpui::{App, AppContext as _, Context, Entity, IntoElement, Render, Window};
 use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group, specimen};
