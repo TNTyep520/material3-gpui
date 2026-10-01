@@ -23,7 +23,7 @@ use gpui::{
 
 use crate::icon::{Icon, IconName};
 use crate::interaction::InteractiveSurface;
-use crate::motion::{AnimatedComponent, AnimationDriver};
+use crate::motion::{Animatable, AnimatedComponent, AnimationDriver, MotionRole, lerp_color};
 use crate::theme::{ActiveTheme, TokenSet};
 use crate::tokens::SmallIconButtonTokens;
 
@@ -139,6 +139,7 @@ pub struct ToggleButtonState {
     variant: ToggleButtonVariant,
     on_change: Option<ChangeHandler>,
     style_override: Option<StyleOverride>,
+    checked_progress: Animatable,
     surface: InteractiveSurface,
 }
 
@@ -198,15 +199,17 @@ impl ToggleButton {
     }
 
     pub fn build(self, cx: &mut App) -> Entity<ToggleButtonState> {
+        let checked = self.checked;
         cx.new(|_| ToggleButtonState {
             id: self.id,
             label: self.label,
             icon: self.icon,
-            checked: self.checked,
+            checked,
             disabled: self.disabled,
             variant: self.variant,
             on_change: self.on_change,
             style_override: self.style_override,
+            checked_progress: Animatable::new(if checked { 1.0 } else { 0.0 }, 1.0e-3),
             surface: InteractiveSurface::new(),
         })
     }
@@ -261,9 +264,18 @@ impl ToggleButtonState {
         self.checked
     }
 
-    pub fn set_checked(&mut self, checked: bool, cx: &mut Context<Self>) {
+    pub fn set_checked(&mut self, checked: bool, window: &mut Window, cx: &mut Context<Self>) {
         if self.checked != checked {
             self.checked = checked;
+            let spec = *cx.theme().motion().spec(MotionRole::DefaultEffects);
+            self.checked_progress.animate_to(
+                if checked { 1.0 } else { 0.0 },
+                &spec,
+                Instant::now(),
+            );
+            if self.checked_progress.is_running() {
+                self.schedule_next(window, cx);
+            }
             cx.notify();
         }
     }
@@ -271,7 +283,8 @@ impl ToggleButtonState {
 
 impl AnimatedComponent for ToggleButtonState {
     fn step(&mut self, now: Instant) -> bool {
-        self.surface.step(now)
+        let progress_running = self.checked_progress.tick(now);
+        progress_running || self.surface.step(now)
     }
 
     fn driver_mut(&mut self) -> &mut AnimationDriver {
@@ -281,7 +294,7 @@ impl AnimatedComponent for ToggleButtonState {
 
 impl Render for ToggleButtonState {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        if self.surface.is_animating() {
+        if self.surface.is_animating() || self.checked_progress.is_running() {
             self.schedule_next(window, cx);
         }
 
@@ -289,25 +302,45 @@ impl Render for ToggleButtonState {
         let colors = theme.colors();
         let state_layer = *theme.state_layer();
         let disabled = self.disabled;
-        let checked = self.checked;
+        let p = self.checked_progress.value() as f32;
 
-        let mut style =
-            ToggleButtonStyle::resolve_variant(theme.token_set(), self.variant, checked);
+        let mut style = ToggleButtonStyle::resolve_variant(theme.token_set(), self.variant, false);
         if let Some(style_override) = &self.style_override {
             style_override(&mut style);
         }
+        let checked_style =
+            ToggleButtonStyle::resolve_variant(theme.token_set(), self.variant, true);
 
         let foreground = if disabled {
             colors.disabled_content(&state_layer)
         } else {
-            style.content_color
+            lerp_color(style.content_color, checked_style.content_color, p)
         };
         let background = if disabled {
             style
                 .container_color
                 .map(|_| colors.disabled_container(&state_layer))
         } else {
-            style.container_color
+            match (style.container_color, checked_style.container_color) {
+                (Some(rest), Some(checked)) => Some(lerp_color(rest, checked, p)),
+                (rest, checked) => {
+                    if p >= 0.5 {
+                        checked
+                    } else {
+                        rest
+                    }
+                }
+            }
+        };
+        let outline = match (style.outline_color, checked_style.outline_color) {
+            (Some(rest), Some(checked)) => Some(lerp_color(rest, checked, p)),
+            (rest, checked) => {
+                if p >= 0.5 {
+                    checked
+                } else {
+                    rest
+                }
+            }
         };
 
         let base = div()
@@ -322,9 +355,7 @@ impl Render for ToggleButtonState {
             .rounded(style.corner_radius)
             .text_color(foreground)
             .when_some(background, |el, bg_color| el.bg(bg_color))
-            .when_some(style.outline_color, |el, outline| {
-                el.border_1().border_color(outline)
-            })
+            .when_some(outline, |el, outline| el.border_1().border_color(outline))
             .when(!disabled, |el| el.cursor_pointer().overflow_hidden());
 
         let entity = cx.entity();
@@ -348,8 +379,8 @@ impl Render for ToggleButtonState {
         } else {
             base.on_click(move |_, window, cx| {
                 let change = entity.update(cx, |state, cx| {
-                    state.checked = !state.checked;
-                    cx.notify();
+                    let next = !state.checked;
+                    state.set_checked(next, window, cx);
                     state
                         .on_change
                         .clone()

@@ -19,9 +19,9 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use gpui::{
-    AnyElement, AnyWindowHandle, App, AppContext as _, Bounds, Context, ElementId, Entity, Global,
-    InteractiveElement as _, IntoElement, ParentElement as _, Pixels, Render, RenderOnce,
-    SharedString, StatefulInteractiveElement as _, Styled, Window, div,
+    Animation, AnimationExt, AnyElement, AnyWindowHandle, App, AppContext as _, Bounds, Context,
+    ElementId, Entity, Global, InteractiveElement as _, IntoElement, ParentElement as _, Pixels,
+    Render, RenderOnce, SharedString, StatefulInteractiveElement as _, Styled, Window, div,
     prelude::FluentBuilder as _, px, relative,
 };
 
@@ -343,7 +343,11 @@ impl Render for OverlayHostState {
                 .absolute()
                 .left(anchor.origin.x)
                 .top(anchor.origin.y + anchor.size.height + px(4.))
-                .child(menu_entity)
+                .child(div().relative().child(menu_entity).with_animation(
+                    "md3-menu-enter",
+                    Animation::new(Duration::from_millis(150)),
+                    move |el, delta| el.opacity(delta).top(px((delta - 1.) * 8.)),
+                ))
                 .on_mouse_down_out({
                     let host_entity = cx.entity();
                     move |_event: &gpui::MouseDownEvent, _window, cx| {
@@ -379,7 +383,12 @@ impl Render for OverlayHostState {
                                     .child(title),
                             )
                         })
-                        .child(tip.text),
+                        .child(tip.text)
+                        .with_animation(
+                            "md3-tooltip-fade",
+                            Animation::new(Duration::from_millis(120)),
+                            |el, delta| el.opacity(delta),
+                        ),
                 )
         });
 

@@ -14,10 +14,11 @@
 // 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/BottomSheetScaffold.kt
 
 use gpui::{
-    AnyElement, App, ElementId, Hsla, IntoElement, ParentElement as _, Pixels, RenderOnce, Window,
-    anchored, deferred, div, point, prelude::*, px,
+    Animation, AnimationExt, AnyElement, App, ElementId, Hsla, IntoElement, ParentElement as _,
+    Pixels, RenderOnce, Window, anchored, deferred, div, point, prelude::*, px,
 };
 use std::rc::Rc;
+use std::time::Duration;
 
 use crate::prelude::ActiveTheme;
 use crate::theme::TokenSet;
@@ -229,6 +230,7 @@ impl RenderOnce for ModalBottomSheet {
 
         let sheet = div()
             .id(self.id.clone())
+            .relative()
             .w_full()
             .max_w(style.max_width)
             .on_click(|_, _, cx| cx.stop_propagation())
@@ -276,7 +278,16 @@ impl RenderOnce for ModalBottomSheet {
             .when_some(self.on_dismiss, |el, handler| {
                 el.on_click(move |_, window, cx| handler(window, cx))
             })
-            .child(sheet);
+            .child(sheet.with_animation(
+                "md3-sheet-enter",
+                Animation::new(Duration::from_millis(250)),
+                |el, delta| el.opacity(delta).relative().top(px((1. - delta) * 64.)),
+            ))
+            .with_animation(
+                "md3-sheet-scrim-fade",
+                Animation::new(Duration::from_millis(150)),
+                |el, delta| el.opacity(delta),
+            );
 
         div().when(self.visible, |el| {
             el.child(

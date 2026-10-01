@@ -23,7 +23,7 @@ use gpui::{
 
 use crate::icon::{Icon, IconName};
 use crate::interaction::InteractiveSurface;
-use crate::motion::{AnimatedComponent, AnimationDriver};
+use crate::motion::{Animatable, AnimatedComponent, AnimationDriver, MotionRole, lerp_color};
 use crate::theme::ActiveTheme;
 
 type ClickHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
@@ -65,6 +65,7 @@ pub struct ChipState {
     on_click: Option<ClickHandler>,
     on_selected_change: Option<SelectionHandler>,
     on_remove: Option<ClickHandler>,
+    selected_progress: Animatable,
     surface: InteractiveSurface,
 }
 
@@ -154,17 +155,19 @@ impl Chip {
     }
 
     pub fn build(self, cx: &mut App) -> Entity<ChipState> {
+        let selected = self.selected;
         cx.new(|_| ChipState {
             id: self.id,
             label: self.label,
             variant: self.variant,
-            selected: self.selected,
+            selected,
             disabled: self.disabled,
             elevated: self.elevated,
             leading_icon: self.leading_icon,
             on_click: self.on_click,
             on_selected_change: self.on_selected_change,
             on_remove: self.on_remove,
+            selected_progress: Animatable::new(if selected { 1.0 } else { 0.0 }, 1.0e-3),
             surface: InteractiveSurface::new(),
         })
     }
@@ -175,9 +178,18 @@ impl ChipState {
         self.selected
     }
 
-    pub fn set_selected(&mut self, selected: bool, cx: &mut Context<Self>) {
+    pub fn set_selected(&mut self, selected: bool, window: &mut Window, cx: &mut Context<Self>) {
         if self.selected != selected {
             self.selected = selected;
+            let spec = *cx.theme().motion().spec(MotionRole::DefaultEffects);
+            self.selected_progress.animate_to(
+                if selected { 1.0 } else { 0.0 },
+                &spec,
+                Instant::now(),
+            );
+            if self.selected_progress.is_running() {
+                self.schedule_next(window, cx);
+            }
             cx.notify();
         }
     }
@@ -253,7 +265,8 @@ chip_variant!(ElevatedSuggestionChip, Suggestion, true);
 
 impl AnimatedComponent for ChipState {
     fn step(&mut self, now: Instant) -> bool {
-        self.surface.step(now)
+        let progress_running = self.selected_progress.tick(now);
+        progress_running || self.surface.step(now)
     }
 
     fn driver_mut(&mut self) -> &mut AnimationDriver {
@@ -263,33 +276,64 @@ impl AnimatedComponent for ChipState {
 
 impl Render for ChipState {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        if self.surface.is_animating() {
+        if self.surface.is_animating() || self.selected_progress.is_running() {
             self.schedule_next(window, cx);
         }
 
         let theme = cx.theme();
         let state_layer = *theme.state_layer();
         let disabled = self.disabled;
-        let selected =
-            self.selected && matches!(self.variant, ChipVariant::Filter | ChipVariant::Input);
-        let style = ChipStyle::resolve(
+        let toggleable = matches!(self.variant, ChipVariant::Filter | ChipVariant::Input);
+        let _selected = self.selected && toggleable;
+        let p = if toggleable {
+            self.selected_progress.value() as f32
+        } else {
+            0.
+        };
+        let rest_style = ChipStyle::resolve(
             theme.token_set(),
             self.variant,
-            selected,
+            false,
             self.elevated,
             disabled,
         );
-        let fg = style.content_color;
-        let icon_color = style.icon_color;
-        let bg = style.container_color;
-
-        let leading = if self.variant == ChipVariant::Filter && selected {
-            Some(IconName::new("check"))
-        } else {
-            self.leading_icon.clone()
+        let selected_style = ChipStyle::resolve(
+            theme.token_set(),
+            self.variant,
+            true,
+            self.elevated,
+            disabled,
+        );
+        let fg = lerp_color(rest_style.content_color, selected_style.content_color, p);
+        let icon_color = lerp_color(rest_style.icon_color, selected_style.icon_color, p);
+        let bg = match (rest_style.container_color, selected_style.container_color) {
+            (Some(rest), Some(checked)) => Some(lerp_color(rest, checked, p)),
+            (rest, checked) => {
+                if p >= 0.5 {
+                    checked
+                } else {
+                    rest
+                }
+            }
+        };
+        let outline_color = match (rest_style.outline_color, selected_style.outline_color) {
+            (Some(rest), Some(checked)) => Some(lerp_color(rest, checked, p)),
+            (rest, checked) => {
+                if p >= 0.5 {
+                    checked
+                } else {
+                    rest
+                }
+            }
         };
 
-        let has_leading = leading.is_some();
+        let mut style = rest_style;
+        style.content_color = fg;
+        style.icon_color = icon_color;
+        style.container_color = bg;
+        style.outline_color = outline_color;
+
+        let has_leading = self.leading_icon.is_some() || self.variant == ChipVariant::Filter;
         let has_trailing = self.on_remove.is_some();
         let label_style = style.label;
 
@@ -339,12 +383,12 @@ impl Render for ChipState {
 
         let base = if disabled {
             base
-        } else if self.variant == ChipVariant::Filter {
+        } else if self.variant == ChipVariant::Filter || self.variant == ChipVariant::Input {
             let click_handler = self.on_click.clone();
             let selection_handler = self.on_selected_change.clone();
             base.on_click(cx.listener(move |this, event, window, cx| {
                 let selected = !this.selected;
-                this.set_selected(selected, cx);
+                this.set_selected(selected, window, cx);
                 if let Some(handler) = &selection_handler {
                     handler(selected, window, cx);
                 }
@@ -358,10 +402,20 @@ impl Render for ChipState {
             base
         };
 
+        let leading_icon_element = if self.variant == ChipVariant::Filter && p > 0.01 {
+            Some(
+                Icon::new(IconName::new("check"))
+                    .size(style.icon_size * (0.5 + 0.5 * p))
+                    .color(icon_color.opacity(p)),
+            )
+        } else {
+            self.leading_icon
+                .clone()
+                .map(|icon| Icon::new(icon).size(style.icon_size).color(icon_color))
+        };
+
         let base = base
-            .when_some(leading, |el, icon| {
-                el.child(Icon::new(icon).size(style.icon_size).color(icon_color))
-            })
+            .when_some(leading_icon_element, |el, icon| el.child(icon))
             .child(self.label.clone());
 
         base.when_some(

@@ -13,10 +13,11 @@
 // 参考 https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AlertDialog.kt
 
 use gpui::{
-    AnyElement, App, ElementId, IntoElement, ParentElement, RenderOnce, SharedString, Window,
-    anchored, deferred, div, point, prelude::*, px,
+    Animation, AnimationExt, AnyElement, App, ElementId, IntoElement, ParentElement, RenderOnce,
+    SharedString, Window, anchored, deferred, div, point, prelude::*, px,
 };
 use std::rc::Rc;
+use std::time::Duration;
 
 use crate::icon::{Icon, IconName};
 use crate::theme::ActiveTheme;
@@ -192,7 +193,16 @@ impl RenderOnce for Dialog {
             .when_some(self.on_dismiss, |el, handler| {
                 el.on_click(move |_, window, cx| handler(window, cx))
             })
-            .child(container);
+            .child(container.with_animation(
+                "md3-dialog-panel-enter",
+                Animation::new(Duration::from_millis(200)),
+                |el, delta| el.opacity(delta).relative().top(px((1. - delta) * 12.)),
+            ))
+            .with_animation(
+                "md3-dialog-scrim-fade",
+                Animation::new(Duration::from_millis(150)),
+                |el, delta| el.opacity(delta),
+            );
 
         deferred(anchored().position(point(px(0.), px(0.))).child(scrim)).with_priority(100)
     }

@@ -24,7 +24,7 @@ use gpui::{
 
 use crate::icon::{Icon, IconName};
 use crate::interaction::InteractiveSurface;
-use crate::motion::{AnimatedComponent, AnimationDriver};
+use crate::motion::{Animatable, AnimatedComponent, AnimationDriver, MotionRole, lerp_color};
 use crate::theme::{ActiveTheme, TokenSet};
 
 type ClickHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
@@ -135,6 +135,7 @@ pub struct IconButtonState {
     toggle_colors: Option<IconToggleButtonColors>,
     on_click: Option<ClickHandler>,
     on_checked_change: Option<CheckedHandler>,
+    checked_progress: Animatable,
     surface: InteractiveSurface,
 }
 
@@ -235,6 +236,7 @@ impl IconButton {
             toggle_colors: self.toggle_colors,
             on_click: self.on_click,
             on_checked_change: self.on_checked_change,
+            checked_progress: Animatable::new(if self.selected { 1.0 } else { 0.0 }, 1.0e-3),
             surface: InteractiveSurface::new(),
         })
     }
@@ -391,9 +393,18 @@ impl IconButtonState {
         self.selected
     }
 
-    pub fn set_checked(&mut self, checked: bool, cx: &mut Context<Self>) {
+    pub fn set_checked(&mut self, checked: bool, window: &mut Window, cx: &mut Context<Self>) {
         if self.selected != checked {
             self.selected = checked;
+            let spec = *cx.theme().motion().spec(MotionRole::DefaultEffects);
+            self.checked_progress.animate_to(
+                if checked { 1.0 } else { 0.0 },
+                &spec,
+                Instant::now(),
+            );
+            if self.checked_progress.is_running() {
+                self.schedule_next(window, cx);
+            }
             cx.notify();
         }
     }
@@ -405,7 +416,8 @@ impl IconButtonState {
 
 impl AnimatedComponent for IconButtonState {
     fn step(&mut self, now: Instant) -> bool {
-        self.surface.step(now)
+        let progress_running = self.checked_progress.tick(now);
+        progress_running || self.surface.step(now)
     }
 
     fn driver_mut(&mut self) -> &mut AnimationDriver {
@@ -415,7 +427,7 @@ impl AnimatedComponent for IconButtonState {
 
 impl Render for IconButtonState {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        if self.surface.is_animating() {
+        if self.surface.is_animating() || self.checked_progress.is_running() {
             self.schedule_next(window, cx);
         }
 
@@ -423,19 +435,26 @@ impl Render for IconButtonState {
         let colors = theme.colors();
         let state_layer = *theme.state_layer();
         let disabled = self.disabled;
-        let selected = self.selected;
+        let p = self.checked_progress.value() as f32;
 
         let style = IconButtonStyle::resolve_with_size(
             theme.token_set(),
             self.variant,
-            selected,
+            false,
+            self.size,
+            self.shape,
+        );
+        let checked_style = IconButtonStyle::resolve_with_size(
+            theme.token_set(),
+            self.variant,
+            true,
             self.size,
             self.shape,
         );
         let custom = self
             .toggle_colors
             .map(|toggle| {
-                if selected {
+                if p >= 0.5 {
                     IconButtonColors {
                         container: toggle.checked_container,
                         content: toggle.checked_content,
@@ -460,7 +479,20 @@ impl Render for IconButtonState {
                 colors.disabled_content(&state_layer),
             )
         } else {
-            (style.container_color, style.content_color)
+            let bg = match (style.container_color, checked_style.container_color) {
+                (Some(rest), Some(checked)) => Some(lerp_color(rest, checked, p)),
+                (rest, checked) => {
+                    if p >= 0.5 {
+                        checked
+                    } else {
+                        rest
+                    }
+                }
+            };
+            (
+                bg,
+                lerp_color(style.content_color, checked_style.content_color, p),
+            )
         };
 
         let base = div()
@@ -503,7 +535,7 @@ impl Render for IconButtonState {
         } else if let Some(handler) = self.on_checked_change.clone() {
             base.on_click(cx.listener(move |this, _event, window, cx| {
                 let checked = !this.selected;
-                this.set_checked(checked, cx);
+                this.set_checked(checked, window, cx);
                 handler(checked, window, cx);
             }))
         } else if let Some(handler) = self.on_click.clone() {

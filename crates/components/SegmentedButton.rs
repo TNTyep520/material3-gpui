@@ -23,7 +23,7 @@ use gpui::{
 
 use crate::icon::{Icon, IconName};
 use crate::interaction::{InteractiveSurface, wire_events};
-use crate::motion::{AnimatedComponent, AnimationDriver};
+use crate::motion::{Animatable, AnimatedComponent, AnimationDriver, MotionRole, lerp_color};
 use crate::theme::ActiveTheme;
 
 type ChangeHandler = Rc<dyn Fn(&[usize], &mut Window, &mut App)>;
@@ -86,6 +86,7 @@ pub struct SegmentedButtonRow {
 pub struct SegmentedButtonRowState {
     row: SegmentedButtonRow,
     surfaces: Vec<InteractiveSurface>,
+    selected_progress: Vec<Animatable>,
     focus_handles: Vec<FocusHandle>,
     driver: AnimationDriver,
 }
@@ -136,11 +137,16 @@ impl SegmentedButtonRow {
 
     pub fn build(mut self, cx: &mut App) -> Entity<SegmentedButtonRowState> {
         self.normalize_selection();
+        let selected_flags: Vec<bool> = self.buttons.iter().map(|button| button.selected).collect();
         cx.new(|cx| SegmentedButtonRowState {
             surfaces: self
                 .buttons
                 .iter()
                 .map(|_| InteractiveSurface::new())
+                .collect(),
+            selected_progress: selected_flags
+                .iter()
+                .map(|selected| Animatable::new(if *selected { 1.0 } else { 0.0 }, 1.0e-3))
                 .collect(),
             focus_handles: self.buttons.iter().map(|_| cx.focus_handle()).collect(),
             row: self,
@@ -242,9 +248,32 @@ impl SegmentedButtonRowState {
         self.row.selected_indices()
     }
 
-    pub fn set_selected(&mut self, index: usize, selected: bool, cx: &mut Context<Self>) {
+    pub fn set_selected(
+        &mut self,
+        index: usize,
+        selected: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.row.set_selected(index, selected) {
+            self.animate_selection(window, cx);
             cx.notify();
+        }
+    }
+
+    fn animate_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let spec = *cx.theme().motion().spec(MotionRole::DefaultEffects);
+        for (index, button) in self.row.buttons.iter().enumerate() {
+            if let Some(progress) = self.selected_progress.get_mut(index) {
+                progress.animate_to(
+                    if button.selected { 1.0 } else { 0.0 },
+                    &spec,
+                    Instant::now(),
+                );
+            }
+        }
+        if self.selected_progress.iter().any(Animatable::is_running) {
+            self.schedule_next(window, cx);
         }
     }
 
@@ -253,6 +282,7 @@ impl SegmentedButtonRowState {
             if !state.row.activate(index) {
                 return None;
             }
+            state.animate_selection(window, cx);
             cx.notify();
             state
                 .row
@@ -269,6 +299,9 @@ impl SegmentedButtonRowState {
 impl AnimatedComponent for SegmentedButtonRowState {
     fn step(&mut self, now: Instant) -> bool {
         let mut running = false;
+        for progress in &mut self.selected_progress {
+            running |= progress.tick(now);
+        }
         for surface in &mut self.surfaces {
             running |= surface.step(now);
         }
@@ -282,7 +315,9 @@ impl AnimatedComponent for SegmentedButtonRowState {
 
 impl Render for SegmentedButtonRowState {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        if self.surfaces.iter().any(InteractiveSurface::is_animating) {
+        if self.surfaces.iter().any(InteractiveSurface::is_animating)
+            || self.selected_progress.iter().any(Animatable::is_running)
+        {
             self.schedule_next(window, cx);
         }
         let theme = cx.theme();
@@ -298,8 +333,20 @@ impl Render for SegmentedButtonRowState {
             .enumerate()
         {
             let disabled = self.row.disabled || button.disabled;
-            let mut style =
-                SegmentedButtonStyle::resolve(theme.token_set(), button.selected, disabled);
+            let p = self.selected_progress[index].value() as f32;
+            let mut style = SegmentedButtonStyle::resolve(theme.token_set(), false, disabled);
+            let checked_style = SegmentedButtonStyle::resolve(theme.token_set(), true, disabled);
+            style.content_color = lerp_color(style.content_color, checked_style.content_color, p);
+            style.container_color = match (style.container_color, checked_style.container_color) {
+                (Some(rest), Some(checked)) => Some(lerp_color(rest, checked, p)),
+                (rest, checked) => {
+                    if p >= 0.5 {
+                        checked
+                    } else {
+                        rest
+                    }
+                }
+            };
             if let Some(customize) = &self.row.style_override {
                 customize(&mut style);
             }
@@ -377,21 +424,23 @@ impl Render for SegmentedButtonRowState {
                         }
                     });
             }
-            let icon = if button.selected {
-                Some(IconName::new("check"))
+            let leading_icon = if p > 0.01 {
+                Some(
+                    Icon::new(IconName::new("check"))
+                        .size(style.icon_size * (0.5 + 0.5 * p))
+                        .color(style.content_color.opacity(p)),
+                )
             } else {
-                button.icon.clone()
+                button.icon.clone().map(|icon| {
+                    Icon::new(icon)
+                        .size(style.icon_size)
+                        .color(style.content_color)
+                })
             };
             content = style
                 .label
                 .apply(content)
-                .when_some(icon, |element, icon| {
-                    element.child(
-                        Icon::new(icon)
-                            .size(style.icon_size)
-                            .color(style.content_color),
-                    )
-                })
+                .when_some(leading_icon, |element, icon| element.child(icon))
                 .child(button.label.clone());
             row = row.child(base.child(content));
         }
