@@ -141,7 +141,7 @@ pub use segmented_button::{
     MultiChoiceSegmentedButtonRow, SegmentedButton, SegmentedButtonRow, SegmentedButtonRowState,
     SegmentedButtonSelectionMode, SingleChoiceSegmentedButtonRow,
 };
-pub use slider::{RangeSlider, Slider, SliderState, VerticalSlider};
+pub use slider::{RangeSlider, Slider, SliderSize, SliderState, VerticalSlider};
 pub use split_button::{SplitButton, SplitButtonLayout, SplitButtonStyle};
 pub use swipe_to_dismiss_box::{SwipeToDismissBox, SwipeToDismissBoxState, SwipeToDismissBoxValue};
 pub use switch::{Switch, SwitchState};
