@@ -11,35 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use gpui::{
-    App, AppContext as _, Context, Entity, IntoElement, Render, WeakEntity, Window, div,
-    prelude::*, px,
-};
+use gpui::{App, AppContext as _, Entity, IntoElement, Render, Window, div, prelude::*, px};
 use material3_gpui::prelude::*;
 
-use super::{LogErr as _, page, showcase_group};
+use super::{page, showcase_group};
 
 pub struct CarouselPage {
-    weak: WeakEntity<Self>,
-    selected: usize,
+    carousel: Entity<CarouselState>,
 }
 
 impl CarouselPage {
     pub fn new(cx: &mut App) -> Entity<Self> {
-        cx.new(|cx| Self {
-            weak: cx.entity().downgrade(),
-            selected: 1,
-        })
-    }
-}
-
-impl Render for CarouselPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        let theme = cx.theme();
-        let colors = *theme.colors();
-        let typography = *theme.typography();
-        let weak = self.weak.clone();
-
+        let hero_colors = *cx.theme().colors();
+        let hero_typography = *cx.theme().typography();
         let hero = move |name: &'static str| {
             div()
                 .flex()
@@ -50,10 +34,32 @@ impl Render for CarouselPage {
                 .child(
                     Icon::new(IconName::new("image"))
                         .size(px(28.))
-                        .color(colors.on_surface_variant),
+                        .color(hero_colors.on_surface_variant),
                 )
-                .child(typography.title_medium.apply(div()).child(name))
+                .child(hero_typography.title_medium.apply(div()).child(name))
+                .into_any_element()
         };
+        let carousel = Carousel::new("carousel")
+            .selected(1)
+            .item(move || hero("Alpha"))
+            .item(move || hero("Bravo"))
+            .item(move || hero("Charlie"))
+            .item(move || hero("Delta"))
+            .item(move || hero("Echo"))
+            .build(cx);
+        cx.new(|cx| {
+            cx.observe(&carousel, |_, _, cx| cx.notify()).detach();
+            Self { carousel }
+        })
+    }
+}
+
+impl Render for CarouselPage {
+    fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
+        let theme = cx.theme();
+        let colors = *theme.colors();
+        let typography = *theme.typography();
+        let carousel = self.carousel.clone();
 
         page(
             cx,
@@ -73,26 +79,12 @@ impl Render for CarouselPage {
                             .body_medium
                             .apply(div())
                             .text_color(colors.on_surface_variant)
-                            .child(format!("Selected item {}", self.selected + 1)),
+                            .child(format!(
+                                "Selected item {}",
+                                self.carousel.read(cx).selected() + 1
+                            )),
                     )
-                    .child(
-                        Carousel::new("carousel")
-                            .selected(self.selected)
-                            .on_select({
-                                move |index, _, cx| {
-                                    weak.update(cx, |page: &mut Self, cx: &mut Context<Self>| {
-                                        page.selected = index;
-                                        cx.notify();
-                                    })
-                                    .log_err();
-                                }
-                            })
-                            .child(hero("Alpha"))
-                            .child(hero("Bravo"))
-                            .child(hero("Charlie"))
-                            .child(hero("Delta"))
-                            .child(hero("Echo")),
-                    )
+                    .child(carousel)
                     .into_any_element()],
             )],
         )

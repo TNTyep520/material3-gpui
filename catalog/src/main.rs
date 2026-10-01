@@ -16,11 +16,14 @@
 mod pages;
 mod titlebar;
 
+use std::time::Instant;
+
 use gpui::{
     AnyView, App, Bounds, Context, Entity, IntoElement, KeyDownEvent, Render, TitlebarOptions,
     Window, WindowBounds, WindowOptions, div, point, prelude::*, px, size,
 };
 
+use material3_gpui::motion::{Animatable, AnimatedComponent, AnimationDriver, MotionRole};
 use material3_gpui::overlay::host;
 use material3_gpui::prelude::*;
 use pages::{LogErr as _, Pages, palette_strip};
@@ -212,6 +215,9 @@ struct Catalog {
     wired: bool,
     dark_switch: Entity<SwitchState>,
     pages: Pages,
+    transition: Animatable,
+    transition_direction: f32,
+    driver: AnimationDriver,
 }
 
 impl Catalog {
@@ -224,7 +230,31 @@ impl Catalog {
             wired: false,
             dark_switch: Switch::new("theme-switch").build(cx),
             pages: Pages::new(cx),
+            transition: Animatable::new(1.0, 1.0e-3),
+            transition_direction: 1.,
+            driver: AnimationDriver::default(),
         }
+    }
+
+    fn navigate(&mut self, target: PageId, window: &mut Window, cx: &mut Context<Self>) {
+        if self.page == target {
+            return;
+        }
+        let position = |id: PageId| PAGES.iter().position(|meta| meta.id == id).unwrap_or(0);
+        self.transition_direction = if position(target) >= position(self.page) {
+            1.
+        } else {
+            -1.
+        };
+        self.page = target;
+        let spec = *cx.theme().motion().spec(MotionRole::DefaultEffects);
+        self.transition.stop();
+        self.transition.snap_to(0.0);
+        self.transition.animate_to(1.0, &spec, Instant::now());
+        if self.transition.is_running() {
+            self.schedule_next(window, cx);
+        }
+        cx.notify();
     }
 
     fn apply_theme(&self, cx: &mut App) {
@@ -345,11 +375,25 @@ impl Catalog {
     }
 }
 
+impl AnimatedComponent for Catalog {
+    fn step(&mut self, now: Instant) -> bool {
+        self.transition.tick(now)
+    }
+
+    fn driver_mut(&mut self) -> &mut AnimationDriver {
+        &mut self.driver
+    }
+}
+
 impl Render for Catalog {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.wire(cx);
         #[cfg(target_os = "macos")]
         hide_maximize_buttons();
+
+        if self.transition.is_running() {
+            self.schedule_next(window, cx);
+        }
 
         let this = cx.entity();
         let colors = *cx.theme().colors();
@@ -357,6 +401,8 @@ impl Render for Catalog {
         let font_family = cx.theme().font_family().clone();
         let page = self.page;
         let dialog_open = self.dialog_open;
+        let transition = self.transition.value() as f32;
+        let transition_offset = px(self.transition_direction * (1. - transition) * 24.);
 
         let page_view: AnyView = match self.page {
             PageId::Buttons => self.pages.buttons.clone().into(),
@@ -478,20 +524,18 @@ impl Render for Catalog {
                                                     .child(meta.title),
                                             )
                                             .on_key_down(cx.listener(
-                                                move |this, event: &KeyDownEvent, _, cx| {
+                                                move |this, event: &KeyDownEvent, window, cx| {
                                                     if matches!(
                                                         event.keystroke.key.as_str(),
                                                         "enter" | "space"
                                                     ) {
-                                                        this.page = target;
-                                                        cx.notify();
+                                                        this.navigate(target, window, cx);
                                                         cx.stop_propagation();
                                                     }
                                                 },
                                             ))
-                                            .on_click(cx.listener(move |this, _, _, cx| {
-                                                this.page = target;
-                                                cx.notify();
+                                            .on_click(cx.listener(move |this, _, window, cx| {
+                                                this.navigate(target, window, cx);
                                             }))
                                             .into_any_element()
                                     })
@@ -572,7 +616,15 @@ impl Render for Catalog {
                     .min_w_0()
                     .overflow_y_scroll()
                     .p(px(28.))
-                    .child(div().w_full().max_w(px(1120.)).mx_auto().child(page_view)),
+                    .child(
+                        div().w_full().max_w(px(1120.)).mx_auto().child(
+                            div()
+                                .relative()
+                                .opacity(transition.clamp(0., 1.))
+                                .left(transition_offset)
+                                .child(page_view),
+                        ),
+                    ),
             );
         div()
             .id("catalog-root")

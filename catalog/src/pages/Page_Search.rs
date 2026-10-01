@@ -11,7 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use gpui::{App, AppContext as _, Context, Entity, IntoElement, Render, Window, div, prelude::*, px};
+use gpui::{
+    App, AppContext as _, Context, Entity, IntoElement, Render, Window, div, prelude::*, px,
+};
 use material3_gpui::prelude::*;
 
 use super::{LogErr as _, page, showcase_group};

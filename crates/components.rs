@@ -88,7 +88,7 @@ pub use button::{
 };
 pub use button_group::{ButtonGroup, ButtonGroupMenuState, ButtonGroupStyle};
 pub use card::{Card, CardVariant, ElevatedCard, OutlinedCard};
-pub use carousel::Carousel;
+pub use carousel::{Carousel, CarouselState};
 pub use checkbox::{Checkbox, CheckboxState, ToggleableState, TriStateCheckbox};
 pub use chip::{
     AssistChip, Chip, ChipState, ChipVariant, ElevatedAssistChip, ElevatedFilterChip,

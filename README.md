@@ -21,27 +21,29 @@
   - 13 条 MD3 缓动曲线（含三段式 emphasized 曲线），支持 `reduce_motion`
 - **交互行为**：弹簧驱动的状态层（hover/press）、指针涟漪、开关 / 复选框 / 单选 / 标签指示器动画
 - **窗口级弹层系统**（`material3_gpui::overlay`）：`OverlayHost` + `show_snackbar` / `show_menu` / `show_tooltip`
-- **字体字形图标**：`Icon` 渲染 Material Symbols Rounded 连字名，内嵌完整字重（2500+ 图标，无需额外下载）
+- **按需图标**（Iconify 风格）：`Icon` 按 Material Symbols Rounded SVG 名称渲染；`Md3Assets::with_icon_dir(dir)` 注册图标目录，运行时按需从磁盘读取，库本身不内嵌图标资源
 - **样式层**（`material3_gpui::styles`）：每个组件一个 `XxxStyle` 结构（几何、形状、颜色、字型），默认值由令牌推导
 - **MD3 Expressive 组件**：
   - `LoadingIndicator`：7 形状连续变形动画（expressive default spatial 缓动 + sin² 呼吸缩放），支持 `CONTAINED` 变体
   - `LinearWavyProgressIndicator` / `CircularWavyProgressIndicator`：确定性（相位 1λ/s 推进）与不确定性（1750ms 双段扫掠 / 6000ms 旋转扫掠）波浪进度
+  - `Slider`：五档尺寸（XS/S/M/L/XL，轨道 16–96dp）、按压 handle 变细弹簧（4→2dp）、非拖动改值 FastSpatial 弹簧、离散刻度点、`centered` 变体、拖动反色 value indicator、M/L/XL 轨道内嵌图标
   - `FabMenu`：展开 / 收起弹簧动画（defaultSpatial / fastSpatial）的 FAB 菜单，内置 Add/Close 切换钮
+  - `Carousel`：multi-browse 排布 + defaultSpatial 弹簧选中有宽度/透明度插值
   - `FloatingToolbar`：standard / vibrant 双配色浮动工具栏（横向 / 纵向，48dp 槽位）
-  - `Carousel`：multi-browse 排布轮播（选中 large / 相邻 medium / 其余 small）
   - `MediumFlexibleTopAppBar` / `LargeFlexibleTopAppBar`：可折叠弹性应用栏
+  - `TypeScale::expressive()`：Expressive 字阶（display/headline 升 Medium，title/label 升 SemiBold）
 - **基准 MD3 组件**：
 
   | 分类 | 组件 |
   |---|---|
-  | 按钮 | `Button`（filled / tonal / elevated / outlined / text）、`ToggleButton`、`SplitButton`、`ButtonGroup`、`IconButton`（4 变体 + 开关型）、`Fab`（3 尺寸 / 4 配色 / 扩展型） |
-  | 选择 | `Checkbox`、`RadioButton`、`Switch`、`Slider`（含纵向与区间 `RangeSlider`）、`Chip`（assist / filter / input / suggestion）、`SegmentedButton` |
+  | 按钮 | `Button`（filled / tonal / elevated / outlined / text）、`ToggleButton`、`SplitButton`、`ButtonGroup`、`IconButton`（4 变体 + 开关型）、`Fab`（3 尺寸 / 4 配色 / 扩展型）、`FabMenu` |
+  | 选择 | `Checkbox`、`RadioButton`、`Switch`、`Slider`（`SliderSize` 五档 / 离散 / 居中 / 值指示器）、`RangeSlider`、`Chip`（assist / filter / input / suggestion）、`SegmentedButton` |
   | 容器 | `Card`（elevated / filled / outlined）、`Dialog`、`List` / `ListItem`、`Divider`、`Scaffold` |
   | 导航 | `TabBar` / `TabRow`（primary / secondary / scrollable）、`TopAppBar`（5 变体 + flexible）、`BottomAppBar`、`NavigationBar`、`NavigationRail`、`NavigationDrawer`、`WideNavigationRail` |
   | 输入 | `TextField`（outlined、浮动标签、helper/error）、`SecureTextField`、`SearchBar`、`ExposedDropdownMenu` |
   | 弹层 | `Snackbar`、`Menu`、`Tooltip`（经窗口 `overlay::host`）、`ModalBottomSheet`、`BottomSheetScaffold` |
-  | 进度 | `LinearProgress`、`CircularProgress`、波浪进度（见上） |
-  | 其他 | `Badge` / `BadgedBox`、`DatePicker`、`TimePicker`、`TimeInput`、`SwipeToDismissBox`、`Scrollbar` |
+  | 进度 | `LinearProgress`、`CircularProgress`、波浪进度（见上）、`LoadingIndicator` |
+  | 其他 | `Badge` / `BadgedBox`、`Carousel`、`DatePicker`、`TimePicker`、`TimeInput`、`SwipeToDismissBox`、`Scrollbar` |
 
 ## 快速开始
 
@@ -80,7 +82,7 @@ impl Render for MyApp {
 
 fn main() {
     Application::new()
-        .with_assets(Md3Assets) // 安装内嵌图标资源
+        .with_assets(Md3Assets::new().with_icon_dir("icons")) // 注册图标目录（按需读取）
         .run(|cx: &mut App| {
             material3_gpui::init(cx); // 注册内嵌字体并安装默认（亮色）主题
             cx.open_window(WindowOptions::default(), |_, cx| cx.new(|_| MyApp))
@@ -96,7 +98,7 @@ fn main() {
 cargo run -p catalog
 ```
 
-catalog 覆盖全部组件的变体与状态对比，包含 MD3 Expressive 页（变形加载指示器、波浪进度、FabMenu、浮动工具栏、轮播等），支持亮 / 暗主题切换与种子色实时动态色。
+catalog 按 m3fx demo 的方式组织：侧栏 17 个分组、23 个组件页，每页为大标题 + 副标题 + 分组流式布局；页面切换带 shared-axis 过渡动画。包含 MD3 Expressive 演示（变形加载指示器、波浪进度、五档 Slider、FabMenu、弹簧动画 Motion 页等），支持亮 / 暗主题切换与种子色实时动态色。图标来自 `catalog/symbols_icons/`（4150 个 Material Symbols Rounded SVG，按需读取）。
 
 > 首次构建需要编译 gpui 及其依赖，耗时较长。
 
@@ -138,32 +140,44 @@ div().child(checkbox.clone()).child(switch.clone())
 
 简单容器（`Card`、`Divider`、`List` / `ListItem`、`Dialog`、进度指示器、`Carousel` 等）保持无状态 `RenderOnce`。
 
-## 字体（内嵌 TTF，应用侧零配置）
+## 字体与图标
 
 `material3_gpui::init()` 自动注册内嵌字体：
 
-- **Roboto** Regular / Medium（Apache-2.0）
-- **Material Symbols Rounded** Regular 字重实例（约 1.2 MB，Apache-2.0，按官方自托管参数 `opsz,wght,FILL,GRAD@24,400,0,0` 实例化，含完整字形集）
+- **Roboto** Regular / Medium（Apache-2.0）——字阶中 title/label 系列使用 Medium(500)；600/700 字重就近回退到 Medium
 
-图标经字体连字渲染，任意图标可用 `Icon::new(IconName::Custom("bolt"))` 使用。非拉丁文字回退到系统字体（MD3 推荐 Noto 系列）。
+图标为**按需加载**的 Material Symbols Rounded SVG（Apache-2.0）：
+
+```rust
+use material3_gpui::assets::Md3Assets;
+
+// 注册一个或多个图标目录；Icon::new("bolt") 请求 md3-icons/bolt.svg 时
+// 依次在这些目录中查找 {name}.svg 并从磁盘读取
+Md3Assets::new().with_icon_dir("path/to/symbols_icons")
+```
+
+图标名即文件名（snake_case，如 `Icon::new("arrow_forward")`），缺失的图标渲染为空，不 panic。catalog 的 `catalog/symbols_icons/` 收录了完整 4150 个图标可直接复用。非拉丁文字回退到系统字体（MD3 推荐 Noto 系列）。
 
 ## 项目结构
 
 ```
 crates/                  库源码（[lib] path = crates/material3_gpui.rs）
-  components/            组件实现（含 Expressive.rs —— MD3 Expressive 组件）
+  components/            组件实现（一组件一文件；MD3E 组件见
+                         LoadingIndicator / FabMenu / FloatingToolbar / Carousel 等）
   tokens/                组件令牌（对齐 compose material3 Tokens.kt）
-  motion/                运动系统（弹簧 / 缓动 / 运动方案）
-  theme/                 主题（颜色方案 / 令牌集 / 字阶 / 形状 / 动态色）
+  motion/                运动系统（弹簧 / 缓动 / 运动方案 standard + expressive）
+  theme/                 主题（颜色方案 / 令牌集 / 字阶 baseline + expressive / 动态色）
   overlay（components）   窗口级弹层宿主
-catalog/                 组件展厅应用（16+ 演示页）
+catalog/                 组件展厅应用（17 节 23 页，m3fx demo 布局）
+  symbols_icons/         Material Symbols Rounded SVG × 4150（按需加载）
 ```
 
 ## 已知限制 / 路线图
 
 - [ ] 键盘焦点环与无障碍（focus-visible 状态层、键盘激活）
 - [ ] `TextField` 的 IME 组合输入；`Menu` 键盘导航
-- [ ] `Carousel` 吸附与排布插值动画；`LoadingIndicator` 的角特征级 morph（当前为角度采样近似）
+- [ ] SemiBold(600) / Bold(700) 字体未内嵌，Expressive 字阶高字重就近回退 Medium
+- [ ] `Carousel` 滚动吸附；`LoadingIndicator` 的角特征级 morph（当前为角度采样近似）
 - [ ] `SplitButton` / `ButtonGroup` 的 Expressive 内角形变
 - [ ] 其余组件的样式层（`XxxStyle`）迁移
 
