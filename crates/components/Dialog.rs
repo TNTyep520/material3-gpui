@@ -17,8 +17,8 @@
 //! ```
 
 use gpui::{
-    AnyElement, App, ElementId, IntoElement, RenderOnce, SharedString, Window, anchored, deferred,
-    div, point, prelude::*, px,
+    AnyElement, App, ElementId, IntoElement, ParentElement, RenderOnce, SharedString, Window,
+    anchored, deferred, div, point, prelude::*, px,
 };
 use std::rc::Rc;
 
@@ -37,6 +37,11 @@ pub struct Dialog {
     actions: Vec<AnyElement>,
     on_dismiss: Option<DismissHandler>,
 }
+
+/// AndroidX AlertDialog 对应的带标题、正文和操作区的对话框。
+pub type AlertDialog = Dialog;
+/// AndroidX BasicAlertDialog 对应的可自定义内容对话框。
+pub type BasicAlertDialog = Dialog;
 
 impl Dialog {
     pub fn new(id: impl Into<ElementId>) -> Self {
@@ -74,11 +79,56 @@ impl Dialog {
     }
 }
 
-impl gpui::ParentElement for Dialog {
+impl ParentElement for Dialog {
     fn extend(&mut self, elements: impl IntoIterator<Item = AnyElement>) {
         self.children.extend(elements)
     }
 }
+
+macro_rules! picker_dialog {
+    ($name:ident) => {
+        #[doc = concat!("AndroidX ", stringify!($name), " 对应的选择器对话框。")]
+        #[derive(IntoElement)]
+        pub struct $name(Dialog);
+
+        impl $name {
+            /// 创建包含日期或时间选择器的对话框。
+            pub fn new(id: impl Into<ElementId>, picker: impl IntoElement) -> Self {
+                Self(Dialog::new(id).child(picker))
+            }
+
+            /// 设置对话框标题。
+            pub fn title(mut self, title: impl Into<SharedString>) -> Self {
+                self.0 = self.0.title(title);
+                self
+            }
+
+            /// 添加操作按钮。
+            pub fn action(mut self, action: impl IntoElement) -> Self {
+                self.0 = self.0.action(action);
+                self
+            }
+
+            /// 设置关闭请求回调。
+            pub fn on_dismiss_request(
+                mut self,
+                handler: impl Fn(&mut Window, &mut App) + 'static,
+            ) -> Self {
+                self.0 = self.0.on_dismiss(handler);
+                self
+            }
+        }
+
+        impl RenderOnce for $name {
+            fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+                self.0.render(window, cx)
+            }
+        }
+    };
+}
+
+picker_dialog!(DatePickerDialog);
+picker_dialog!(TimePickerDialog);
 
 impl RenderOnce for Dialog {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
@@ -200,24 +250,25 @@ mod appearance {
         pub body: crate::theme::TypeStyle,
     }
     impl DialogStyle {
-        /// 由令牌推导默认样式。
+        /// 由令牌推导默认样式(DialogTokens / ScrimTokens)。
         pub fn resolve(tokens: &TokenSet) -> Self {
+            use crate::tokens::{DialogTokens, ScrimTokens};
             let colors = &tokens.colors;
             Self {
-                container_color: colors.surface_container_high,
-                content_color: colors.on_surface,
-                supporting_color: colors.on_surface_variant,
-                icon_color: colors.secondary,
-                scrim_color: colors.scrim,
-                scrim_opacity: 0.32,
+                container_color: DialogTokens::CONTAINER_COLOR.resolve(tokens),
+                content_color: DialogTokens::HEADLINE_COLOR.resolve(tokens),
+                supporting_color: DialogTokens::SUPPORTING_TEXT_COLOR.resolve(tokens),
+                icon_color: DialogTokens::ICON_COLOR.resolve(tokens),
+                scrim_color: ScrimTokens::CONTAINER_COLOR.resolve(tokens),
+                scrim_opacity: ScrimTokens::CONTAINER_OPACITY,
                 corner_radius: tokens.shapes.extra_large,
                 width_range: (px(280.), px(560.)),
                 padding: px(24.),
                 gap: px(16.),
                 shadow_color: colors.shadow,
                 elevation: crate::theme::Elevation::Level3,
-                title: tokens.typography.headline_small,
-                body: tokens.typography.body_medium,
+                title: DialogTokens::HEADLINE_FONT.resolve(tokens),
+                body: DialogTokens::SUPPORTING_TEXT_FONT.resolve(tokens),
             }
         }
     }

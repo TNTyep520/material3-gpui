@@ -53,42 +53,78 @@ mod toggle_button;
 #[path = "components/TopAppBar.rs"]
 mod top_app_bar;
 
-pub use badge::{Badge, BadgeStyle, badged};
-pub use bottom_sheet::{BottomSheetStyle, ModalBottomSheet};
-pub use button::{Button, ButtonState, ButtonVariant};
-pub use button_group::ButtonGroup;
-pub use card::{Card, CardVariant};
-pub use checkbox::{Checkbox, CheckboxState};
-pub use chip::{Chip, ChipState, ChipVariant};
-pub use dialog::Dialog;
-pub use divider::Divider;
-pub use exposed_dropdown_menu::ExposedDropdownMenu;
+pub use badge::{Badge, BadgeStyle, BadgedBox, badged};
+pub use bottom_sheet::{BottomSheetScaffold, BottomSheetStyle, ModalBottomSheet};
+pub use button::{
+    Button, ButtonState, ButtonVariant, ElevatedButton, FilledTonalButton, OutlinedButton,
+    TextButton,
+};
+pub use button_group::{ButtonGroup, ButtonGroupMenuState, ButtonGroupStyle};
+pub use card::{Card, CardVariant, ElevatedCard, OutlinedCard};
+pub use checkbox::{Checkbox, CheckboxState, ToggleableState, TriStateCheckbox};
+pub use chip::{
+    AssistChip, Chip, ChipState, ChipVariant, ElevatedAssistChip, ElevatedFilterChip,
+    ElevatedSuggestionChip, FilterChip, InputChip, SuggestionChip,
+};
+pub use dialog::{AlertDialog, BasicAlertDialog, DatePickerDialog, Dialog, TimePickerDialog};
+pub use divider::{Divider, HorizontalDivider, VerticalDivider};
+pub use exposed_dropdown_menu::{
+    ExposedDropdownMenu, ExposedDropdownMenuBox, ExposedDropdownMenuStyle,
+};
 
 pub use additional::{
-    DatePicker, ExposedDatePicker, ExposedTimePicker, FabMenu, FloatingToolbar, LoadingIndicator,
-    RangeSlider, Scrollbar, SearchBar, SecureTextField, SwipeToDismissBox, TimePicker,
+    DatePicker, DatePickerState, ExposedDatePicker, ExposedTimePicker, FabMenu,
+    FloatingActionButtonMenu, FloatingActionButtonMenuItem, FloatingToolbar, FloatingToolbarState,
+    HorizontalFloatingToolbar, LoadingIndicator, RangeSlider, Scrollbar, SearchBar,
+    SecureTextField, SwipeToDismissBox, SwipeToDismissBoxState, SwipeToDismissBoxValue, TimeInput,
+    TimePicker, TimePickerState, ToggleFloatingActionButton, VerticalFloatingToolbar,
     WavyProgressIndicator, WideNavigationRail,
 };
-pub use fab::{Fab, FabColor, FabSize, FabState};
-pub use icon_button::{IconButton, IconButtonState, IconButtonVariant};
-pub use list::{List, ListItem};
-pub use navigation::{
-    DrawerEntry, NavigationBar, NavigationBarState, NavigationDrawer, NavigationDrawerState,
-    NavigationItemSpec, NavigationRail, NavigationRailState,
+pub use fab::{
+    ExtendedFloatingActionButton, Fab, FabColor, FabSize, FabState, FloatingActionButton,
+    LargeExtendedFloatingActionButton, LargeFloatingActionButton,
+    MediumExtendedFloatingActionButton, MediumFloatingActionButton,
+    SmallExtendedFloatingActionButton, SmallFloatingActionButton,
 };
-pub use progress::{CircularProgress, LinearProgress};
+pub use icon_button::{
+    FilledIconButton, FilledIconToggleButton, FilledTonalIconButton, FilledTonalIconToggleButton,
+    IconButton, IconButtonColors, IconButtonDefaults, IconButtonShape, IconButtonSize,
+    IconButtonState, IconButtonVariant, IconToggleButton, IconToggleButtonColors,
+    OutlinedIconButton, OutlinedIconToggleButton,
+};
+pub use list::{List, ListItem, SegmentedListItem};
+pub use navigation::{
+    DismissibleDrawerSheet, DismissibleNavigationDrawer, DrawerEntry, ModalDrawerSheet,
+    ModalNavigationDrawer, NavigationBar, NavigationBarItem, NavigationBarState, NavigationDrawer,
+    NavigationDrawerItem, NavigationDrawerState, NavigationItemSpec, NavigationRail,
+    NavigationRailItem, NavigationRailState, PermanentDrawerSheet, PermanentNavigationDrawer,
+};
+pub use progress::{
+    CircularProgress, CircularProgressIndicator, LinearProgress, LinearProgressIndicator,
+};
 pub use radio::{RadioButton, RadioState};
 pub use scaffold::Scaffold;
 pub use segmented_button::{
-    SegmentedButton, SegmentedButtonRow, SegmentedButtonRowState, SegmentedButtonSelectionMode,
+    MultiChoiceSegmentedButtonRow, SegmentedButton, SegmentedButtonRow, SegmentedButtonRowState,
+    SegmentedButtonSelectionMode, SingleChoiceSegmentedButtonRow,
 };
-pub use slider::{Slider, SliderState};
-pub use split_button::SplitButton;
+pub use slider::{Slider, SliderState, VerticalSlider};
+pub use split_button::{SplitButton, SplitButtonLayout, SplitButtonStyle};
 pub use switch::{Switch, SwitchState};
-pub use tabs::{Tab, TabBar, TabBarState};
-pub use text_field::{TextField, TextFieldState};
-pub use toggle_button::{ToggleButton, ToggleButtonState};
-pub use top_app_bar::{TopAppBar, TopAppBarVariant};
+pub use tabs::{
+    LeadingIconTab, PrimaryScrollableTabRow, PrimaryTabRow, SecondaryScrollableTabRow,
+    SecondaryTabRow, Tab, TabBar, TabBarState, TabRow, TabRowVariant,
+};
+pub use text_field::{OutlinedTextField, TextField, TextFieldState};
+pub use toggle_button::{
+    ElevatedToggleButton, FilledTonalToggleButton, OutlinedToggleButton, ToggleButton,
+    ToggleButtonState, ToggleButtonStyle, ToggleButtonVariant,
+};
+pub use top_app_bar::{
+    BottomAppBar, BottomAppBarState, CenterAlignedTopAppBar, FlexibleBottomAppBar,
+    LargeFlexibleTopAppBar, LargeTopAppBar, MediumFlexibleTopAppBar, MediumTopAppBar, TopAppBar,
+    TopAppBarVariant, TwoRowsTopAppBar,
+};
 
 #[path = "components/Icon.rs"]
 pub mod icon;
@@ -107,7 +143,9 @@ pub use list::ListItemStyle;
 pub use navigation::{
     NavigationBarStyle, NavigationDrawerStyle, NavigationItemStyle, NavigationRailStyle,
 };
-pub use overlay::{MenuItem, MenuState, Snackbar};
+pub use overlay::{
+    MenuItem, MenuState, PlainTooltip, RichTooltip, Snackbar, SnackbarHost, TooltipBox,
+};
 pub use overlay::{MenuStyle, SnackbarStyle, TooltipStyle};
 pub use progress::{CircularProgressStyle, LinearProgressStyle};
 pub use radio::RadioStyle;

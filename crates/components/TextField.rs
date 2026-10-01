@@ -38,6 +38,7 @@ pub struct TextField {
     error: Option<SharedString>,
     leading_icon: Option<IconName>,
     disabled: bool,
+    outlined: bool,
     on_change: Option<ChangeHandler>,
     on_submit: Option<SubmitHandler>,
 }
@@ -50,6 +51,7 @@ pub struct TextFieldState {
     error: Option<SharedString>,
     leading_icon: Option<IconName>,
     disabled: bool,
+    outlined: bool,
     value: String,
     /// 光标位置（UTF-8 字符下标）。
     caret: usize,
@@ -72,6 +74,7 @@ impl TextField {
             error: None,
             leading_icon: None,
             disabled: false,
+            outlined: false,
             on_change: None,
             on_submit: None,
         }
@@ -107,10 +110,26 @@ impl TextField {
         self
     }
 
+    /// 设置 AndroidX 对应的 enabled 状态。
+    pub fn enabled(self, enabled: bool) -> Self {
+        self.disabled(!enabled)
+    }
+
+    /// 使用 AndroidX OutlinedTextField 的全边框外观。
+    pub fn outlined(mut self) -> Self {
+        self.outlined = true;
+        self
+    }
+
     /// 文本变化回调。
     pub fn on_change(mut self, handler: impl Fn(&str, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
+    }
+
+    /// 设置文本变化回调；参数为新文本。
+    pub fn on_value_change(self, handler: impl Fn(&str, &mut Window, &mut App) + 'static) -> Self {
+        self.on_change(handler)
     }
 
     /// Enter 提交回调。
@@ -131,6 +150,7 @@ impl TextField {
             error: self.error,
             leading_icon: self.leading_icon,
             disabled: self.disabled,
+            outlined: self.outlined,
             value,
             caret,
             focus,
@@ -139,6 +159,66 @@ impl TextField {
             on_submit: self.on_submit,
             driver: AnimationDriver::default(),
         })
+    }
+}
+
+/// AndroidX OutlinedTextField 对应的全边框文本输入框。
+pub struct OutlinedTextField(TextField);
+
+impl OutlinedTextField {
+    /// 创建带标签的描边文本框。
+    pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
+        Self(TextField::new(id, label).outlined())
+    }
+
+    /// 设置初始文本。
+    pub fn value(mut self, value: impl Into<SharedString>) -> Self {
+        self.0 = self.0.value(value);
+        self
+    }
+
+    /// 设置辅助文本。
+    pub fn helper(mut self, helper: impl Into<SharedString>) -> Self {
+        self.0 = self.0.helper(helper);
+        self
+    }
+
+    /// 设置错误文本与错误外观。
+    pub fn error(mut self, error: impl Into<SharedString>) -> Self {
+        self.0 = self.0.error(error);
+        self
+    }
+
+    /// 设置前导图标。
+    pub fn leading_icon(mut self, icon: IconName) -> Self {
+        self.0 = self.0.leading_icon(icon);
+        self
+    }
+
+    /// 设置启用状态。
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.0 = self.0.enabled(enabled);
+        self
+    }
+
+    /// 设置文本变化回调。
+    pub fn on_value_change(
+        mut self,
+        handler: impl Fn(&str, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.0 = self.0.on_value_change(handler);
+        self
+    }
+
+    /// 设置提交回调。
+    pub fn on_submit(mut self, handler: impl Fn(&str, &mut Window, &mut App) + 'static) -> Self {
+        self.0 = self.0.on_submit(handler);
+        self
+    }
+
+    /// 构建可渲染的文本框实体。
+    pub fn build(self, cx: &mut App) -> Entity<TextFieldState> {
+        self.0.build(cx)
     }
 }
 
@@ -263,7 +343,12 @@ impl Render for TextFieldState {
         let p = self.focus_progress.value() as f32;
 
         let has_error = self.error.is_some();
-        let style = TextFieldStyle::resolve(theme.token_set(), has_error, self.disabled);
+        let style = TextFieldStyle::resolve_for_variant(
+            theme.token_set(),
+            has_error,
+            self.disabled,
+            self.outlined,
+        );
         let accent = if has_error {
             colors.error
         } else {
@@ -302,7 +387,8 @@ impl Render for TextFieldState {
             .flex_col()
             .justify_center()
             .rounded(theme.shapes().extra_small)
-            .border_1()
+            .when(self.outlined, |el| el.border_1())
+            .when(!self.outlined, |el| el.border_b_1())
             .border_color(border_color)
             .bg(style.container_color)
             .when(!self.disabled, |el| el.cursor_text())
@@ -330,7 +416,8 @@ impl Render for TextFieldState {
                         .absolute()
                         .inset_0()
                         .rounded(theme.shapes().extra_small)
-                        .border_2()
+                        .when(self.outlined, |overlay| overlay.border_2())
+                        .when(!self.outlined, |overlay| overlay.border_b_2())
                         .border_color(if has_error {
                             colors.error.opacity(p.max(0.001))
                         } else {
@@ -589,6 +676,16 @@ mod appearance {
     impl TextFieldStyle {
         /// 由令牌推导默认样式。
         pub fn resolve(tokens: &TokenSet, error: bool, disabled: bool) -> Self {
+            Self::resolve_for_variant(tokens, error, disabled, false)
+        }
+
+        /// 按填充或描边变体解析样式。
+        pub fn resolve_for_variant(
+            tokens: &TokenSet,
+            error: bool,
+            disabled: bool,
+            outlined: bool,
+        ) -> Self {
             let colors = &tokens.colors;
             let state = &tokens.state_layer;
             let field = &tokens.component.text_field;
@@ -596,8 +693,10 @@ mod appearance {
             Self {
                 container_color: if disabled {
                     colors.on_surface.opacity(state.disabled_container / 6.0)
-                } else {
+                } else if outlined {
                     colors.surface
+                } else {
+                    colors.surface_container_highest
                 },
                 border_color: if disabled {
                     colors.disabled_container(state)

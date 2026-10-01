@@ -1,31 +1,47 @@
-//! Chips 页。
+//! Chips 页：分组展示标签类型及可移除状态。
 
-use gpui::{AnyElement, App, AppContext as _, Entity, IntoElement, Render, Window};
+use gpui::{App, AppContext as _, Entity, IntoElement, Render, Window};
 use material3_gpui::prelude::*;
 
-use super::{gallery, showcase_group};
+use super::{gallery, showcase_group, specimen};
 
 /// Chips 页视图。
 pub struct ChipsPage {
-    pub chip_assist: Entity<ChipState>,
-    pub chip_filters: Vec<Entity<ChipState>>,
+    chip_assist: Entity<ChipState>,
+    chip_filters: Vec<Entity<ChipState>>,
     /// Input chip：点击移除按钮后从页面消失。
-    pub chip_input: Option<Entity<ChipState>>,
-    pub chip_suggestion: Entity<ChipState>,
+    chip_input: Option<Entity<ChipState>>,
+    chip_suggestion: Entity<ChipState>,
 }
 
 impl ChipsPage {
+    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
-        let chip_assist = Chip::new("chip-assist", "Assist")
+        let chip_assist = Chip::new("chip-assist", "Draft reply")
             .assist()
-            .leading_icon(IconName::Info)
+            .leading_icon(IconName::Edit)
+            .on_click(|_, window, cx| {
+                show_snackbar(window, cx, Snackbar::new("Reply drafted"), None);
+            })
             .build(cx);
-        let chip_filters = ["Alpha", "Beta", "Gamma"]
+        let chip_filters = ["Photos", "Receipts", "Travel"]
             .into_iter()
             .enumerate()
-            .map(|(ix, label)| Chip::new(("chip-filter", ix), label).filter().build(cx))
+            .map(|(ix, label)| {
+                Chip::new(("chip-filter", ix), label)
+                    .filter()
+                    .on_click(move |_, window, cx| {
+                        show_snackbar(
+                            window,
+                            cx,
+                            Snackbar::new(format!("\"{label}\" filter applied")),
+                            None,
+                        );
+                    })
+                    .build(cx)
+            })
             .collect();
-        let chip_suggestion = Chip::new("chip-suggestion", "Suggestion")
+        let chip_suggestion = Chip::new("chip-suggestion", "Not now")
             .suggestion()
             .elevated(true)
             .build(cx);
@@ -40,19 +56,14 @@ impl ChipsPage {
         // Input chip 需要在回调里更新页面状态，因此拿到页面句柄后再构建
         page.update(cx, |page, cx| {
             let page_entity = cx.entity();
-            let chip_input = Chip::new("chip-input", "Rust")
+            let chip_input = Chip::new("chip-input", "On vacation")
                 .input()
                 .on_remove(move |_, window, cx| {
                     page_entity.update(cx, |page, cx| {
                         page.chip_input = None;
                         cx.notify();
                     });
-                    material3_gpui::overlay::show_snackbar(
-                        window,
-                        cx,
-                        material3_gpui::overlay::Snackbar::new("Chip removed"),
-                        None,
-                    );
+                    show_snackbar(window, cx, Snackbar::new("Filter removed"), None);
                 })
                 .build(cx);
             page.chip_input = Some(chip_input);
@@ -64,29 +75,28 @@ impl ChipsPage {
 
 impl Render for ChipsPage {
     fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        let filter_items: Vec<AnyElement> = self
-            .chip_filters
-            .iter()
-            .map(|chip| chip.clone().into_any_element())
-            .collect();
-        let input_items: Vec<AnyElement> = self
-            .chip_input
-            .iter()
-            .map(|chip| chip.clone().into_any_element())
-            .collect();
-
         gallery([
             showcase_group(
                 cx,
-                "Assist Chips",
-                [self.chip_assist.clone().into_any_element()],
+                "Variants",
+                [
+                    specimen(cx, "Assist", self.chip_assist.clone()),
+                    specimen(cx, "Suggestion · elevated", self.chip_suggestion.clone()),
+                ],
             ),
-            showcase_group(cx, "Filter Chips", filter_items),
-            showcase_group(cx, "Input Chips", input_items),
             showcase_group(
                 cx,
-                "Suggestion Chips",
-                [self.chip_suggestion.clone().into_any_element()],
+                "Filter chips",
+                self.chip_filters
+                    .iter()
+                    .map(|chip| specimen(cx, "Selectable", chip.clone())),
+            ),
+            showcase_group(
+                cx,
+                "Input chip",
+                self.chip_input
+                    .iter()
+                    .map(|chip| specimen(cx, "Removable", chip.clone())),
             ),
         ])
     }

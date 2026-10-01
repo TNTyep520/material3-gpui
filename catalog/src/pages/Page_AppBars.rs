@@ -1,6 +1,6 @@
-//! App bars & Scaffold 页:顶栏三档变体、Badge 与 Scaffold 槽位演示。
+//! App bars & Scaffold 页：顶栏三档 densities、Badge 与 Scaffold 舞台演示。
 
-use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
+use gpui::{AnyElement, App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
 use material3_gpui::icon::IconName;
 use material3_gpui::prelude::*;
 
@@ -9,14 +9,35 @@ use super::{gallery, showcase_group};
 /// App bars & Scaffold 页视图。
 pub struct AppBarsPage {
     /// Scaffold 槽位里的 FAB(状态组件,构造期一次 build)。
-    fab: Entity<material3_gpui::FabState>,
+    fab: Entity<FabState>,
 }
 
 impl AppBarsPage {
+    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
-        let fab = material3_gpui::Fab::new("scaffold-fab", IconName::Add).build(cx);
+        let fab = Fab::new("scaffold-fab", IconName::Add).build(cx);
         cx.new(|_| Self { fab })
     }
+}
+
+/// 为顶栏变体添加标签，各预览占据完整一行。
+fn bar_row(bar: impl IntoElement, caption: &'static str, cx: &App) -> AnyElement {
+    let typography = *cx.theme().typography();
+    div()
+        .w_full()
+        .min_w_0()
+        .flex()
+        .flex_col()
+        .gap(px(8.))
+        .child(
+            typography
+                .label_medium
+                .apply(div())
+                .text_color(cx.theme().colors().on_surface_variant)
+                .child(caption),
+        )
+        .child(bar)
+        .into_any_element()
 }
 
 impl Render for AppBarsPage {
@@ -35,48 +56,57 @@ impl Render for AppBarsPage {
         gallery([
             showcase_group(
                 cx,
-                "Top app bars",
+                "Top app bar variants",
                 [
-                    TopAppBar::small("bar-small")
-                        .title("Small")
-                        .leading(
-                            Icon::new(IconName::ArrowBack)
-                                .size(px(24.))
-                                .color(colors.on_surface),
-                        )
-                        .action(bell_with_badge)
-                        .action(
-                            Icon::new(IconName::MoreVert)
-                                .size(px(24.))
-                                .color(colors.on_surface_variant),
-                        )
-                        .into_any_element(),
-                    TopAppBar::medium("bar-medium")
-                        .title("Medium")
-                        .leading(
-                            Icon::new(IconName::ArrowBack)
-                                .size(px(24.))
-                                .color(colors.on_surface),
-                        )
-                        .action(
-                            Icon::new(IconName::MoreVert)
-                                .size(px(24.))
-                                .color(colors.on_surface_variant),
-                        )
-                        .into_any_element(),
-                    TopAppBar::large("bar-large")
-                        .title("Large")
-                        .leading(
-                            Icon::new(IconName::ArrowBack)
-                                .size(px(24.))
-                                .color(colors.on_surface),
-                        )
-                        .action(
-                            Icon::new(IconName::MoreVert)
-                                .size(px(24.))
-                                .color(colors.on_surface_variant),
-                        )
-                        .into_any_element(),
+                    bar_row(
+                        TopAppBar::small("bar-small")
+                            .title("Small")
+                            .leading(
+                                Icon::new(IconName::ArrowBack)
+                                    .size(px(24.))
+                                    .color(colors.on_surface),
+                            )
+                            .action(bell_with_badge)
+                            .action(
+                                Icon::new(IconName::MoreVert)
+                                    .size(px(24.))
+                                    .color(colors.on_surface_variant),
+                            ),
+                        "Small app bar",
+                        cx,
+                    ),
+                    bar_row(
+                        TopAppBar::medium("bar-medium")
+                            .title("Medium")
+                            .leading(
+                                Icon::new(IconName::ArrowBack)
+                                    .size(px(24.))
+                                    .color(colors.on_surface),
+                            )
+                            .action(
+                                Icon::new(IconName::MoreVert)
+                                    .size(px(24.))
+                                    .color(colors.on_surface_variant),
+                            ),
+                        "Medium app bar",
+                        cx,
+                    ),
+                    bar_row(
+                        TopAppBar::large("bar-large")
+                            .title("Large")
+                            .leading(
+                                Icon::new(IconName::ArrowBack)
+                                    .size(px(24.))
+                                    .color(colors.on_surface),
+                            )
+                            .action(
+                                Icon::new(IconName::MoreVert)
+                                    .size(px(24.))
+                                    .color(colors.on_surface_variant),
+                            ),
+                        "Large app bar",
+                        cx,
+                    ),
                 ],
             ),
             showcase_group(
@@ -104,17 +134,21 @@ impl Render for AppBarsPage {
                 cx,
                 "Scaffold",
                 [div()
-                    .h(px(360.))
+                    .w_full()
+                    .min_w_0()
+                    .h(px(320.))
                     .overflow_hidden()
-                    .rounded(px(12.))
+                    .rounded(px(24.))
                     .child(
                         Scaffold::new("scaffold-demo")
                             .top_bar(
-                                TopAppBar::small("scaffold-bar").title("Scaffold").action(
-                                    Icon::new(IconName::MoreVert)
-                                        .size(px(24.))
-                                        .color(colors.on_surface_variant),
-                                ),
+                                TopAppBar::small("scaffold-bar")
+                                    .title("Kiln report")
+                                    .action(
+                                        Icon::new(IconName::MoreVert)
+                                            .size(px(24.))
+                                            .color(colors.on_surface_variant),
+                                    ),
                             )
                             .fab(self.fab.clone())
                             .child(
@@ -122,8 +156,8 @@ impl Render for AppBarsPage {
                                     .p(px(16.))
                                     .text_color(colors.on_surface_variant)
                                     .child(
-                                        "Content area. The FAB floats above the bottom-right \
-                                         corner and the top bar stays pinned.",
+                                        "The FAB floats above the bottom-right corner and the \
+                                     top bar stays pinned.",
                                     ),
                             ),
                     )

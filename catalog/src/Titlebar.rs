@@ -1,7 +1,7 @@
-//! 自定义标题栏(客户端窗口装饰),对齐 BakaXL 标题栏样式。
+//! 组件展厅的紧凑标题栏，保留平台原生窗口操作。
 //!
-//! 布局:`[应用图标 40dp] [搜索胶囊] .......... [最小化] [关闭]`,高 64dp;
-//! 按钮图标用 Material Symbols 字体字形。
+//! 应用图标和名称位于左侧，窗口控制按钮位于右侧。
+//! 按钮图标使用 Material Symbols Rounded SVG。
 //!
 //! 平台行为:
 //! - **Windows**:整条标题栏标 [`WindowControlArea::Drag`](拖动/双击最大化
@@ -25,11 +25,9 @@ use material3_gpui::icon::{Icon, IconName};
 use material3_gpui::prelude::ActiveTheme;
 
 /// 标题栏高度。
-const HEIGHT: f32 = 64.0;
+const HEIGHT: f32 = 48.0;
 /// 应用图标圆角方块边长。
-const ICON_SIZE: f32 = 40.0;
-/// 搜索胶囊宽度。
-const SEARCH_WIDTH: f32 = 220.0;
+const ICON_SIZE: f32 = 28.0;
 /// 窗口按钮的圆形热区边长。
 const BUTTON_SIZE: f32 = 44.0;
 /// 关闭按钮红色(BakaXL 惯例)。
@@ -100,32 +98,13 @@ impl RenderOnce for CustomTitleBar {
                     .flex_none(),
             );
 
-        // 搜索胶囊(装饰性,md3 search bar 样式)
         let title_bar = title_bar.child(
             div()
-                .flex_none()
-                .w(px(SEARCH_WIDTH))
-                .h(px(40.))
-                .rounded(px(20.))
-                .bg(colors.surface_container_highest)
-                .flex()
-                .items_center()
-                .gap(px(8.))
-                .px(px(14.))
-                .child(
-                    Icon::new(IconName::Search)
-                        .size(px(20.))
-                        .color(colors.on_surface_variant),
-                )
-                .child(
-                    div()
-                        .text_size(px(14.))
-                        .font_family(TEXT_FONT_FAMILY)
-                        .text_color(colors.on_surface_variant)
-                        .child("Search components"),
-                ),
+                .text_size(px(14.))
+                .font_family(TEXT_FONT_FAMILY)
+                .text_color(colors.on_surface)
+                .child("Material 3 · Catalog"),
         );
-
         // 弹性空白:窗口按钮推到右侧
         let title_bar = title_bar.child(div().flex_1());
 
@@ -188,11 +167,11 @@ fn window_button(
             on_click(event, window, cx)
         })
     };
-    // 关闭按钮用 Icon::Close;最小化用码点直取(0xE15B,cmap 已验证存在)
+
     let icon = if id == "titlebar-close" {
         Icon::new(IconName::Close).size(px(20.)).color(icon_color)
     } else {
-        Icon::ligature("\u{e15b}").size(px(20.)).color(icon_color)
+        Icon::new(IconName::Remove).size(px(20.)).color(icon_color)
     };
     base.child(icon)
 }

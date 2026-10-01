@@ -122,6 +122,11 @@ impl ListItem {
         self
     }
 
+    /// 设置条目的启用状态；禁用时移除点击交互。
+    pub fn enabled(self, enabled: bool) -> Self {
+        self.disabled(!enabled)
+    }
+
     pub fn on_click(
         mut self,
         handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -218,6 +223,66 @@ impl RenderOnce for ListItem {
                 )
             })
             .when_some(self.trailing, |el, trailing| el.child(trailing))
+    }
+}
+
+/// AndroidX SegmentedListItem 对应的连组列表项。
+#[derive(IntoElement)]
+pub struct SegmentedListItem {
+    item: ListItem,
+    index: usize,
+    count: usize,
+}
+
+impl SegmentedListItem {
+    /// 创建位于指定位置的连组列表项。
+    pub fn new(
+        id: impl Into<ElementId>,
+        headline: impl Into<SharedString>,
+        index: usize,
+        count: usize,
+    ) -> Self {
+        Self {
+            item: ListItem::new(id, headline),
+            index,
+            count,
+        }
+    }
+
+    /// 设置辅助文字。
+    pub fn supporting_text(mut self, text: impl Into<SharedString>) -> Self {
+        self.item = self.item.supporting_text(text);
+        self
+    }
+
+    /// 设置条目是否可交互。
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.item = self.item.enabled(enabled);
+        self
+    }
+
+    /// 设置点击回调。
+    pub fn on_click(
+        mut self,
+        handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.item = self.item.on_click(handler);
+        self
+    }
+}
+
+impl RenderOnce for SegmentedListItem {
+    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let radius = cx.theme().shapes().medium;
+        let first = self.index == 0;
+        let last = self.index + 1 >= self.count;
+        div()
+            .w_full()
+            .overflow_hidden()
+            .bg(cx.theme().colors().surface_container)
+            .when(first, |el| el.rounded_tl(radius).rounded_tr(radius))
+            .when(last, |el| el.rounded_bl(radius).rounded_br(radius))
+            .child(self.item)
     }
 }
 

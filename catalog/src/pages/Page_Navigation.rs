@@ -1,4 +1,4 @@
-//! Navigation 页：图标预览 + TopAppBar / NavigationBar / Rail / Drawer。
+//! Navigation 页：字形画廊 + NavigationBar / Rail / Drawer 组件预览。
 
 use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
 use material3_gpui::prelude::*;
@@ -13,10 +13,8 @@ pub struct NavigationPage {
 }
 
 impl NavigationPage {
+    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
-        let rail_fab = Fab::new("rail-fab", IconName::Add)
-            .size(FabSize::Small)
-            .build(cx);
         let nav_bar = NavigationBar::new("nav-bar")
             .items([
                 NavigationItemSpec::new("Home", IconName::Home),
@@ -27,7 +25,11 @@ impl NavigationPage {
             .selected(0)
             .build(cx);
         let nav_rail = NavigationRail::new("nav-rail")
-            .header(rail_fab)
+            .header(
+                Fab::new("rail-fab", IconName::Add)
+                    .size(FabSize::Small)
+                    .build(cx),
+            )
             .items([
                 NavigationItemSpec::new("Inbox", IconName::Info),
                 NavigationItemSpec::new("Starred", IconName::Star),
@@ -52,7 +54,7 @@ impl NavigationPage {
     }
 }
 
-/// 字体字形图标预览条。
+/// 字形画廊:内置码点图标全覆盖。
 fn icon_strip(cx: &App) -> impl IntoElement {
     let color = cx.theme().colors().on_surface_variant;
     div()
@@ -78,56 +80,70 @@ fn icon_strip(cx: &App) -> impl IntoElement {
                 IconName::Add,
                 IconName::ArrowBack,
                 IconName::ChevronRight,
+                IconName::ProgressActivity,
             ]
             .into_iter()
             .map(|name| Icon::new(name).size(px(24.)).color(color)),
         )
 }
 
+/// 通勤图组(walk/bike/car,字体连字已在旧版验证)。
+fn commute_strip(cx: &App) -> impl IntoElement {
+    let color = cx.theme().colors().on_surface_variant;
+    div()
+        .flex()
+        .flex_wrap()
+        .items_center()
+        .gap(px(16.))
+        .children([
+            Icon::new(IconName::Custom("directions_walk"))
+                .size(px(24.))
+                .color(color),
+            Icon::new(IconName::Custom("directions_bike"))
+                .size(px(24.))
+                .color(color),
+            Icon::new(IconName::Custom("directions_car"))
+                .size(px(24.))
+                .color(color),
+        ])
+}
+
 impl Render for NavigationPage {
     fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
         gallery([
-            showcase_group(cx, "Icons", [icon_strip(cx).into_any_element()]),
             showcase_group(
                 cx,
-                "Top App Bar",
-                [div()
-                    .w_full()
-                    .child(
-                        material3_gpui::TopAppBar::new("Navigation").leading(
-                            material3_gpui::Icon::new(IconName::Menu)
-                                .size(px(24.))
-                                .color(cx.theme().colors().on_surface),
-                        ),
-                    )
-                    .into_any_element()],
+                "Glyph set",
+                [
+                    icon_strip(cx).into_any_element(),
+                    commute_strip(cx).into_any_element(),
+                ],
             ),
             showcase_group(
                 cx,
-                "Navigation Bar",
+                "Navigation bar",
                 [div()
                     .w_full()
+                    .min_w_0()
                     .child(self.nav_bar.clone())
                     .into_any_element()],
             ),
             showcase_group(
                 cx,
-                "Navigation Rail & Drawer",
-                [div()
-                    .flex()
-                    .flex_wrap()
-                    .gap(px(16.))
-                    .min_h(px(320.))
-                    .child(self.nav_rail.clone())
-                    .child(
-                        material3_gpui::Card::new()
-                            .outlined()
-                            .overflow_hidden()
-                            .w(px(360.))
-                            .max_w_full()
-                            .child(self.nav_drawer.clone()),
-                    )
-                    .into_any_element()],
+                "Rail & drawer",
+                [
+                    div()
+                        .h(px(360.))
+                        .child(self.nav_rail.clone())
+                        .into_any_element(),
+                    div()
+                        .w(px(360.))
+                        .max_w_full()
+                        .h(px(360.))
+                        .overflow_hidden()
+                        .child(self.nav_drawer.clone())
+                        .into_any_element(),
+                ],
             ),
         ])
     }

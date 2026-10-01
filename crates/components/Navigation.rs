@@ -71,7 +71,7 @@ impl NavSelection for NavigationDrawerState {
 }
 
 /// 导航项描述。
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct NavigationItemSpec {
     /// 标签。
     pub label: SharedString,
@@ -79,7 +79,19 @@ pub struct NavigationItemSpec {
     pub icon: Option<IconName>,
     /// 可选徽标文字（右上天角）。
     pub badge: Option<SharedString>,
+    /// 是否允许点击与选中。
+    pub enabled: bool,
+    on_click: Option<ItemClickHandler>,
 }
+
+type ItemClickHandler = Rc<dyn Fn(&mut Window, &mut App)>;
+
+/// AndroidX NavigationBarItem 对应的条目配置。
+pub type NavigationBarItem = NavigationItemSpec;
+/// AndroidX NavigationRailItem 对应的条目配置。
+pub type NavigationRailItem = NavigationItemSpec;
+/// AndroidX NavigationDrawerItem 对应的条目配置。
+pub type NavigationDrawerItem = NavigationItemSpec;
 
 impl NavigationItemSpec {
     /// 创建导航项。
@@ -88,12 +100,26 @@ impl NavigationItemSpec {
             label: label.into(),
             icon: Some(icon),
             badge: None,
+            enabled: true,
+            on_click: None,
         }
     }
 
     /// 设置徽标文字。
     pub fn badge(mut self, badge: impl Into<SharedString>) -> Self {
         self.badge = Some(badge.into());
+        self
+    }
+
+    /// 设置条目是否可以响应点击。
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+
+    /// 设置条目级点击回调；它在容器的选中回调之后执行。
+    pub fn on_click(mut self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
+        self.on_click = Some(Rc::new(handler));
         self
     }
 }
@@ -127,6 +153,9 @@ fn navigation_item<T: NavSelection>(
     let indicator_color = item.indicator_color;
     let click_entity = entity.clone();
     let on_change = on_change.cloned();
+    let item_on_click = spec.on_click.clone();
+    let enabled = spec.enabled;
+    let interaction_group = SharedString::from(format!("navigation-{:?}-{ix}", entity.entity_id()));
 
     // 指示条胶囊：仅选中项渲染，锚定整项宽度的中心（relative 0.5），
     // 按 (弹簧位置 − 项下标) 的偏移跨项滑动；越出部分由容器裁剪
@@ -145,16 +174,15 @@ fn navigation_item<T: NavSelection>(
 
     let base = div()
         .id(id)
+        .group(interaction_group.clone())
         .relative()
         .flex()
         .flex_col()
         .items_center()
         .justify_center()
         .gap(px(item_gap_from(horizontal)))
-        .cursor_pointer()
+        .when(enabled, |el| el.cursor_pointer())
         .text_color(label_color)
-        .hover(move |s| s.bg(icon_color.opacity(hover)))
-        .active(move |s| s.bg(icon_color.opacity(pressed)))
         // 指示条胶囊在下、图标在上;图标行铺满整项宽度,
         // 使胶囊的 relative 定位以整项为基准
         .child(
@@ -166,23 +194,43 @@ fn navigation_item<T: NavSelection>(
                 .items_center()
                 .justify_center()
                 .when_some(pill, |el, pill| el.child(pill))
+                .child(
+                    div()
+                        .id("navigation-state-layer")
+                        .absolute()
+                        .left(relative(0.5))
+                        .ml(-indicator_w / 2.0)
+                        .top(px(0.))
+                        .w(indicator_w)
+                        .h(indicator_h)
+                        .rounded(item.indicator_radius)
+                        .group_hover(interaction_group.clone(), move |style| {
+                            style.bg(icon_color.opacity(hover))
+                        })
+                        .group_active(interaction_group, move |style| {
+                            style.bg(icon_color.opacity(pressed))
+                        }),
+                )
                 .when_some(spec.icon, |el, icon| {
                     el.child(Icon::new(icon).size(item.icon_size).color(icon_color))
                 }),
         )
         // 点击:组件内部先完成选中(指示条滑动),
         // 状态真正变化才触发一次 on_change(未设置回调时仅内部切换)
-        .on_click(move |_, window, cx| {
-            click_entity.update(cx, |state, cx| {
-                let changed = ix != state.selected_index();
-                state.select_index(ix, window, cx);
-                if changed && let Some(handler) = on_change.clone() {
-                    handler(ix, window, cx);
+        .when(enabled, |el| {
+            el.on_click(move |_, window, cx| {
+                click_entity.update(cx, |state, cx| {
+                    let changed = ix != state.selected_index();
+                    state.select_index(ix, window, cx);
+                    if changed && let Some(handler) = on_change.clone() {
+                        handler(ix, window, cx);
+                    }
+                });
+                if let Some(handler) = &item_on_click {
+                    handler(window, cx);
                 }
             })
         });
-
-    let base = item.label.apply(base);
 
     let base = item.label.apply(base);
     base.child(spec.label.clone())
@@ -477,6 +525,7 @@ impl Render for NavigationRailState {
             .pt(rail.top_padding)
             .gap(rail.item_gap)
             .bg(rail.container_color)
+            .overflow_y_scroll()
             .children(header.map(|h| div().pb(px(16.)).child(h)))
             .children(self.items.iter().enumerate().map(|(ix, spec)| {
                 let is_selected = ix == selected;
@@ -587,6 +636,63 @@ impl NavigationDrawer {
     }
 }
 
+macro_rules! navigation_drawer_variant {
+    ($name:ident, $modal:expr) => {
+        #[doc = concat!("AndroidX ", stringify!($name), " 对应的导航抽屉。")]
+        pub struct $name(NavigationDrawer);
+
+        impl $name {
+            /// 创建指定呈现方式的导航抽屉。
+            pub fn new(id: impl Into<ElementId>) -> Self {
+                Self(NavigationDrawer::new(id).modal($modal))
+            }
+
+            /// 添加导航项。
+            pub fn item(mut self, item: NavigationDrawerItem) -> Self {
+                self.0 = self.0.item(item);
+                self
+            }
+
+            /// 添加分组标题。
+            pub fn section(mut self, title: impl Into<SharedString>) -> Self {
+                self.0 = self.0.section(title);
+                self
+            }
+
+            /// 设置选中项下标。
+            pub fn selected(mut self, index: usize) -> Self {
+                self.0 = self.0.selected(index);
+                self
+            }
+
+            /// 设置选中项变化回调。
+            pub fn on_change(
+                mut self,
+                handler: impl Fn(usize, &mut Window, &mut App) + 'static,
+            ) -> Self {
+                self.0 = self.0.on_change(handler);
+                self
+            }
+
+            /// 构建导航抽屉实体。
+            pub fn build(self, cx: &mut App) -> Entity<NavigationDrawerState> {
+                self.0.build(cx)
+            }
+        }
+    };
+}
+
+navigation_drawer_variant!(ModalNavigationDrawer, true);
+navigation_drawer_variant!(PermanentNavigationDrawer, false);
+navigation_drawer_variant!(DismissibleNavigationDrawer, false);
+
+/// AndroidX ModalDrawerSheet 对应的模态抽屉面板。
+pub type ModalDrawerSheet = ModalNavigationDrawer;
+/// AndroidX PermanentDrawerSheet 对应的常驻抽屉面板。
+pub type PermanentDrawerSheet = PermanentNavigationDrawer;
+/// AndroidX DismissibleDrawerSheet 对应的可收起抽屉面板。
+pub type DismissibleDrawerSheet = DismissibleNavigationDrawer;
+
 impl AnimatedComponent for NavigationDrawerState {
     fn step(&mut self, _now: Instant) -> bool {
         false
@@ -637,6 +743,7 @@ impl Render for NavigationDrawerState {
             .gap(px(4.))
             .p(drawer.padding)
             .bg(drawer.container_color)
+            .overflow_y_scroll()
             .when(self.modal, |el| {
                 el.shadow(drawer.modal_elevation.shadows(drawer.shadow_color))
             });
@@ -657,25 +764,68 @@ impl Render for NavigationDrawerState {
                     let ix = item_ix;
                     let is_selected = ix == self.selected;
                     let on_change = self.on_change.clone();
-                    let el = navigation_item(
-                        (SharedString::from(format!("{}-item", self.id)), ix),
-                        spec,
-                        is_selected,
-                        true,
-                        None,
-                        &item,
-                        &entity,
-                        on_change.as_ref(),
-                        ix,
-                    )
-                    .w_full()
-                    .flex_row()
-                    .items_center()
-                    .gap(px(12.))
-                    .h(px(56.))
-                    .rounded(item.indicator_radius)
-                    .px(drawer.item_horizontal_padding)
-                    .when(is_selected, |el| el.bg(item.indicator_color));
+                    let click_entity = entity.clone();
+                    let icon_color = if is_selected {
+                        item.selected_icon_color
+                    } else {
+                        item.unselected_icon_color
+                    };
+                    let label_color = if is_selected {
+                        item.selected_label_color
+                    } else {
+                        item.unselected_label_color
+                    };
+                    let hover = item.hover_opacity;
+                    let pressed = item.pressed_opacity;
+                    // 抽屉条目为横向行式布局:[图标 24][标签][可选徽标]
+                    let el = div()
+                        .id((SharedString::from(format!("{}-item", self.id)), ix))
+                        .w_full()
+                        .flex()
+                        .flex_row()
+                        .items_center()
+                        .gap(px(12.))
+                        .h(px(56.))
+                        .rounded(item.indicator_radius)
+                        .px(drawer.item_horizontal_padding)
+                        .cursor_pointer()
+                        .text_color(label_color)
+                        .when(is_selected, |el| el.bg(item.indicator_color))
+                        .when(!is_selected, |el| {
+                            el.hover(move |s| s.bg(icon_color.opacity(hover)))
+                        })
+                        .active(move |s| s.bg(icon_color.opacity(pressed)))
+                        .when_some(spec.icon, |el, icon| {
+                            el.child(
+                                div()
+                                    .flex_none()
+                                    .child(Icon::new(icon).size(item.icon_size).color(icon_color)),
+                            )
+                        })
+                        .child(
+                            div()
+                                .flex_1()
+                                .min_w_0()
+                                .child(item.label.apply(div()).child(spec.label.clone())),
+                        )
+                        .when_some(spec.badge.clone(), |el, badge| {
+                            el.child(
+                                crate::components::Badge::new((
+                                    SharedString::from(format!("{}-badge", self.id)),
+                                    ix,
+                                ))
+                                .label(badge),
+                            )
+                        })
+                        .on_click(move |_, window, cx| {
+                            click_entity.update(cx, |state, cx| {
+                                let changed = ix != state.selected;
+                                state.select(ix, window, cx);
+                                if changed && let Some(handler) = on_change.clone() {
+                                    handler(ix, window, cx);
+                                }
+                            })
+                        });
                     column = column.child(el);
                     item_ix += 1;
                 }

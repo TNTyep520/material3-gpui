@@ -1,32 +1,31 @@
-//! Overlays 页：Snackbar / Menu / Tooltip（经窗口 OverlayHost 渲染）。
+//! Overlays 页「Delivery desk」：Snackbar / Menu / Tooltip(经窗口 OverlayHost 渲染)。
 
 use gpui::{App, Bounds, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px, size};
-use material3_gpui::overlay::{
-    MenuItem, MenuState, Snackbar, close_tooltip, show_menu, show_snackbar, show_tooltip,
-};
+use material3_gpui::overlay::{close_tooltip, show_menu, show_snackbar, show_tooltip};
 use material3_gpui::prelude::*;
 
 use super::{gallery, showcase_group};
 
 /// Overlays 页视图。
 pub struct OverlaysPage {
-    pub b_snack: Entity<ButtonState>,
-    pub b_menu: Entity<ButtonState>,
-    pub tooltip_trigger: Entity<ButtonState>,
+    b_snack: Entity<ButtonState>,
+    b_menu: Entity<ButtonState>,
+    tooltip_trigger: Entity<ButtonState>,
 }
 
 impl OverlaysPage {
+    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
-        let b_snack = Button::new("b-snack", "Show snackbar")
+        let b_snack = Button::new("b-snack", "Start download")
             .filled()
             .on_click(|_, window, cx| {
                 show_snackbar(
                     window,
                     cx,
-                    Snackbar::new("File archived")
+                    Snackbar::new("Batch downloaded")
                         .action("UNDO")
                         .on_action(|window, cx| {
-                            show_snackbar(window, cx, Snackbar::new("Restored"), None);
+                            show_snackbar(window, cx, Snackbar::new("Restored to drafts"), None);
                         }),
                     None,
                 );
@@ -35,27 +34,35 @@ impl OverlaysPage {
 
         let menu = MenuState::new()
             .item(
-                MenuItem::new("Refresh")
-                    .icon(IconName::Settings)
+                MenuItem::new("Refresh the queue")
+                    .icon(IconName::ProgressActivity)
                     .on_click(|window, cx| {
-                        show_snackbar(window, cx, Snackbar::new("Refreshed"), None);
+                        show_snackbar(window, cx, Snackbar::new("Queue refreshed"), None);
                     }),
             )
             .item(
-                MenuItem::new("Send feedback")
+                MenuItem::new("Report a delivery")
                     .icon(IconName::Info)
                     .on_click(|window, cx| {
-                        show_snackbar(window, cx, Snackbar::new("Thanks for the feedback!"), None);
+                        show_snackbar(window, cx, Snackbar::new("Thanks for the report!"), None);
+                    }),
+            )
+            .item(
+                MenuItem::new("Open tracking sheet")
+                    .icon(IconName::Menu)
+                    .on_click(|window, cx| {
+                        show_snackbar(window, cx, Snackbar::new("Sheet opened"), None);
                     }),
             )
             .build(cx);
-        let b_menu = Button::new("b-menu", "Show menu")
+        let b_menu = Button::new("b-menu", "Delivery options")
             .outlined()
             .on_click(move |event, window, cx| {
                 let anchor = Bounds {
                     origin: event.position(),
                     size: size(px(0.), px(0.)),
                 };
+                // 每次点击把菜单交给 overlay 宿主,所以按次克隆
                 show_menu(window, cx, menu.clone(), anchor);
             })
             .build(cx);

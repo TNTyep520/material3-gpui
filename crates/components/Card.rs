@@ -12,9 +12,12 @@ use crate::theme::ActiveTheme;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum CardVariant {
-    #[default]
+    /// 浮起卡片。
     Elevated,
+    /// 默认填充卡片。
+    #[default]
     Filled,
+    /// 描边卡片。
     Outlined,
 }
 
@@ -27,6 +30,7 @@ pub struct Card {
 }
 
 impl Card {
+    /// 创建默认的填充卡片。
     pub fn new() -> Self {
         Self {
             base: div(),
@@ -52,6 +56,48 @@ impl Card {
         self.variant(CardVariant::Outlined)
     }
 }
+
+macro_rules! card_variant {
+    ($name:ident, $variant:ident) => {
+        #[doc = concat!("AndroidX ", stringify!($name), " 对应的卡片容器。")]
+        #[derive(IntoElement)]
+        pub struct $name(Card);
+
+        impl $name {
+            /// 创建此卡片变体。
+            pub fn new() -> Self {
+                Self(Card::new().variant(CardVariant::$variant))
+            }
+        }
+
+        impl Default for $name {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
+        impl Styled for $name {
+            fn style(&mut self) -> &mut StyleRefinement {
+                self.0.style()
+            }
+        }
+
+        impl ParentElement for $name {
+            fn extend(&mut self, elements: impl IntoIterator<Item = AnyElement>) {
+                self.0.extend(elements);
+            }
+        }
+
+        impl RenderOnce for $name {
+            fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+                self.0.render(window, cx)
+            }
+        }
+    };
+}
+
+card_variant!(ElevatedCard, Elevated);
+card_variant!(OutlinedCard, Outlined);
 
 impl Default for Card {
     fn default() -> Self {

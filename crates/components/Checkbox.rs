@@ -29,10 +29,23 @@ use crate::theme::ActiveTheme;
 
 type ChangeHandler = Rc<dyn Fn(bool, &mut Window, &mut App) + 'static>;
 
+/// AndroidX ToggleableState 对应的三态复选框值。
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ToggleableState {
+    /// 未选中。
+    #[default]
+    Off,
+    /// 已选中。
+    On,
+    /// 部分选中。
+    Indeterminate,
+}
+
 /// MD3 复选框构建器（`.build(cx)` 产出 [`CheckboxState`]）。
 pub struct Checkbox {
     id: ElementId,
     checked: bool,
+    indeterminate: bool,
     disabled: bool,
     error: bool,
     on_change: Option<ChangeHandler>,
@@ -42,6 +55,7 @@ pub struct Checkbox {
 pub struct CheckboxState {
     id: ElementId,
     checked: bool,
+    indeterminate: bool,
     disabled: bool,
     error: bool,
     on_change: Option<ChangeHandler>,
@@ -56,6 +70,7 @@ impl Checkbox {
         Self {
             id: id.into(),
             checked: false,
+            indeterminate: false,
             disabled: false,
             error: false,
             on_change: None,
@@ -65,6 +80,14 @@ impl Checkbox {
     /// 初始勾选态。
     pub fn checked(mut self, checked: bool) -> Self {
         self.checked = checked;
+        self.indeterminate = false;
+        self
+    }
+
+    /// 设置三态值；部分选中时显示横线。
+    pub fn toggleable_state(mut self, state: ToggleableState) -> Self {
+        self.checked = state == ToggleableState::On;
+        self.indeterminate = state == ToggleableState::Indeterminate;
         self
     }
 
@@ -72,6 +95,11 @@ impl Checkbox {
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
+    }
+
+    /// 设置 AndroidX 对应的 enabled 状态。
+    pub fn enabled(self, enabled: bool) -> Self {
+        self.disabled(!enabled)
     }
 
     /// 错误状态（使用 error 配色）。
@@ -86,18 +114,67 @@ impl Checkbox {
         self
     }
 
+    /// 设置勾选状态变化回调；传递新的 checked 值。
+    pub fn on_checked_change(
+        self,
+        handler: impl Fn(bool, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.on_change(handler)
+    }
+
     /// 构建有状态组件实体。
     pub fn build(self, cx: &mut App) -> Entity<CheckboxState> {
         let checked = self.checked;
         cx.new(|_| CheckboxState {
             id: self.id,
             checked,
+            indeterminate: self.indeterminate,
             disabled: self.disabled,
             error: self.error,
             on_change: self.on_change,
-            progress: Animatable::new(if checked { 1.0 } else { 0.0 }, 1.0e-3),
+            progress: Animatable::new(
+                if checked || self.indeterminate {
+                    1.0
+                } else {
+                    0.0
+                },
+                1.0e-3,
+            ),
             surface: InteractiveSurface::new(),
         })
+    }
+}
+
+/// AndroidX TriStateCheckbox 对应的三态复选框构建器。
+pub struct TriStateCheckbox(Checkbox);
+
+impl TriStateCheckbox {
+    /// 创建初始未选中的三态复选框。
+    pub fn new(id: impl Into<ElementId>) -> Self {
+        Self(Checkbox::new(id))
+    }
+
+    /// 设置 Off、On 或 Indeterminate 状态。
+    pub fn state(mut self, state: ToggleableState) -> Self {
+        self.0 = self.0.toggleable_state(state);
+        self
+    }
+
+    /// 设置启用状态。
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.0 = self.0.enabled(enabled);
+        self
+    }
+
+    /// 设置点击回调；调用者可以据此控制下一个三态值。
+    pub fn on_click(mut self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
+        self.0 = self.0.on_change(move |_, window, cx| handler(window, cx));
+        self
+    }
+
+    /// 构建可渲染的三态复选框实体。
+    pub fn build(self, cx: &mut App) -> Entity<CheckboxState> {
+        self.0.build(cx)
     }
 }
 
@@ -107,12 +184,24 @@ impl CheckboxState {
         self.checked
     }
 
+    /// 返回当前三态值。
+    pub fn toggleable_state(&self) -> ToggleableState {
+        if self.indeterminate {
+            ToggleableState::Indeterminate
+        } else if self.checked {
+            ToggleableState::On
+        } else {
+            ToggleableState::Off
+        }
+    }
+
     /// 设置勾选态（带动画）。
     pub fn set_checked(&mut self, checked: bool, window: &mut Window, cx: &mut Context<Self>) {
-        if self.checked == checked {
+        if self.checked == checked && !self.indeterminate {
             return;
         }
         self.checked = checked;
+        self.indeterminate = false;
         let spec = *cx.theme().motion().spec(MotionRole::DefaultEffects);
         self.progress
             .animate_to(if checked { 1.0 } else { 0.0 }, &spec, Instant::now());
@@ -165,7 +254,7 @@ impl Render for CheckboxState {
         };
 
         // 状态层颜色（40dp 圆形触摸目标）
-        let layer = if self.checked {
+        let layer = if self.checked || self.indeterminate {
             accent
         } else {
             colors.on_surface
@@ -173,7 +262,7 @@ impl Render for CheckboxState {
 
         // 勾选填充/边框/图标随进度插值
         let (box_bg, box_border, mark_color) = if disabled {
-            if self.checked {
+            if self.checked || self.indeterminate {
                 (
                     Some(colors.disabled_content(&state_layer)),
                     None,
@@ -244,9 +333,13 @@ impl Render for CheckboxState {
                 })
                 .when_some(mark_color.filter(|_| p > 0.0), |el, color| {
                     el.child(
-                        Icon::new(IconName::Check)
-                            .size(style.mark_size)
-                            .color(color.opacity(p)),
+                        Icon::new(if self.indeterminate {
+                            IconName::Remove
+                        } else {
+                            IconName::Check
+                        })
+                        .size(style.mark_size)
+                        .color(color.opacity(p)),
                     )
                 }),
         )

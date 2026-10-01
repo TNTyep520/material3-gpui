@@ -1,45 +1,43 @@
-//! Buttons 页：五种变体按钮演示。
+//! Buttons 页：并列展示按钮变体、图标和禁用状态。
 
 use gpui::{App, Entity, IntoElement, Render, Window, prelude::*};
 use material3_gpui::prelude::*;
 
-use super::{gallery, showcase_group};
+use super::{gallery, showcase_group, specimen};
 
 /// Buttons 页视图。
 pub struct ButtonsPage {
-    pub b_filled: Entity<ButtonState>,
-    pub b_tonal: Entity<ButtonState>,
-    pub b_elevated: Entity<ButtonState>,
-    pub b_outlined: Entity<ButtonState>,
-    pub b_text: Entity<ButtonState>,
-    pub b_icon: Entity<ButtonState>,
-    pub b_disabled: Entity<ButtonState>,
+    b_filled: Entity<ButtonState>,
+    b_tonal: Entity<ButtonState>,
+    b_elevated: Entity<ButtonState>,
+    b_outlined: Entity<ButtonState>,
+    b_text: Entity<ButtonState>,
+    b_icon: Entity<ButtonState>,
+    b_disabled: Entity<ButtonState>,
+    b_trailing: Entity<ButtonState>,
 }
 
 impl ButtonsPage {
+    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
-        let b_filled = Button::new("b-filled", "Filled")
+        let b_filled = Button::new("b-filled", "Book now")
             .filled()
             .on_click(|_, window, cx| {
-                material3_gpui::overlay::show_snackbar(
-                    window,
-                    cx,
-                    material3_gpui::overlay::Snackbar::new("Filled button clicked"),
-                    None,
-                );
+                show_snackbar(window, cx, Snackbar::new("Trip booked · gate B7"), None);
             })
             .build(cx);
-        let b_tonal = Button::new("b-tonal", "Tonal").tonal().build(cx);
-        let b_elevated = Button::new("b-elevated", "Elevated").elevated().build(cx);
-        let b_outlined = Button::new("b-outlined", "Outlined").outlined().build(cx);
-        let b_text = Button::new("b-text", "Text").text().build(cx);
-        let b_icon = Button::new("b-icon", "With icon")
-            .filled()
+        let b_tonal = FilledTonalButton::new("b-tonal", "Save trip").build(cx);
+        let b_elevated = ElevatedButton::new("b-elevated", "Elevated").build(cx);
+        let b_outlined = OutlinedButton::new("b-outlined", "Compare fares").build(cx);
+        let b_text = TextButton::new("b-text", "Skip").build(cx);
+        let b_icon = Button::new("b-icon", "Add itinerary")
             .leading_icon(IconName::Add)
             .build(cx);
-        let b_disabled = Button::new("b-disabled", "Disabled")
-            .filled()
-            .disabled(true)
+        let b_disabled = FilledTonalButton::new("b-disabled", "Sold out")
+            .enabled(false)
+            .build(cx);
+        let b_trailing = Button::new("b-trailing", "Continue")
+            .trailing_icon(IconName::ArrowForward)
             .build(cx);
 
         cx.new(|_| Self {
@@ -50,24 +48,34 @@ impl ButtonsPage {
             b_text,
             b_icon,
             b_disabled,
+            b_trailing,
         })
     }
 }
 
 impl Render for ButtonsPage {
     fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        gallery([showcase_group(
-            cx,
-            "Button Variants",
-            [
-                self.b_filled.clone().into_any_element(),
-                self.b_tonal.clone().into_any_element(),
-                self.b_elevated.clone().into_any_element(),
-                self.b_outlined.clone().into_any_element(),
-                self.b_text.clone().into_any_element(),
-                self.b_icon.clone().into_any_element(),
-                self.b_disabled.clone().into_any_element(),
-            ],
-        )])
+        gallery([
+            showcase_group(
+                cx,
+                "Variants",
+                [
+                    specimen(cx, "Filled", self.b_filled.clone()),
+                    specimen(cx, "Tonal", self.b_tonal.clone()),
+                    specimen(cx, "Elevated", self.b_elevated.clone()),
+                    specimen(cx, "Outlined", self.b_outlined.clone()),
+                    specimen(cx, "Text", self.b_text.clone()),
+                ],
+            ),
+            showcase_group(
+                cx,
+                "States & content",
+                [
+                    specimen(cx, "Leading icon", self.b_icon.clone()),
+                    specimen(cx, "Trailing icon", self.b_trailing.clone()),
+                    specimen(cx, "Disabled", self.b_disabled.clone()),
+                ],
+            ),
+        ])
     }
 }

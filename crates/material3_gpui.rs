@@ -36,13 +36,13 @@
 //! }
 //! ```
 
-#[path = "Assets.rs"]
+#[path = "assets.rs"]
 pub mod assets;
 pub mod components;
-#[path = "Fonts.rs"]
+#[path = "fonts.rs"]
 pub mod fonts;
 pub use components::icon;
-#[path = "Interaction.rs"]
+#[path = "interaction.rs"]
 pub mod interaction;
 pub mod motion;
 pub use components::overlay;
@@ -52,7 +52,7 @@ pub mod tokens;
 
 pub use assets::Md3Assets;
 pub use components::*;
-pub use icon::{ICON_FONT_FAMILY, Icon, IconName};
+pub use icon::{ALL_ICONS, ICON_COUNT, Icon, IconName, materialsymbolsrounded};
 pub use theme::{ActiveTheme, Theme, ThemeMode};
 
 use gpui::App;
@@ -72,8 +72,7 @@ pub mod prelude {
     pub use crate::assets::Md3Assets;
     pub use crate::components::*;
     pub use crate::fonts::TEXT_FONT_FAMILY;
-    pub use crate::icon::ICON_FONT_FAMILY;
-    pub use crate::icon::{Icon, IconName};
+    pub use crate::icon::{ALL_ICONS, ICON_COUNT, Icon, IconName, materialsymbolsrounded};
     pub use crate::motion::{
         Animatable, AnimatedComponent, AnimationDriver, Easing, MotionRole, MotionScheme,
         MotionSpec, SpringParameters,

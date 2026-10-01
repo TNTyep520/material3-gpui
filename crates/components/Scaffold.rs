@@ -25,6 +25,7 @@ pub struct Scaffold {
     top_bar: Option<AnyElement>,
     bottom_bar: Option<AnyElement>,
     fab: Option<AnyElement>,
+    snackbar_host: Option<AnyElement>,
     children: Vec<AnyElement>,
 }
 
@@ -35,6 +36,7 @@ impl Scaffold {
             top_bar: None,
             bottom_bar: None,
             fab: None,
+            snackbar_host: None,
             children: Vec::new(),
         }
     }
@@ -56,6 +58,12 @@ impl Scaffold {
         self.fab = Some(fab.into_any_element());
         self
     }
+
+    /// 设置 SnackbarHost 槽位，显示在内容区底部。
+    pub fn snackbar_host(mut self, host: impl IntoElement) -> Self {
+        self.snackbar_host = Some(host.into_any_element());
+        self
+    }
 }
 
 impl ParentElement for Scaffold {
@@ -72,6 +80,7 @@ impl RenderOnce for Scaffold {
         let content = div()
             .relative()
             .flex_1()
+            .min_w_0()
             .min_h_0()
             .flex()
             .flex_col()
@@ -80,6 +89,9 @@ impl RenderOnce for Scaffold {
             .children(self.children)
             .when_some(self.fab, |el, fab| {
                 el.child(div().absolute().right(px(16.)).bottom(px(16.)).child(fab))
+            })
+            .when_some(self.snackbar_host, |el, host| {
+                el.child(div().absolute().left(px(16.)).bottom(px(16.)).child(host))
             });
 
         div()

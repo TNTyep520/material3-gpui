@@ -70,6 +70,11 @@ impl RadioButton {
         self
     }
 
+    /// 设置 AndroidX 对应的 enabled 状态。
+    pub fn enabled(self, enabled: bool) -> Self {
+        self.disabled(!enabled)
+    }
+
     /// 被点击（选中）时触发。
     pub fn on_select(mut self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
         self.on_select = Some(Rc::new(handler));

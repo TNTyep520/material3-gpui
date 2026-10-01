@@ -38,6 +38,8 @@ pub enum FabSize {
     /// 56dp（默认）。
     #[default]
     Standard,
+    /// 80dp。
+    Medium,
     /// 96dp。
     Large,
 }
@@ -111,6 +113,11 @@ impl Fab {
         self
     }
 
+    /// 设置扩展 FAB 的文字内容。
+    pub fn text(self, text: impl Into<SharedString>) -> Self {
+        self.label(text)
+    }
+
     /// 降低的 elevation（Level1 而非 Level3）。
     pub fn lowered(mut self, lowered: bool) -> Self {
         self.lowered = lowered;
@@ -141,6 +148,87 @@ impl Fab {
     }
 }
 
+macro_rules! floating_action_button {
+    ($name:ident, $size:ident) => {
+        #[doc = concat!("AndroidX ", stringify!($name), " 对应的图标 FAB。")]
+        pub struct $name(Fab);
+
+        impl $name {
+            /// 创建指定尺寸的 FAB。
+            pub fn new(id: impl Into<ElementId>, icon: IconName) -> Self {
+                Self(Fab::new(id, icon).size(FabSize::$size))
+            }
+
+            /// 设置容器配色。
+            pub fn color(mut self, color: FabColor) -> Self {
+                self.0 = self.0.color(color);
+                self
+            }
+
+            /// 设置点击回调。
+            pub fn on_click(
+                mut self,
+                handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+            ) -> Self {
+                self.0 = self.0.on_click(handler);
+                self
+            }
+
+            /// 构建可渲染的 FAB 实体。
+            pub fn build(self, cx: &mut App) -> Entity<FabState> {
+                self.0.build(cx)
+            }
+        }
+    };
+}
+
+macro_rules! extended_floating_action_button {
+    ($name:ident, $size:ident) => {
+        #[doc = concat!("AndroidX ", stringify!($name), " 对应的文字 FAB。")]
+        pub struct $name(Fab);
+
+        impl $name {
+            /// 创建带文字内容的 FAB。
+            pub fn new(
+                id: impl Into<ElementId>,
+                icon: IconName,
+                text: impl Into<SharedString>,
+            ) -> Self {
+                Self(Fab::new(id, icon).size(FabSize::$size).text(text))
+            }
+
+            /// 设置容器配色。
+            pub fn color(mut self, color: FabColor) -> Self {
+                self.0 = self.0.color(color);
+                self
+            }
+
+            /// 设置点击回调。
+            pub fn on_click(
+                mut self,
+                handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+            ) -> Self {
+                self.0 = self.0.on_click(handler);
+                self
+            }
+
+            /// 构建可渲染的扩展 FAB 实体。
+            pub fn build(self, cx: &mut App) -> Entity<FabState> {
+                self.0.build(cx)
+            }
+        }
+    };
+}
+
+floating_action_button!(FloatingActionButton, Standard);
+floating_action_button!(SmallFloatingActionButton, Small);
+floating_action_button!(MediumFloatingActionButton, Medium);
+floating_action_button!(LargeFloatingActionButton, Large);
+extended_floating_action_button!(ExtendedFloatingActionButton, Standard);
+extended_floating_action_button!(SmallExtendedFloatingActionButton, Small);
+extended_floating_action_button!(MediumExtendedFloatingActionButton, Medium);
+extended_floating_action_button!(LargeExtendedFloatingActionButton, Large);
+
 impl AnimatedComponent for FabState {
     fn step(&mut self, now: Instant) -> bool {
         self.surface.step(now)
@@ -160,16 +248,7 @@ impl Render for FabState {
         let theme = cx.theme();
         let state_layer = *theme.state_layer();
         let extended = self.label.is_some();
-        let style = FabStyle::resolve(
-            theme.token_set(),
-            if extended {
-                FabSize::Standard
-            } else {
-                self.size
-            },
-            self.color,
-            self.lowered,
-        );
+        let style = FabStyle::resolve(theme.token_set(), self.size, self.color, self.lowered);
         let (bg, fg) = (style.container_color, style.content_color);
         let (container, radius, icon_size) = (style.size, style.corner_radius, style.icon_size);
         let elevation = style.elevation;
@@ -276,7 +355,8 @@ mod appearance {
             let (size, radius, icon) = match size {
                 FabSize::Small => (px(40.), shapes.medium, px(24.)),
                 FabSize::Standard => (px(56.), shapes.large, px(24.)),
-                FabSize::Large => (px(96.), shapes.extra_large, px(36.)),
+                FabSize::Medium => (px(80.), shapes.extra_large, px(28.)),
+                FabSize::Large => (px(96.), shapes.extra_large, px(32.)),
             };
 
             Self {

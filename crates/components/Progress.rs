@@ -5,7 +5,7 @@
 
 use gpui::{
     Animation, AnimationExt, App, ElementId, IntoElement, RenderOnce, Transformation, Window, div,
-    ease_in_out, percentage, prelude::*, px, relative, svg,
+    ease_in_out, percentage, prelude::*, relative, svg,
 };
 use std::time::Duration;
 
@@ -18,6 +18,9 @@ pub struct LinearProgress {
     /// Some(0.0..=1.0) 确定进度；None 为不确定动画
     value: Option<f32>,
 }
+
+/// AndroidX LinearProgressIndicator 对应的线性进度指示器。
+pub type LinearProgressIndicator = LinearProgress;
 
 impl LinearProgress {
     pub fn new(id: impl Into<ElementId>) -> Self {
@@ -81,16 +84,20 @@ impl RenderOnce for LinearProgress {
 /// MD3 环形进度指示器（不确定进度）
 #[derive(IntoElement)]
 pub struct CircularProgress {
-    size: gpui::Pixels,
+    size: Option<gpui::Pixels>,
 }
+
+/// AndroidX CircularProgressIndicator 对应的环形进度指示器。
+pub type CircularProgressIndicator = CircularProgress;
 
 impl CircularProgress {
     pub fn new() -> Self {
-        Self { size: px(48.) }
+        Self { size: None }
     }
 
+    /// 覆盖默认尺寸(默认取环形进度令牌的 40dp)。
     pub fn size(mut self, size: gpui::Pixels) -> Self {
-        self.size = size;
+        self.size = Some(size);
         self
     }
 }
@@ -103,11 +110,11 @@ impl Default for CircularProgress {
 
 impl RenderOnce for CircularProgress {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let color = CircularProgressStyle::resolve(cx.theme().token_set()).color;
+        let style = CircularProgressStyle::resolve(cx.theme().token_set());
         svg()
             .path(crate::assets::PROGRESS_ARC_SVG_PATH)
-            .size(self.size)
-            .text_color(color)
+            .size(self.size.unwrap_or(style.size))
+            .text_color(style.color)
             .with_animation(
                 "md3-circular-indeterminate",
                 Animation::new(Duration::from_millis(1000)).repeat(),
@@ -120,7 +127,7 @@ pub use appearance::{CircularProgressStyle, LinearProgressStyle};
 
 mod appearance {
     use crate::theme::TokenSet;
-    use gpui::{Hsla, Pixels, px};
+    use gpui::{Hsla, Pixels};
     /// 线性进度条样式。
     #[derive(Clone, Copy, Debug)]
     pub struct LinearProgressStyle {
@@ -134,13 +141,13 @@ mod appearance {
         pub corner_radius: Pixels,
     }
     impl LinearProgressStyle {
-        /// 由令牌推导默认样式。
+        /// 由令牌推导默认样式(ProgressIndicatorTokens / LinearProgressIndicatorTokens)。
         pub fn resolve(tokens: &TokenSet) -> Self {
-            let colors = &tokens.colors;
+            use crate::tokens::{LinearProgressIndicatorTokens, ProgressIndicatorTokens};
             Self {
-                active_color: colors.primary,
-                track_color: colors.secondary_container,
-                height: px(4.),
+                active_color: ProgressIndicatorTokens::ACTIVE_INDICATOR_COLOR.resolve(tokens),
+                track_color: ProgressIndicatorTokens::TRACK_COLOR.resolve(tokens),
+                height: LinearProgressIndicatorTokens::HEIGHT.pixels(),
                 corner_radius: tokens.shapes.full,
             }
         }
@@ -154,11 +161,12 @@ mod appearance {
         pub size: Pixels,
     }
     impl CircularProgressStyle {
-        /// 由令牌推导默认样式。
+        /// 由令牌推导默认样式(CircularProgressIndicatorTokens,默认 40dp)。
         pub fn resolve(tokens: &TokenSet) -> Self {
+            use crate::tokens::{CircularProgressIndicatorTokens, ProgressIndicatorTokens};
             Self {
-                color: tokens.colors.primary,
-                size: px(48.),
+                color: ProgressIndicatorTokens::ACTIVE_INDICATOR_COLOR.resolve(tokens),
+                size: CircularProgressIndicatorTokens::SIZE.pixels(),
             }
         }
     }

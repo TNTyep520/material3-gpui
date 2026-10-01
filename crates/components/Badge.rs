@@ -100,3 +100,26 @@ pub fn badged(anchor: impl IntoElement, badge: Badge) -> AnyElement {
         .child(div().absolute().top(px(-4.)).right(px(-6.)).child(badge))
         .into_any_element()
 }
+
+/// AndroidX BadgedBox 对应的徽标叠放容器。
+#[derive(IntoElement)]
+pub struct BadgedBox {
+    anchor: AnyElement,
+    badge: Badge,
+}
+
+impl BadgedBox {
+    /// 创建带徽标的内容容器。
+    pub fn new(anchor: impl IntoElement, badge: Badge) -> Self {
+        Self {
+            anchor: anchor.into_any_element(),
+            badge,
+        }
+    }
+}
+
+impl RenderOnce for BadgedBox {
+    fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
+        badged(self.anchor, self.badge)
+    }
+}

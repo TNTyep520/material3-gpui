@@ -125,6 +125,11 @@ impl Button {
         self
     }
 
+    /// 与 AndroidX 的 enabled 参数对应；禁用时阻止点击并使用禁用配色。
+    pub fn enabled(self, enabled: bool) -> Self {
+        self.disabled(!enabled)
+    }
+
     /// 设置点击回调。
     pub fn on_click(
         mut self,
@@ -155,6 +160,63 @@ impl Button {
         })
     }
 }
+
+macro_rules! button_variant {
+    ($name:ident, $variant:ident) => {
+        #[doc = concat!("AndroidX ", stringify!($name), " 对应的 GPUI 按钮构建器。")]
+        pub struct $name(Button);
+
+        impl $name {
+            /// 创建带文字内容的按钮。
+            pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
+                Self(Button::new(id, label).variant(ButtonVariant::$variant))
+            }
+
+            /// 设置启用状态。
+            pub fn enabled(mut self, enabled: bool) -> Self {
+                self.0 = self.0.enabled(enabled);
+                self
+            }
+
+            /// 设置内容前方的图标。
+            pub fn leading_icon(mut self, icon: IconName) -> Self {
+                self.0 = self.0.leading_icon(icon);
+                self
+            }
+
+            /// 设置内容后方的图标。
+            pub fn trailing_icon(mut self, icon: IconName) -> Self {
+                self.0 = self.0.trailing_icon(icon);
+                self
+            }
+
+            /// 设置点击回调。
+            pub fn on_click(
+                mut self,
+                handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+            ) -> Self {
+                self.0 = self.0.on_click(handler);
+                self
+            }
+
+            /// 覆盖当前变体的令牌样式。
+            pub fn style(mut self, override_fn: impl Fn(&mut ButtonStyle) + 'static) -> Self {
+                self.0 = self.0.style(override_fn);
+                self
+            }
+
+            /// 创建可渲染的按钮实体。
+            pub fn build(self, cx: &mut App) -> Entity<ButtonState> {
+                self.0.build(cx)
+            }
+        }
+    };
+}
+
+button_variant!(ElevatedButton, Elevated);
+button_variant!(FilledTonalButton, FilledTonal);
+button_variant!(OutlinedButton, Outlined);
+button_variant!(TextButton, Text);
 
 impl ButtonState {
     /// 组件最近的边界（窗口坐标），可用于菜单等弹层锚定。

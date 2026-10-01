@@ -54,6 +54,11 @@ impl SegmentedButton {
         self.disabled = disabled;
         self
     }
+
+    /// 设置条目的启用状态。
+    pub fn enabled(self, enabled: bool) -> Self {
+        self.disabled(!enabled)
+    }
 }
 
 pub struct SegmentedButtonRow {
@@ -97,6 +102,11 @@ impl SegmentedButtonRow {
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
+    }
+
+    /// 设置整行的启用状态。
+    pub fn enabled(self, enabled: bool) -> Self {
+        self.disabled(!enabled)
     }
 
     pub fn on_change(
@@ -174,6 +184,51 @@ impl SegmentedButtonRow {
         self.set_selected(index, selected)
     }
 }
+
+macro_rules! segmented_button_row_variant {
+    ($name:ident, $mode:ident) => {
+        #[doc = concat!("AndroidX ", stringify!($name), " 对应的分段按钮行。")]
+        pub struct $name(SegmentedButtonRow);
+
+        impl $name {
+            /// 创建指定选择模式的按钮行。
+            pub fn new(id: impl Into<ElementId>) -> Self {
+                Self(
+                    SegmentedButtonRow::new(id).selection_mode(SegmentedButtonSelectionMode::$mode),
+                )
+            }
+
+            /// 设置行内按钮。
+            pub fn buttons(mut self, buttons: impl IntoIterator<Item = SegmentedButton>) -> Self {
+                self.0 = self.0.buttons(buttons);
+                self
+            }
+
+            /// 设置整行的启用状态。
+            pub fn enabled(mut self, enabled: bool) -> Self {
+                self.0 = self.0.enabled(enabled);
+                self
+            }
+
+            /// 设置选择变化回调，返回被选中的下标集合。
+            pub fn on_change(
+                mut self,
+                handler: impl Fn(&[usize], &mut Window, &mut App) + 'static,
+            ) -> Self {
+                self.0 = self.0.on_change(handler);
+                self
+            }
+
+            /// 构建可渲染的分段按钮行实体。
+            pub fn build(self, cx: &mut App) -> Entity<SegmentedButtonRowState> {
+                self.0.build(cx)
+            }
+        }
+    };
+}
+
+segmented_button_row_variant!(SingleChoiceSegmentedButtonRow, Single);
+segmented_button_row_variant!(MultiChoiceSegmentedButtonRow, Multiple);
 
 impl SegmentedButtonRowState {
     pub fn selected(&self) -> Vec<usize> {

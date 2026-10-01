@@ -1,30 +1,18 @@
 // Windows 下隐藏随 GUI 程序弹出的控制台窗口
 #![windows_subsystem = "windows"]
 
-//! material3-gpui 组件演示（入口）。
-//!
-//! 结构：
-//! - `Catalog`：根视图——主题状态、页面导航、侧栏与头部开关、对话框与弹层宿主；
-//! - `pages`：每个组件页面一个独立 Entity 视图（页面只在自身状态变化时
-//!   重渲染自己，Slider 拖动 / Progress 动画不再触发整树重绘）。
-//!
-//! 运行：`cargo run -p catalog`
-
-// 模块名跟随文件名的驼峰式约定,非 snake_case
-#[allow(non_snake_case)]
-mod Home;
-#[allow(non_snake_case)]
-mod Titlebar;
+//! material3-gpui 组件展厅入口。
 mod pages;
+mod titlebar;
 
 use gpui::{
-    AnyView, App, Bounds, Context, Entity, IntoElement, Render, TitlebarOptions, Window,
-    WindowBounds, WindowOptions, div, point, prelude::*, px, size,
+    AnyView, App, Bounds, Context, Entity, IntoElement, KeyDownEvent, Render, TitlebarOptions,
+    Window, WindowBounds, WindowOptions, div, point, prelude::*, px, size,
 };
 
 use material3_gpui::overlay::host;
 use material3_gpui::prelude::*;
-use pages::Pages;
+use pages::{Pages, palette_strip};
 
 const DEFAULT_SEED: u32 = 0x6750A4;
 
@@ -66,11 +54,11 @@ enum PageId {
     Sheets,
 }
 
-/// 页面元信息：(标题, 副标题, 图标)。
+/// 页面元信息：导航和标题使用相同的组件名称。
 pub(crate) struct PageMeta {
     pub(crate) id: PageId,
+    /// 导航与顶栏使用的短标签。
     pub(crate) title: &'static str,
-    pub(crate) subtitle: &'static str,
     pub(crate) icon: IconName,
 }
 
@@ -78,97 +66,81 @@ pub(crate) const PAGES: [PageMeta; 16] = [
     PageMeta {
         id: PageId::Buttons,
         title: "Buttons",
-        subtitle: "Common button variants with ripple and state layer springs (m3fx motion)",
-        icon: IconName::Add,
+        icon: IconName::Star,
     },
     PageMeta {
         id: PageId::Additional,
-        title: "More Material components",
-        subtitle: "Date/time pickers, search, progress, toolbar and navigation",
+        title: "Additional",
         icon: IconName::Settings,
     },
     PageMeta {
         id: PageId::IconButtonsFab,
         title: "Icon buttons & FAB",
-        subtitle: "Icon button variants and floating action button sizes",
         icon: IconName::Favorite,
     },
     PageMeta {
         id: PageId::ButtonsExtended,
-        title: "Toggle & split buttons",
-        subtitle: "Toggle buttons, button groups, split buttons and exposed menus",
+        title: "Toggle & split",
         icon: IconName::MoreVert,
     },
     PageMeta {
         id: PageId::Selection,
-        title: "Selection controls",
-        subtitle: "Checkbox, radio button and switch with spring-driven animations",
+        title: "Selection",
         icon: IconName::Check,
     },
     PageMeta {
         id: PageId::Chips,
         title: "Chips",
-        subtitle: "Assist, filter, input and suggestion chips",
         icon: IconName::Info,
     },
     PageMeta {
         id: PageId::SliderProgress,
-        title: "Slider & Progress",
-        subtitle: "Slider with linear and circular progress indicators",
-        icon: IconName::Settings,
+        title: "Slider & progress",
+        icon: IconName::ProgressActivity,
     },
     PageMeta {
         id: PageId::Tabs,
         title: "Tabs",
-        subtitle: "Primary tabs; the selection indicator slides with a fastSpatial spring",
         icon: IconName::Menu,
     },
     PageMeta {
         id: PageId::TextFields,
         title: "Text fields",
-        subtitle: "Outlined text field with floating label and focus morph",
         icon: IconName::Edit,
     },
     PageMeta {
         id: PageId::Overlays,
         title: "Overlays",
-        subtitle: "Snackbar, menu and tooltip rendered through the window overlay host",
         icon: IconName::MoreVert,
     },
     PageMeta {
         id: PageId::Navigation,
         title: "Navigation",
-        subtitle: "Top app bar, navigation bar, rail and drawer with spring indicator",
         icon: IconName::Menu,
     },
     PageMeta {
         id: PageId::Cards,
         title: "Cards",
-        subtitle: "Elevated, filled and outlined cards",
         icon: IconName::Star,
     },
     PageMeta {
         id: PageId::Lists,
         title: "Lists",
-        subtitle: "List items with icons, supporting text and dividers",
         icon: IconName::Person,
     },
     PageMeta {
         id: PageId::Dialogs,
         title: "Dialogs",
-        subtitle: "Modal dialog with scrim, hero icon and actions",
         icon: IconName::Delete,
     },
     PageMeta {
         id: PageId::AppBars,
-        title: "App bars & Scaffold",
-        subtitle: "Top app bar variants, badges and the scaffold layout",
+        title: "App bars",
         icon: IconName::Home,
     },
     PageMeta {
         id: PageId::Sheets,
         title: "Bottom sheet",
-        subtitle: "Modal bottom sheet with drag handle",
         icon: IconName::Menu,
     },
 ];
@@ -178,8 +150,6 @@ struct Catalog {
     dark: bool,
     seed: u32,
     page: PageId,
-    /// 竖屏下是否显示主页列表(false = 详情页)。
-    home_visible: bool,
     dialog_open: bool,
     wired: bool,
     dark_switch: Entity<SwitchState>,
@@ -192,7 +162,6 @@ impl Catalog {
             dark: false,
             seed: DEFAULT_SEED,
             page: PageId::Buttons,
-            home_visible: true,
             dialog_open: false,
             wired: false,
             dark_switch: Switch::new("theme-switch").build(cx),
@@ -306,11 +275,17 @@ impl Catalog {
         let handle = this;
         dialogs_page.update(cx, |page, cx| {
             page.dlg_ok.update(cx, |button, _| {
-                button.set_on_click(move |_, _window, cx| {
+                button.set_on_click(move |_, window, cx| {
                     handle.update(cx, |d, cx| {
                         d.dialog_open = false;
                         cx.notify();
                     });
+                    material3_gpui::overlay::show_snackbar(
+                        window,
+                        cx,
+                        Snackbar::new("3 recordings deleted"),
+                        None,
+                    );
                 });
             });
         });
@@ -329,11 +304,6 @@ impl Render for Catalog {
         let font_family = cx.theme().font_family().clone();
         let page = self.page;
         let dialog_open = self.dialog_open;
-        let wired = self.wired;
-        let dialogs = self.pages.dialogs.read(cx);
-        let dlg_cancel = dialogs.dlg_cancel.clone();
-        let dlg_ok = dialogs.dlg_ok.clone();
-        let _ = wired;
 
         // 当前页面视图（页面只在自身状态变化时重渲染）
         let page_view: AnyView = match self.page {
@@ -355,121 +325,152 @@ impl Render for Catalog {
             PageId::Sheets => self.pages.sheets.clone().into(),
         };
         let meta = &PAGES[PAGES.iter().position(|p| p.id == page).unwrap_or(0)];
-        let selected_ix = PAGES.iter().position(|p| p.id == page);
-        // 横屏阈值:窗口拖宽到 840dp 及以上切换为左列表右详情双栏
-        let landscape = window.viewport_size().width >= px(840.);
+        // 对话框按钮实体属于 Dialogs 页(由其构造期创建)
+        let dialogs = self.pages.dialogs.read(cx);
+        let dlg_cancel = dialogs.dlg_cancel.clone();
+        let dlg_ok = dialogs.dlg_ok.clone();
 
-        // 主页面板(BakaXL 设置页风格;横屏为左栏,竖屏铺满)
-        let home_pane = Home::pane(cx, selected_ix, {
-            let this = this.clone();
-            std::rc::Rc::new(move |ix: usize, cx: &mut App| {
-                this.update(cx, |d, cx| {
-                    d.page = PAGES[ix].id;
-                    d.home_visible = false;
-                    cx.notify();
-                })
-            })
-        });
-
-        // 详情页头(竖屏详情加返回按钮)
-        let back_button = div()
-            .id("detail-back")
-            .size(px(40.))
+        let rail_pane = div()
+            .w(px(232.))
+            .h_full()
             .flex_none()
-            .rounded_full()
             .flex()
-            .items_center()
-            .justify_center()
-            .cursor_pointer()
-            .hover(|s| s.bg(colors.on_surface.opacity(0.08)))
+            .flex_col()
+            .border_r_1()
+            .border_color(colors.outline_variant)
             .child(
-                Icon::new(IconName::ArrowBack)
-                    .size(px(24.))
-                    .color(colors.on_surface),
+                typography
+                    .label_large
+                    .apply(div())
+                    .px(px(20.))
+                    .py(px(20.))
+                    .text_color(colors.on_surface_variant)
+                    .child("Components"),
             )
-            .on_click({
-                let this = this.clone();
-                move |_, _w, cx| {
-                    this.update(cx, |d, cx| {
-                        d.home_visible = true;
-                        cx.notify();
-                    })
-                }
-            });
-
-        // 页头
-        let content_header = div()
-            .flex()
-            .flex_wrap()
-            .items_start()
-            .justify_between()
-            .gap(px(16.))
-            .when(!landscape, |el| el.child(back_button))
             .child(
                 div()
+                    .id("catalog-navigation")
                     .flex_1()
-                    .min_w(px(180.))
+                    .min_h_0()
+                    .overflow_y_scroll()
+                    .px(px(12.))
+                    .pb(px(12.))
+                    .children(PAGES.iter().enumerate().map(|(index, meta)| {
+                        let selected = meta.id == page;
+                        let target = meta.id;
+                        let color = if selected {
+                            colors.on_secondary_container
+                        } else {
+                            colors.on_surface_variant
+                        };
+                        div()
+                            .id(("catalog-page", index))
+                            .focusable()
+                            .tab_stop(true)
+                            .w_full()
+                            .h(px(44.))
+                            .mb(px(4.))
+                            .px(px(12.))
+                            .rounded(px(12.))
+                            .flex()
+                            .items_center()
+                            .gap(px(12.))
+                            .cursor_pointer()
+                            .focus(|style| style.bg(colors.secondary_container))
+                            .text_color(color)
+                            .when(selected, |element| element.bg(colors.secondary_container))
+                            .when(!selected, |element| {
+                                element.hover(move |style| style.bg(colors.surface_container_high))
+                            })
+                            .child(Icon::new(meta.icon).size(px(20.)).color(color))
+                            .child(typography.label_large.apply(div()).child(meta.title))
+                            .on_key_down(cx.listener(move |this, event: &KeyDownEvent, _, cx| {
+                                if matches!(event.keystroke.key.as_str(), "enter" | "space") {
+                                    this.page = target;
+                                    cx.notify();
+                                    cx.stop_propagation();
+                                }
+                            }))
+                            .on_click(cx.listener(move |this, _, _, cx| {
+                                this.page = target;
+                                cx.notify();
+                            }))
+                    })),
+            );
+        let theme_action = div()
+            .flex()
+            .flex_none()
+            .items_center()
+            .gap(px(12.))
+            .px(px(12.))
+            .child(
+                typography
+                    .label_large
+                    .apply(div())
+                    .text_color(colors.on_surface_variant)
+                    .child(if self.dark { "Dark" } else { "Light" }),
+            )
+            .child(self.dark_switch.clone());
+
+        let detail_bar = div()
+            .h(px(72.))
+            .w_full()
+            .flex_none()
+            .px(px(28.))
+            .border_b_1()
+            .border_color(colors.outline_variant)
+            .flex()
+            .items_center()
+            .justify_between()
+            .child(
+                div()
                     .flex()
                     .flex_col()
-                    .gap(px(8.))
+                    .gap(px(2.))
                     .child(
                         typography
-                            .headline_large
+                            .title_large
                             .apply(div())
                             .text_color(colors.on_surface)
                             .child(meta.title),
                     )
                     .child(
                         typography
-                            .body_medium
+                            .label_medium
                             .apply(div())
                             .text_color(colors.on_surface_variant)
-                            .child(meta.subtitle),
+                            .child("Material 3 · variants and states"),
                     ),
             )
             .child(
                 div()
                     .flex()
-                    .flex_none()
                     .items_center()
-                    .gap(px(12.))
-                    .child(
-                        typography
-                            .label_large
-                            .apply(div())
-                            .text_color(colors.on_surface_variant)
-                            .child(if self.dark { "Dark" } else { "Light" }),
-                    )
-                    .child(self.dark_switch.clone()),
+                    .gap(px(24.))
+                    .child(palette_strip(cx))
+                    .child(theme_action),
             );
 
         let content = div()
             .flex_1()
             .min_w_0()
-            .min_h_0()
             .h_full()
             .flex()
             .flex_col()
-            .bg(colors.surface)
+            .child(detail_bar)
             .child(
                 div()
-                    .px(px(12.))
-                    .pt(px(20.))
-                    .pb(px(12.))
-                    .child(content_header),
-            )
-            .child(
-                div()
-                    .id("catalog-content")
+                    .id((
+                        "catalog-content",
+                        PAGES.iter().position(|meta| meta.id == page).unwrap_or(0),
+                    ))
                     .flex_1()
-                    .min_w_0()
                     .min_h_0()
+                    .min_w_0()
                     .overflow_y_scroll()
-                    .px(px(12.))
-                    .pb(px(24.))
-                    .child(page_view),
+                    .p(px(28.))
+                    .child(div().w_full().max_w(px(1120.)).mx_auto().child(page_view)),
             );
-
         div()
             .id("catalog-root")
             .relative()
@@ -480,47 +481,17 @@ impl Render for Catalog {
             .font_family(font_family)
             .text_color(colors.on_surface)
             // 自定义标题栏(隐藏系统标题栏后的窗体框架)
-            .child(Titlebar::CustomTitleBar)
-            .child(if landscape {
-                // 横屏双栏:左主页面板 + 右详情
+            .child(titlebar::CustomTitleBar)
+            // 双栏:左导航抽屉 + 右组件详情(横屏固定布局)
+            .child(
                 div()
                     .flex_1()
                     .min_h_0()
                     .flex()
                     .overflow_hidden()
-                    .child(
-                        div()
-                            .w(px(440.))
-                            .h_full()
-                            .flex_none()
-                            .flex()
-                            .flex_col()
-                            .bg(colors.surface)
-                            .border_r_1()
-                            .border_color(colors.outline_variant)
-                            .child(home_pane),
-                    )
-                    .child(content)
-            } else if self.home_visible {
-                // 竖屏:主页列表铺满
-                div()
-                    .flex_1()
-                    .min_h_0()
-                    .flex()
-                    .flex_col()
-                    .overflow_hidden()
-                    .bg(colors.surface)
-                    .child(home_pane)
-            } else {
-                // 竖屏:详情页铺满
-                div()
-                    .flex_1()
-                    .min_h_0()
-                    .flex()
-                    .flex_col()
-                    .overflow_hidden()
-                    .child(content)
-            })
+                    .child(rail_pane)
+                    .child(content),
+            )
             // 窗口级弹层宿主：Snackbar / Menu / Tooltip
             .child(host(window, cx))
             .when(dialog_open, |el| {
@@ -536,10 +507,10 @@ impl Render for Catalog {
                 el.child(
                     Dialog::new("catalog-dialog")
                         .icon(IconName::Delete)
-                        .title("Permanently delete?")
+                        .title("Delete 3 recordings?")
                         .child(
-                            "Deleting the selected items will also remove them from all synced \
-                             devices. This action cannot be undone.",
+                            "The recordings and their transcripts will be removed from \
+                             your library. This action cannot be undone.",
                         )
                         .action(dlg_cancel.clone())
                         .action(dlg_ok.clone())
@@ -554,9 +525,9 @@ fn main() {
         .with_assets(Md3Assets)
         .run(|cx: &mut App| {
             material3_gpui::init(cx);
-            // 竖屏窗体:初始与最小尺寸一致(456×700,宽度对齐 BakaXL)
-            let initial = size(px(456.), px(700.));
-            let min_size = size(px(456.), px(700.));
+            // 横屏尺寸对齐资源管理器 tokens 窗口实测(996×621)
+            let initial = size(px(996.), px(621.));
+            let min_size = size(px(996.), px(621.));
             let bounds = Bounds::centered(None, initial, cx);
             cx.open_window(
                 WindowOptions {

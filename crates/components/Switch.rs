@@ -109,6 +109,11 @@ impl Switch {
         self
     }
 
+    /// 设置 AndroidX 对应的 enabled 状态。
+    pub fn enabled(self, enabled: bool) -> Self {
+        self.disabled(!enabled)
+    }
+
     /// 带图标变体:选中态拇指内显示对勾、未选中态显示关闭图标
     /// (16dp,对齐 m3fx 双图标模式)。
     pub fn with_check_icon(mut self, check_icon: bool) -> Self {
@@ -120,6 +125,14 @@ impl Switch {
     pub fn on_change(mut self, handler: impl Fn(bool, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
+    }
+
+    /// 设置切换回调；传递新的 checked 值。
+    pub fn on_checked_change(
+        self,
+        handler: impl Fn(bool, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.on_change(handler)
     }
 
     /// 构建有状态组件实体。

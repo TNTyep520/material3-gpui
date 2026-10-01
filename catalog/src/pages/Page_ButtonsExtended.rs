@@ -1,8 +1,11 @@
-use gpui::{App, Entity, IntoElement, Render, Window, div, prelude::*, px};
+//! Toggle & split 页：开关状态、按钮组方向和菜单按钮对比。
+
+use gpui::{App, Entity, IntoElement, Render, Window, prelude::*};
 use material3_gpui::prelude::*;
 
-use super::{gallery, showcase_group};
+use super::{gallery, showcase_group, specimen};
 
+/// ButtonsExtended 页视图。
 pub struct ButtonsExtendedPage {
     toggle_a: Entity<ToggleButtonState>,
     toggle_b: Entity<ToggleButtonState>,
@@ -10,16 +13,23 @@ pub struct ButtonsExtendedPage {
 }
 
 impl ButtonsExtendedPage {
+    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
         let menu = MenuState::new()
-            .item(MenuItem::new("Edit").icon(IconName::Edit))
-            .item(MenuItem::new("Duplicate").icon(IconName::Add))
-            .item(MenuItem::new("Delete").icon(IconName::Delete))
+            .item(
+                MenuItem::new("Save as copy")
+                    .icon(IconName::Edit)
+                    .on_click(|window, cx| {
+                        show_snackbar(window, cx, Snackbar::new("Copied to drafts"), None);
+                    }),
+            )
+            .item(MenuItem::new("Duplicate row").icon(IconName::Add))
+            .item(MenuItem::new("Discard").icon(IconName::Delete))
             .build(cx);
-        let toggle_a = ToggleButton::new("toggle-bold", "Bold")
-            .icon(IconName::Edit)
+        let toggle_a = ToggleButton::new("toggle-bold", "Emphasis")
+            .icon(IconName::Star)
             .build(cx);
-        let toggle_b = ToggleButton::new("toggle-favorite", "Favorite")
+        let toggle_b = ToggleButton::new("toggle-favorite", "Starred")
             .icon(IconName::Favorite)
             .checked(true)
             .build(cx);
@@ -33,7 +43,7 @@ impl ButtonsExtendedPage {
 
 impl Render for ButtonsExtendedPage {
     fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        let disabled = ToggleButton::new("toggle-disabled", "Disabled")
+        let disabled = ToggleButton::new("toggle-disabled", "Locked")
             .disabled(true)
             .build(cx);
         let group = ButtonGroup::new("actions").children([
@@ -54,30 +64,31 @@ impl Render for ButtonsExtendedPage {
             .build(cx);
         let dropdown = ExposedDropdownMenu::new(
             "exposed-menu",
-            Button::new("exposed-field", "Choose an action")
+            Button::new("exposed-field", "Save to…")
                 .outlined()
                 .build(cx),
         )
         .menu(self.menu.clone())
         .expanded(true);
+
         gallery([
             showcase_group(
                 cx,
-                "Toggle buttons",
+                "Toggle states",
                 [
-                    self.toggle_a.clone().into_any_element(),
-                    self.toggle_b.clone().into_any_element(),
-                    disabled.into_any_element(),
+                    specimen(cx, "Unselected", self.toggle_a.clone()),
+                    specimen(cx, "Selected", self.toggle_b.clone()),
+                    specimen(cx, "Disabled", disabled),
                 ],
             ),
             showcase_group(
                 cx,
-                "Button group",
+                "Button groups",
                 [group.into_any_element(), vertical.into_any_element()],
             ),
             showcase_group(
                 cx,
-                "Split button",
+                "Menu buttons",
                 [
                     SplitButton::new("split", "Save")
                         .filled()
@@ -86,14 +97,7 @@ impl Render for ButtonsExtendedPage {
                     dropdown.into_any_element(),
                 ],
             ),
-            showcase_group(
-                cx,
-                "Segmented button",
-                [
-                    segmented.into_any_element(),
-                    div().h(px(1.)).into_any_element(),
-                ],
-            ),
+            showcase_group(cx, "Segmented", [segmented.into_any_element()]),
         ])
     }
 }

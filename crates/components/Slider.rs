@@ -60,6 +60,7 @@ pub struct Slider {
     value: f32,
     step: Option<f32>,
     disabled: bool,
+    vertical: bool,
     on_change: Option<ChangeHandler>,
 }
 
@@ -70,6 +71,7 @@ pub struct SliderState {
     value: f32,
     step: Option<f32>,
     disabled: bool,
+    vertical: bool,
     dragging: bool,
     bounds: Bounds<Pixels>,
     on_change: Option<ChangeHandler>,
@@ -84,6 +86,7 @@ impl Slider {
             value: value.clamp(min, max),
             step: None,
             disabled: false,
+            vertical: false,
             on_change: None,
         }
     }
@@ -100,10 +103,26 @@ impl Slider {
         self
     }
 
+    /// 设置 AndroidX 对应的 enabled 状态。
+    pub fn enabled(self, enabled: bool) -> Self {
+        self.disabled(!enabled)
+    }
+
+    /// 沿纵向布局轨道，顶部表示最大值。
+    pub fn vertical(mut self) -> Self {
+        self.vertical = true;
+        self
+    }
+
     /// 值变化回调。
     pub fn on_change(mut self, handler: impl Fn(f32, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
+    }
+
+    /// 设置数值变化回调；传递当前值域内的新值。
+    pub fn on_value_change(self, handler: impl Fn(f32, &mut Window, &mut App) + 'static) -> Self {
+        self.on_change(handler)
     }
 
     /// 构建有状态组件实体。
@@ -114,10 +133,47 @@ impl Slider {
             value: self.value,
             step: self.step,
             disabled: self.disabled,
+            vertical: self.vertical,
             dragging: false,
             bounds: Bounds::default(),
             on_change: self.on_change,
         })
+    }
+}
+
+/// AndroidX VerticalSlider 对应的纵向滑块。
+pub struct VerticalSlider(Slider);
+
+impl VerticalSlider {
+    /// 创建顶部为最大值的纵向滑块。
+    pub fn new(min: f32, max: f32, value: f32) -> Self {
+        Self(Slider::new(min, max, value).vertical())
+    }
+
+    /// 设置离散步长。
+    pub fn step(mut self, step: f32) -> Self {
+        self.0 = self.0.step(step);
+        self
+    }
+
+    /// 设置启用状态。
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.0 = self.0.enabled(enabled);
+        self
+    }
+
+    /// 设置数值变化回调。
+    pub fn on_value_change(
+        mut self,
+        handler: impl Fn(f32, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.0 = self.0.on_value_change(handler);
+        self
+    }
+
+    /// 构建可渲染的纵向滑块实体。
+    pub fn build(self, cx: &mut App) -> Entity<SliderState> {
+        self.0.build(cx)
     }
 }
 
@@ -141,10 +197,26 @@ impl SliderState {
         }
     }
 
-    fn update_from_x(&mut self, x: Pixels, window: &mut Window, cx: &mut Context<Self>) {
+    fn update_from_position(
+        &mut self,
+        position: gpui::Point<Pixels>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let (position, length) = if self.vertical {
+            (
+                f32::from(self.bounds.size.height - (position.y - self.bounds.origin.y)),
+                f32::from(self.bounds.size.height),
+            )
+        } else {
+            (
+                f32::from(position.x - self.bounds.origin.x),
+                f32::from(self.bounds.size.width),
+            )
+        };
         let Some(value) = value_at_position(
-            f32::from(x - self.bounds.origin.x),
-            f32::from(self.bounds.size.width),
+            position,
+            length,
             cx.theme().component().slider.handle_width,
             self.min,
             self.max,
@@ -171,7 +243,7 @@ impl SliderState {
             return;
         }
         self.dragging = true;
-        self.update_from_x(event.position.x, window, cx);
+        self.update_from_position(event.position, window, cx);
         cx.notify();
     }
 
@@ -182,13 +254,13 @@ impl SliderState {
         cx: &mut Context<Self>,
     ) {
         if self.dragging && event.pressed_button == Some(MouseButton::Left) {
-            self.update_from_x(event.position.x, window, cx);
+            self.update_from_position(event.position, window, cx);
         }
     }
 
     fn on_mouse_up(&mut self, event: &MouseUpEvent, window: &mut Window, cx: &mut Context<Self>) {
         if self.dragging {
-            self.update_from_x(event.position.x, window, cx);
+            self.update_from_position(event.position, window, cx);
             self.dragging = false;
             cx.notify();
         }
@@ -206,62 +278,106 @@ impl Render for SliderState {
         let handle_color = style.handle;
 
         let entity = cx.entity();
+        let track_content = if self.vertical {
+            div()
+                .size_full()
+                .flex()
+                .flex_col()
+                .items_center()
+                .gap(px(TRACK_GAP))
+                .child(
+                    div()
+                        .w(style.track_height)
+                        .min_h_0()
+                        .flex_basis(px(0.))
+                        .map(|mut track| {
+                            track.style().flex_grow = Some(1. - fraction);
+                            track
+                        })
+                        .rounded_full()
+                        .bg(inactive_color),
+                )
+                .child(
+                    div()
+                        .w(style.handle_size.1)
+                        .h(style.handle_size.0)
+                        .flex_none()
+                        .rounded_full()
+                        .bg(handle_color),
+                )
+                .child(
+                    div()
+                        .w(style.track_height)
+                        .min_h_0()
+                        .flex_basis(px(0.))
+                        .map(|mut track| {
+                            track.style().flex_grow = Some(fraction);
+                            track
+                        })
+                        .rounded_full()
+                        .bg(active_color),
+                )
+                .into_any_element()
+        } else {
+            div()
+                .size_full()
+                .flex()
+                .items_center()
+                .gap(px(TRACK_GAP))
+                .child(
+                    div()
+                        .h(style.track_height)
+                        .min_w_0()
+                        .flex_basis(px(0.))
+                        .map(|mut track| {
+                            track.style().flex_grow = Some(fraction);
+                            track
+                        })
+                        .rounded_tl(style.track_height / 2.)
+                        .rounded_bl(style.track_height / 2.)
+                        .rounded_tr(px(2.))
+                        .rounded_br(px(2.))
+                        .bg(active_color),
+                )
+                .child(
+                    div()
+                        .w(style.handle_size.0)
+                        .h(style.handle_size.1)
+                        .flex_none()
+                        .rounded_full()
+                        .bg(handle_color),
+                )
+                .child(
+                    div()
+                        .h(style.track_height)
+                        .min_w_0()
+                        .flex_basis(px(0.))
+                        .map(|mut track| {
+                            track.style().flex_grow = Some(1. - fraction);
+                            track
+                        })
+                        .rounded_tl(px(2.))
+                        .rounded_bl(px(2.))
+                        .rounded_tr(style.track_height / 2.)
+                        .rounded_br(style.track_height / 2.)
+                        .bg(inactive_color),
+                )
+                .into_any_element()
+        };
 
         div()
             .id("md3-slider")
             .relative()
-            .w_full()
-            .min_w_0()
-            .h(style.container_height)
-            .flex()
-            .items_center()
-            .gap(px(TRACK_GAP))
+            .when(self.vertical, |el| el.w(style.container_height).h(px(200.)))
+            .when(!self.vertical, |el| {
+                el.w_full().min_w_0().h(style.container_height)
+            })
             .when(!disabled, |el| el.cursor_pointer())
             .on_mouse_down(MouseButton::Left, cx.listener(Self::on_mouse_down))
             .on_mouse_move(cx.listener(Self::on_mouse_move))
             .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::on_mouse_up))
-            // 活动轨道（允许收缩，避免手柄+间距造成溢出）
-            .child(
-                div()
-                    .h(style.track_height)
-                    .min_w_0()
-                    .flex_basis(px(0.))
-                    .map(|mut track| {
-                        track.style().flex_grow = Some(fraction);
-                        track
-                    })
-                    .rounded_tl(style.track_height / 2.)
-                    .rounded_bl(style.track_height / 2.)
-                    .rounded_tr(px(2.))
-                    .rounded_br(px(2.))
-                    .bg(active_color),
-            )
-            // 手柄（4×44 竖条）
-            .child(
-                div()
-                    .w(style.handle_size.0)
-                    .h(style.handle_size.1)
-                    .flex_none()
-                    .rounded_full()
-                    .bg(handle_color),
-            )
-            // 非活动轨道
-            .child(
-                div()
-                    .h(style.track_height)
-                    .min_w_0()
-                    .flex_basis(px(0.))
-                    .map(|mut track| {
-                        track.style().flex_grow = Some(1. - fraction);
-                        track
-                    })
-                    .rounded_tl(px(2.))
-                    .rounded_bl(px(2.))
-                    .rounded_tr(style.track_height / 2.)
-                    .rounded_br(style.track_height / 2.)
-                    .bg(inactive_color),
-            )
+            .child(track_content)
             // 捕获轨道 bounds，用于把鼠标 x 坐标映射为数值
             .child({
                 let entity = entity.clone();

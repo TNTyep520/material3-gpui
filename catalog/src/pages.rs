@@ -1,8 +1,5 @@
-//! catalog 页面模块：每个组件页面一个独立 Entity 视图。
-//!
-//! 页面视图只在自身状态变化时重渲染自己（Slider 拖动、Progress 动画
-//! 等不再触发整棵应用树重绘——掉帧修复的核心）。
-
+//! catalog 组件展厅：每页使用独立 Entity，组件状态变化只刷新对应页面。
+//! 共用分组表面和带标签的预览单元统一变体与状态展示。
 // 页面文件按 `Page_<Name>` 命名(多词用驼峰式),非 snake_case
 #![allow(non_snake_case)]
 
@@ -23,7 +20,7 @@ pub mod Page_SliderProgress;
 pub mod Page_Tabs;
 pub mod Page_TextFields;
 
-use gpui::{AnyElement, App, Entity, FontWeight, IntoElement, Styled, div, prelude::*, px};
+use gpui::{AnyElement, App, Entity, IntoElement, Styled, div, prelude::*, px};
 
 // 页面间回调类型（页 → 根）。
 pub type PageCallback<A> = std::rc::Rc<dyn Fn(A, &mut App)>;
@@ -75,20 +72,38 @@ impl Pages {
     }
 }
 
-/// m3fx 风格演示画廊:展示组垂直排列,组间距 18(对齐 m3fx `createGallery`)。
+/// 垂直排列组件分组，宽度由页面容器约束。
 pub(crate) fn gallery(groups: impl IntoIterator<Item = AnyElement>) -> impl IntoElement {
     div()
         .w_full()
         .min_w_0()
         .flex()
         .flex_col()
-        .gap(px(18.))
+        .gap(px(24.))
         .children(groups)
 }
 
-/// m3fx 风格展示组:粗体 14px 标题 + 圆角卡片(surface-container-low
-/// 背景、12px 圆角、18px 内边距),内容以 16px 间距流式排布
-/// (对齐 m3fx `createShowcaseGroup` 与 m3fx-demo.css)。
+/// 核心主题色的紧凑预览，颜色随主题更新。
+pub(crate) fn palette_strip(cx: &App) -> impl IntoElement {
+    let colors = *cx.theme().colors();
+    div()
+        .flex_none()
+        .flex()
+        .items_center()
+        .gap(px(6.))
+        .children(
+            [
+                colors.primary,
+                colors.secondary,
+                colors.tertiary,
+                colors.error,
+                colors.surface_variant,
+            ]
+            .map(|color| div().size(px(14.)).rounded_full().bg(color)),
+        )
+}
+
+/// 带标题的组件展示区域；内容按行换行，保留组件自己的表面样式。
 pub(crate) fn showcase_group(
     cx: &App,
     title: &'static str,
@@ -101,11 +116,12 @@ pub(crate) fn showcase_group(
         .flex_none()
         .flex()
         .flex_col()
-        .gap(px(10.))
+        .gap(px(12.))
         .child(
-            div()
-                .text_size(px(14.))
-                .font_weight(FontWeight::BOLD)
+            theme
+                .typography()
+                .title_medium
+                .apply(div())
                 .text_color(theme.colors().on_surface)
                 .child(title),
         )
@@ -113,19 +129,49 @@ pub(crate) fn showcase_group(
             div()
                 .w_full()
                 .min_w_0()
+                .p(px(20.))
+                .rounded(px(16.))
+                .border_1()
+                .border_color(theme.colors().outline_variant)
+                .bg(theme.colors().surface_container_low)
                 .flex()
                 .flex_wrap()
-                .items_center()
-                .gap(px(16.))
-                .p(px(12.))
-                .rounded(px(12.))
-                .bg(theme.colors().surface_container_low)
+                .items_start()
+                .gap(px(20.))
                 .children(items),
         )
         .into_any_element()
 }
 
-/// 演示卡片。
+/// 固定最小展示高度并附加标签，便于比较同组组件的变体和状态。
+pub(crate) fn specimen(cx: &App, label: &'static str, element: impl IntoElement) -> AnyElement {
+    let theme = cx.theme();
+    div()
+        .w(px(176.))
+        .max_w_full()
+        .min_w_0()
+        .flex()
+        .flex_col()
+        .gap(px(12.))
+        .child(
+            div()
+                .w_full()
+                .min_h(px(64.))
+                .flex()
+                .items_center()
+                .child(element),
+        )
+        .child(
+            theme
+                .typography()
+                .label_medium
+                .apply(div())
+                .text_color(theme.colors().on_surface_variant)
+                .child(label),
+        )
+        .into_any_element()
+}
+/// 为不同 Card 变体提供相同的内容和尺寸，以便直接比较表面样式。
 pub(crate) fn catalog_card(cx: &App, card: Card, title: &'static str) -> impl IntoElement {
     let theme = cx.theme();
     card.w(px(220.))

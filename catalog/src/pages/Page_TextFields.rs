@@ -1,9 +1,9 @@
-//! Text fields 页：含动态色种子输入（输入 hex 实时应用主题）。
+//! Text fields 页：默认、错误和禁用状态，以及动态主题输入。
 
 use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
 use material3_gpui::prelude::*;
 
-use super::{gallery, showcase_group};
+use super::{gallery, palette_strip, showcase_group};
 
 /// Text fields 页视图。
 pub struct TextFieldsPage {
@@ -16,16 +16,18 @@ pub struct TextFieldsPage {
 }
 
 impl TextFieldsPage {
+    /// 创建页面及其初始组件状态。
     pub fn new(cx: &mut App) -> Entity<Self> {
         let seed_field = TextField::new("seed-field", "Seed color (hex)")
             .value("6750A4")
             .helper("Type a hex color (like 6750A4); the theme applies live")
             .build(cx);
-        let tf_name = TextField::new("tf-name", "Name").build(cx);
-        let tf_error = TextField::new("tf-error", "Email")
-            .error("Please enter a valid email address")
+        let tf_name = TextField::new("tf-name", "Display name").build(cx);
+        let tf_error = TextField::new("tf-error", "Handle")
+            .error("@name already exists in this studio")
             .build(cx);
-        let tf_disabled = TextField::new("tf-disabled", "Disabled")
+        let tf_disabled = TextField::new("tf-disabled", "Workspace")
+            .value("Milk crate studio")
             .disabled(true)
             .build(cx);
 
@@ -65,28 +67,57 @@ impl TextFieldsPage {
 
 impl Render for TextFieldsPage {
     fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
+        let theme = cx.theme();
+        let typography = *theme.typography();
+        let colors = *theme.colors();
+
         gallery([
             showcase_group(
                 cx,
-                "Text Fields",
-                [div()
-                    .flex()
-                    .flex_col()
-                    .gap(px(16.))
-                    .w_full()
-                    .child(self.tf_name.clone())
-                    .child(self.tf_error.clone())
-                    .child(self.tf_disabled.clone())
-                    .into_any_element()],
+                "States",
+                [
+                    div()
+                        .w(px(280.))
+                        .max_w_full()
+                        .child(self.tf_name.clone())
+                        .into_any_element(),
+                    div()
+                        .w(px(280.))
+                        .max_w_full()
+                        .child(self.tf_error.clone())
+                        .into_any_element(),
+                    div()
+                        .w(px(280.))
+                        .max_w_full()
+                        .child(self.tf_disabled.clone())
+                        .into_any_element(),
+                ],
             ),
             showcase_group(
                 cx,
-                "Seed Color",
+                "Theme input",
                 [div()
                     .flex()
                     .flex_col()
+                    .gap(px(12.))
                     .w_full()
+                    .min_w_0()
                     .child(self.seed_field.clone())
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(12.))
+                            .flex_wrap()
+                            .child(
+                                typography
+                                    .label_large
+                                    .apply(div())
+                                    .text_color(colors.on_surface_variant)
+                                    .child("Palette preview"),
+                            )
+                            .child(palette_strip(cx)),
+                    )
                     .into_any_element()],
             ),
         ])

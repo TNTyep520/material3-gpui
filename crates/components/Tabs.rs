@@ -35,6 +35,9 @@ pub struct Tab {
     pub label: SharedString,
     /// 可选图标。
     pub icon: Option<IconName>,
+    /// 是否允许点击此标签。
+    pub enabled: bool,
+    leading_icon: bool,
 }
 
 impl Tab {
@@ -43,6 +46,8 @@ impl Tab {
         Self {
             label: label.into(),
             icon: None,
+            enabled: true,
+            leading_icon: false,
         }
     }
 
@@ -51,6 +56,51 @@ impl Tab {
         self.icon = Some(icon);
         self
     }
+
+    /// 设置标签是否可交互。
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+
+    /// 将图标放在标题左侧。
+    pub fn leading_icon(mut self, icon: IconName) -> Self {
+        self.icon = Some(icon);
+        self.leading_icon = true;
+        self
+    }
+}
+
+/// AndroidX LeadingIconTab 对应的图标与文字并排标签。
+pub struct LeadingIconTab(Tab);
+
+impl LeadingIconTab {
+    /// 创建带前导图标的标签。
+    pub fn new(label: impl Into<SharedString>, icon: IconName) -> Self {
+        Self(Tab::new(label).leading_icon(icon))
+    }
+
+    /// 设置标签是否可交互。
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.0 = self.0.enabled(enabled);
+        self
+    }
+}
+
+impl From<LeadingIconTab> for Tab {
+    fn from(tab: LeadingIconTab) -> Self {
+        tab.0
+    }
+}
+
+/// AndroidX 标签行的视觉层级。
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum TabRowVariant {
+    /// 主标签行，显示强调色指示条。
+    #[default]
+    Primary,
+    /// 次级标签行，显示较细的指示条。
+    Secondary,
 }
 
 /// MD3 标签栏构建器（`.build(cx)` 产出 [`TabBarState`]）。
@@ -58,6 +108,8 @@ pub struct TabBar {
     id: ElementId,
     tabs: Vec<Tab>,
     selected: usize,
+    variant: TabRowVariant,
+    scrollable: bool,
     on_change: Option<ChangeHandler>,
 }
 
@@ -66,6 +118,8 @@ pub struct TabBarState {
     id: ElementId,
     tabs: Vec<Tab>,
     selected: usize,
+    variant: TabRowVariant,
+    scrollable: bool,
     on_change: Option<ChangeHandler>,
     /// 指示条位置（以标签下标为单位，弹簧驱动）。
     indicator: Animatable,
@@ -79,25 +133,39 @@ impl TabBar {
             id: id.into(),
             tabs: Vec::new(),
             selected: 0,
+            variant: TabRowVariant::default(),
+            scrollable: false,
             on_change: None,
         }
     }
 
     /// 追加一个标签。
-    pub fn tab(mut self, tab: Tab) -> Self {
-        self.tabs.push(tab);
+    pub fn tab(mut self, tab: impl Into<Tab>) -> Self {
+        self.tabs.push(tab.into());
         self
     }
 
     /// 批量追加标签。
-    pub fn tabs(mut self, tabs: impl IntoIterator<Item = Tab>) -> Self {
-        self.tabs.extend(tabs);
+    pub fn tabs(mut self, tabs: impl IntoIterator<Item = impl Into<Tab>>) -> Self {
+        self.tabs.extend(tabs.into_iter().map(Into::into));
         self
     }
 
     /// 初始选中下标。
     pub fn selected(mut self, index: usize) -> Self {
         self.selected = index;
+        self
+    }
+
+    /// 设置主或次级标签行外观。
+    pub fn variant(mut self, variant: TabRowVariant) -> Self {
+        self.variant = variant;
+        self
+    }
+
+    /// 设置为可横向滚动的标签行。
+    pub fn scrollable(mut self, scrollable: bool) -> Self {
+        self.scrollable = scrollable;
         self
     }
 
@@ -114,12 +182,72 @@ impl TabBar {
             id: self.id,
             tabs: self.tabs,
             selected,
+            variant: self.variant,
+            scrollable: self.scrollable,
             on_change: self.on_change,
             indicator: Animatable::new(selected as f64, 1.0e-3),
             driver: AnimationDriver::default(),
         })
     }
 }
+
+/// AndroidX TabRow 对应的固定宽度标签行。
+pub type TabRow = TabBar;
+
+macro_rules! tab_row_variant {
+    ($name:ident, $variant:ident, $scrollable:expr) => {
+        #[doc = concat!("AndroidX ", stringify!($name), " 对应的标签行。")]
+        pub struct $name(TabBar);
+
+        impl $name {
+            /// 创建指定视觉层级和滚动方式的标签行。
+            pub fn new(id: impl Into<ElementId>) -> Self {
+                Self(
+                    TabBar::new(id)
+                        .variant(TabRowVariant::$variant)
+                        .scrollable($scrollable),
+                )
+            }
+
+            /// 添加单个标签。
+            pub fn tab(mut self, tab: impl Into<Tab>) -> Self {
+                self.0 = self.0.tab(tab);
+                self
+            }
+
+            /// 批量添加标签。
+            pub fn tabs(mut self, tabs: impl IntoIterator<Item = impl Into<Tab>>) -> Self {
+                self.0 = self.0.tabs(tabs);
+                self
+            }
+
+            /// 设置初始选中下标。
+            pub fn selected(mut self, index: usize) -> Self {
+                self.0 = self.0.selected(index);
+                self
+            }
+
+            /// 设置选中项变化回调。
+            pub fn on_change(
+                mut self,
+                handler: impl Fn(usize, &mut Window, &mut App) + 'static,
+            ) -> Self {
+                self.0 = self.0.on_change(handler);
+                self
+            }
+
+            /// 构建可渲染的标签行实体。
+            pub fn build(self, cx: &mut App) -> Entity<TabBarState> {
+                self.0.build(cx)
+            }
+        }
+    };
+}
+
+tab_row_variant!(PrimaryTabRow, Primary, false);
+tab_row_variant!(SecondaryTabRow, Secondary, false);
+tab_row_variant!(PrimaryScrollableTabRow, Primary, true);
+tab_row_variant!(SecondaryScrollableTabRow, Secondary, true);
 
 impl TabBarState {
     /// 当前选中下标。
@@ -183,6 +311,7 @@ impl Render for TabBarState {
             .w_full()
             .flex()
             .overflow_hidden()
+            .when(self.scrollable, |el| el.overflow_x_scroll())
             .bg(surface)
             .border_b_1()
             .border_color(outline_variant)
@@ -204,26 +333,30 @@ impl Render for TabBarState {
                     .id((SharedString::from(format!("{}-tab", self.id)), ix))
                     .relative()
                     .flex_1()
+                    .when(self.scrollable, |el| el.flex_none().w(px(120.)))
                     .h(height)
                     .flex()
                     .flex_col()
+                    .when(tab.leading_icon, |el| el.flex_row())
                     .items_center()
                     .justify_center()
                     .gap(style.gap)
-                    .cursor_pointer()
+                    .when(tab.enabled, |el| el.cursor_pointer())
                     .text_color(fg)
                     .hover(move |s| s.bg(layer.opacity(HOVER_OPACITY)))
                     .active(move |s| s.bg(layer.opacity(PRESSED_OPACITY)))
                     // 点击:组件内部先完成选中(弹簧滑动),
                     // 状态真正变化才触发一次 on_change
-                    .on_click(move |_, window, cx| {
-                        click_entity.update(cx, |state, cx| {
-                            let changed = ix != state.selected;
-                            state.select(ix, window, cx);
-                            if changed && let Some(handler) = on_change.clone() {
-                                handler(ix, window, cx);
-                            }
-                        });
+                    .when(tab.enabled, |el| {
+                        el.on_click(move |_, window, cx| {
+                            click_entity.update(cx, |state, cx| {
+                                let changed = ix != state.selected;
+                                state.select(ix, window, cx);
+                                if changed && let Some(handler) = on_change.clone() {
+                                    handler(ix, window, cx);
+                                }
+                            });
+                        })
                     })
                     .when_some(tab.icon, |el, icon| {
                         el.child(Icon::new(icon).size(style.icon_size))
@@ -245,7 +378,11 @@ impl Render for TabBarState {
                             .justify_center()
                             .child(
                                 div()
-                                    .h(px(3.))
+                                    .h(if self.variant == TabRowVariant::Secondary {
+                                        px(2.)
+                                    } else {
+                                        px(3.)
+                                    })
                                     .w(px(48.))
                                     .rounded_tl(px(3.))
                                     .rounded_tr(px(3.))

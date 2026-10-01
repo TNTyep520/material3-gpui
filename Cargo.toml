@@ -26,6 +26,9 @@ mcu-hct = { version = "0.2.1", optional = true }
 mcu-palettes = { version = "0.2.0", optional = true }
 mcu-dynamiccolor = { version = "0.2.4", optional = true }
 
+[dev-dependencies]
+usvg = "0.45.1"
+
 [lints.clippy]
 redundant_clone = "warn"
 

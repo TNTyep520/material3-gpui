@@ -18,12 +18,13 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use gpui::{
-    AnyWindowHandle, App, AppContext as _, Bounds, Context, Entity, Global,
-    InteractiveElement as _, IntoElement, ParentElement as _, Pixels, Render, SharedString,
-    StatefulInteractiveElement as _, Styled, Window, div, prelude::FluentBuilder as _, px,
-    relative,
+    AnyElement, AnyWindowHandle, App, AppContext as _, Bounds, Context, ElementId, Entity, Global,
+    InteractiveElement as _, IntoElement, ParentElement as _, Pixels, Render, RenderOnce,
+    SharedString, StatefulInteractiveElement as _, Styled, Window, div,
+    prelude::FluentBuilder as _, px, relative,
 };
 
+use crate::interaction::BoundsHandle;
 use crate::motion::{Animatable, AnimatedComponent, AnimationDriver, MotionRole, lerp_color};
 use crate::theme::{ActiveTheme, Elevation};
 
@@ -114,6 +115,26 @@ pub fn show_tooltip(
     let host_entity = host(window, cx);
     host_entity.update(cx, |host, cx| {
         host.tooltip = Some(Tooltip {
+            title: None,
+            text: text.into(),
+            anchor,
+        });
+        cx.notify();
+    });
+}
+
+/// 在锚点下方显示带标题的 RichTooltip。
+pub fn show_rich_tooltip(
+    window: &Window,
+    cx: &mut App,
+    title: impl Into<SharedString>,
+    text: impl Into<SharedString>,
+    anchor: Bounds<Pixels>,
+) {
+    let host_entity = host(window, cx);
+    host_entity.update(cx, |host, cx| {
+        host.tooltip = Some(Tooltip {
+            title: Some(title.into()),
             text: text.into(),
             anchor,
         });
@@ -140,6 +161,103 @@ pub struct OverlayHostState {
     driver: AnimationDriver,
 }
 
+/// AndroidX SnackbarHost 对应的窗口级通知宿主。
+pub type SnackbarHost = OverlayHostState;
+
+/// AndroidX TooltipBox 对应的悬停提示容器。
+#[derive(IntoElement)]
+pub struct TooltipBox {
+    id: ElementId,
+    anchor: AnyElement,
+    text: SharedString,
+    title: Option<SharedString>,
+}
+
+impl TooltipBox {
+    /// 创建带纯文本工具提示的锚点。
+    pub fn new(
+        id: impl Into<ElementId>,
+        anchor: impl IntoElement,
+        text: impl Into<SharedString>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            anchor: anchor.into_any_element(),
+            text: text.into(),
+            title: None,
+        }
+    }
+
+    /// 创建由 PlainTooltip 内容描述的悬停容器。
+    pub fn plain(id: impl Into<ElementId>, anchor: impl IntoElement, tip: PlainTooltip) -> Self {
+        Self::new(id, anchor, tip.text)
+    }
+
+    /// 创建由 RichTooltip 内容描述的悬停容器。
+    pub fn rich(id: impl Into<ElementId>, anchor: impl IntoElement, tip: RichTooltip) -> Self {
+        let mut box_element = Self::new(id, anchor, tip.text);
+        box_element.title = Some(tip.title);
+        box_element
+    }
+}
+
+/// AndroidX PlainTooltip 对应的纯文本提示内容。
+pub struct PlainTooltip {
+    text: SharedString,
+}
+
+impl PlainTooltip {
+    /// 创建纯文本提示内容。
+    pub fn new(text: impl Into<SharedString>) -> Self {
+        Self { text: text.into() }
+    }
+}
+
+/// AndroidX RichTooltip 对应的标题与正文提示内容。
+pub struct RichTooltip {
+    title: SharedString,
+    text: SharedString,
+}
+
+impl RichTooltip {
+    /// 创建带标题和正文的提示内容。
+    pub fn new(title: impl Into<SharedString>, text: impl Into<SharedString>) -> Self {
+        Self {
+            title: title.into(),
+            text: text.into(),
+        }
+    }
+}
+
+impl RenderOnce for TooltipBox {
+    fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
+        let bounds = BoundsHandle::new();
+        let hover_bounds = bounds.clone();
+        div()
+            .id(self.id)
+            .relative()
+            .on_hover(move |hovered, window, cx| {
+                if *hovered {
+                    if let Some(title) = &self.title {
+                        show_rich_tooltip(
+                            window,
+                            cx,
+                            title.clone(),
+                            self.text.clone(),
+                            hover_bounds.get(),
+                        );
+                    } else {
+                        show_tooltip(window, cx, self.text.clone(), hover_bounds.get());
+                    }
+                } else {
+                    close_tooltip(window, cx);
+                }
+            })
+            .child(self.anchor)
+            .child(bounds.capture_element())
+    }
+}
+
 impl OverlayHostState {
     fn dismiss_snack_top(&mut self, cx: &mut Context<Self>) {
         if let Some(snack) = self.snacks.last_mut() {
@@ -153,6 +271,7 @@ impl OverlayHostState {
 /// 工具提示数据。
 #[derive(Clone)]
 struct Tooltip {
+    title: Option<SharedString>,
     text: SharedString,
     anchor: Bounds<Pixels>,
 }
@@ -274,13 +393,22 @@ impl Render for OverlayHostState {
                 .child(
                     div()
                         .flex()
-                        .items_center()
-                        .h(tooltip_style.height)
+                        .flex_col()
+                        .justify_center()
+                        .min_h(tooltip_style.height)
                         .px(tooltip_style.horizontal_padding)
+                        .py(px(8.))
                         .rounded(tooltip_style.corner_radius)
                         .bg(tooltip_style.container_color)
                         .text_size(tooltip_style.text.size)
                         .text_color(tooltip_style.text_color)
+                        .when_some(tip.title, |el, title| {
+                            el.child(
+                                div()
+                                    .text_size(theme.typography().title_small.size)
+                                    .child(title),
+                            )
+                        })
                         .child(tip.text),
                 )
         });
