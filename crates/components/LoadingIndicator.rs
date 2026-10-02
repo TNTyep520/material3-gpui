@@ -32,9 +32,10 @@ const LOADING_SEGMENT_MILLIS: u64 = 650;
 const LOADING_MORPH_ACTIVE_FRACTION: f32 = 0.72;
 const LOADING_BREATHING_AMPLITUDE: f32 = 0.12;
 
-const SHAPE_SAMPLES: usize = 96;
+const SHAPE_SAMPLES: usize = 128;
 const OUTLINE_BUCKETS: usize = 512;
-const ARC_SAMPLES: usize = 10;
+const ARC_SAMPLES: usize = 16;
+const EDGE_SAMPLES: usize = 4;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LoadingIndicatorVariant {
@@ -356,8 +357,15 @@ fn rounded_polygon_radii(vertices: &[(f32, f32)], corner_rounding: f32) -> Vec<f
         } else {
             corner_start(vertices, next_index, corner_rounding)
         };
-        let mid = ((end.0 + next_start.0) * 0.5, (end.1 + next_start.1) * 0.5);
-        emit(&mut buckets, &mut filled, mid.0, mid.1);
+        for s in 1..EDGE_SAMPLES {
+            let t = s as f32 / EDGE_SAMPLES as f32;
+            emit(
+                &mut buckets,
+                &mut filled,
+                end.0 + (next_start.0 - end.0) * t,
+                end.1 + (next_start.1 - end.1) * t,
+            );
+        }
     }
 
     let filled_indices: Vec<usize> = (0..OUTLINE_BUCKETS).filter(|&i| filled[i]).collect();
@@ -464,22 +472,6 @@ fn ellipse_radius(theta: f32, semi_major: f32, semi_minor: f32, rotation: f32) -
     semi_major * semi_minor / denominator
 }
 
-fn chaikin_smooth(points: &[Point<Pixels>], iterations: usize) -> Vec<Point<Pixels>> {
-    let mut current = points.to_vec();
-    for _ in 0..iterations {
-        let source = current.clone();
-        current.clear();
-        let count = source.len();
-        for i in 0..count {
-            let a = source[i];
-            let b = source[(i + 1) % count];
-            current.push(point(a.x + (b.x - a.x) * 0.75, a.y + (b.y - a.y) * 0.75));
-            current.push(point(a.x + (b.x - a.x) * 0.25, a.y + (b.y - a.y) * 0.25));
-        }
-    }
-    current
-}
-
 fn draw_morphing_shape(
     window: &mut Window,
     center: Point<Pixels>,
@@ -511,13 +503,17 @@ fn draw_morphing_shape(
         ));
     }
 
+    let count = outline.len();
     let mut builder = PathBuilder::fill();
-    for (i, point) in chaikin_smooth(&outline, 2).into_iter().enumerate() {
-        if i == 0 {
-            builder.move_to(point);
-        } else {
-            builder.line_to(point);
-        }
+    builder.move_to(outline[0]);
+    for i in 0..count {
+        let p0 = outline[(i + count - 1) % count];
+        let p1 = outline[i];
+        let p2 = outline[(i + 1) % count];
+        let p3 = outline[(i + 2) % count];
+        let control_a = point(p1.x + (p2.x - p0.x) / 6.0, p1.y + (p2.y - p0.y) / 6.0);
+        let control_b = point(p2.x - (p3.x - p1.x) / 6.0, p2.y - (p3.y - p1.y) / 6.0);
+        builder.cubic_bezier_to(p2, control_a, control_b);
     }
     builder.close();
     if let Ok(path) = builder.build() {
