@@ -32,7 +32,9 @@ const LOADING_SEGMENT_MILLIS: u64 = 650;
 const LOADING_MORPH_ACTIVE_FRACTION: f32 = 0.72;
 const LOADING_BREATHING_AMPLITUDE: f32 = 0.12;
 
-const SHAPE_SAMPLES: usize = 72;
+const SHAPE_SAMPLES: usize = 96;
+const OUTLINE_BUCKETS: usize = 512;
+const ARC_SAMPLES: usize = 10;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LoadingIndicatorVariant {
@@ -158,73 +160,261 @@ impl MorphShape {
         MorphShape::SoftburstOval,
     ];
 
-    fn radius_at(&self, theta: f32) -> f32 {
-        match *self {
-            MorphShape::SoftBurst => star_radius(theta, 10, 1.0, 0.65, 18.0_f32.to_radians()),
-            MorphShape::Cookie9 => star_radius(theta, 9, 1.0, 0.8, -90.0_f32.to_radians()),
-            MorphShape::Pentagon => star_radius(theta, 5, 1.0, 1.0, -18.0_f32.to_radians()),
-            MorphShape::Pill => rounded_rect_radius(theta, 0.625, 0.5, 0.5, -45.0_f32.to_radians()),
-            MorphShape::Sunny => star_radius(theta, 8, 1.0, 0.8, 0.0),
-            MorphShape::Cookie4 => star_radius(theta, 4, 1.0, 0.5, -45.0_f32.to_radians()),
-            MorphShape::SoftburstOval => ellipse_radius(theta, 1.0, 0.7, -45.0_f32.to_radians()),
+    fn shape_radii(&self) -> &'static Vec<f32> {
+        static CACHE: std::sync::OnceLock<Vec<Vec<f32>>> = std::sync::OnceLock::new();
+        let cached =
+            CACHE.get_or_init(|| Self::SEQUENCE.map(|shape| shape.compute_radii()).to_vec());
+        let index = match self {
+            MorphShape::SoftBurst => 0,
+            MorphShape::Cookie9 => 1,
+            MorphShape::Pentagon => 2,
+            MorphShape::Pill => 3,
+            MorphShape::Sunny => 4,
+            MorphShape::Cookie4 => 5,
+            MorphShape::SoftburstOval => 6,
+        };
+        &cached[index]
+    }
+
+    fn compute_radii(&self) -> Vec<f32> {
+        let mut radii = match *self {
+            MorphShape::SoftBurst => {
+                rounded_polygon_radii(&star_vertices(10, 1.0, 0.65, 18.0_f32.to_radians()), 0.1)
+            }
+            MorphShape::Cookie9 => {
+                rounded_polygon_radii(&star_vertices(9, 1.0, 0.8, -90.0_f32.to_radians()), 0.5)
+            }
+            MorphShape::Pentagon => rounded_polygon_radii(
+                &regular_polygon_vertices(5, 1.0, -18.0_f32.to_radians()),
+                0.3,
+            ),
+            MorphShape::Pill => (0..SHAPE_SAMPLES)
+                .map(|i| {
+                    rounded_rect_radius(
+                        TAU * i as f32 / SHAPE_SAMPLES as f32,
+                        0.625,
+                        0.5,
+                        0.5,
+                        -45.0_f32.to_radians(),
+                    )
+                })
+                .collect(),
+            MorphShape::Sunny => rounded_polygon_radii(&star_vertices(8, 1.0, 0.8, 0.0), 0.15),
+            MorphShape::Cookie4 => {
+                rounded_polygon_radii(&star_vertices(4, 1.0, 0.5, -45.0_f32.to_radians()), 0.3)
+            }
+            MorphShape::SoftburstOval => (0..SHAPE_SAMPLES)
+                .map(|i| {
+                    ellipse_radius(
+                        TAU * i as f32 / SHAPE_SAMPLES as f32,
+                        1.0,
+                        0.7,
+                        -45.0_f32.to_radians(),
+                    )
+                })
+                .collect(),
+        };
+        let mut max = 0.0_f32;
+        for radius in &radii {
+            max = max.max(*radius);
+        }
+        if max > 0.0 {
+            for radius in &mut radii {
+                *radius /= max;
+            }
+        }
+        radii
+    }
+}
+
+fn star_vertices(spikes: u32, outer: f32, inner: f32, rotation: f32) -> Vec<(f32, f32)> {
+    let mut vertices = Vec::with_capacity(spikes as usize * 2);
+    for k in 0..spikes {
+        let outer_angle = rotation + k as f32 * TAU / spikes as f32;
+        let inner_angle = outer_angle + std::f32::consts::PI / spikes as f32;
+        vertices.push((outer * outer_angle.cos(), outer * outer_angle.sin()));
+        vertices.push((inner * inner_angle.cos(), inner * inner_angle.sin()));
+    }
+    vertices
+}
+
+fn regular_polygon_vertices(sides: u32, radius: f32, rotation: f32) -> Vec<(f32, f32)> {
+    (0..sides)
+        .map(|k| {
+            let angle = rotation + k as f32 * TAU / sides as f32;
+            (radius * angle.cos(), radius * angle.sin())
+        })
+        .collect()
+}
+
+fn rounded_polygon_radii(vertices: &[(f32, f32)], corner_rounding: f32) -> Vec<f32> {
+    let count = vertices.len();
+    let mut buckets = vec![0.0_f32; OUTLINE_BUCKETS];
+    let mut filled = vec![false; OUTLINE_BUCKETS];
+
+    let emit = |buckets: &mut Vec<f32>, filled: &mut [bool], x: f32, y: f32| {
+        let theta = y.atan2(x).rem_euclid(TAU);
+        let bucket = ((theta / TAU) * OUTLINE_BUCKETS as f32) as usize % OUTLINE_BUCKETS;
+        let radius = (x * x + y * y).sqrt();
+        if radius > buckets[bucket] {
+            buckets[bucket] = radius;
+            filled[bucket] = true;
+        }
+    };
+
+    for i in 0..count {
+        let prev = vertices[(i + count - 1) % count];
+        let cur = vertices[i];
+        let next = vertices[(i + 1) % count];
+
+        let in_x = prev.0 - cur.0;
+        let in_y = prev.1 - cur.1;
+        let out_x = next.0 - cur.0;
+        let out_y = next.1 - cur.1;
+        let in_len = (in_x * in_x + in_y * in_y).sqrt();
+        let out_len = (out_x * out_x + out_y * out_y).sqrt();
+        if in_len < 1.0e-6 || out_len < 1.0e-6 {
+            continue;
+        }
+        let (in_x, in_y) = (in_x / in_len, in_y / in_len);
+        let (out_x, out_y) = (out_x / out_len, out_y / out_len);
+
+        let cos_corner = (in_x * out_x + in_y * out_y).clamp(-1.0, 1.0);
+        let corner_angle = cos_corner.acos();
+        let half = corner_angle * 0.5;
+        if half < 1.0e-4 || (std::f32::consts::FRAC_PI_2 - half).abs() < 1.0e-4 {
+            emit(&mut buckets, &mut filled, cur.0, cur.1);
+            continue;
+        }
+        let mut tangent = corner_rounding / half.tan();
+        tangent = tangent.min(in_len * 0.5).min(out_len * 0.5);
+        if tangent < 1.0e-4 {
+            emit(&mut buckets, &mut filled, cur.0, cur.1);
+            continue;
+        }
+        let radius = tangent * half.tan();
+
+        let start = (cur.0 + in_x * tangent, cur.1 + in_y * tangent);
+        let end = (cur.0 + out_x * tangent, cur.1 + out_y * tangent);
+
+        let bis_x = in_x + out_x;
+        let bis_y = in_y + out_y;
+        let bis_len = (bis_x * bis_x + bis_y * bis_y).sqrt();
+        if bis_len < 1.0e-6 {
+            continue;
+        }
+        let distance = radius / half.sin();
+        let center = (
+            cur.0 + bis_x / bis_len * distance,
+            cur.1 + bis_y / bis_len * distance,
+        );
+
+        let start_angle = (start.1 - center.1).atan2(start.0 - center.0);
+        let end_angle = (end.1 - center.1).atan2(end.0 - center.0);
+        let corner_angle_polar = (cur.1 - center.1).atan2(cur.0 - center.0);
+        let span_a = (end_angle - start_angle).rem_euclid(TAU);
+        let span_b = (start_angle - end_angle).rem_euclid(TAU);
+        let sweep = if ((start_angle + span_a * 0.5).rem_euclid(TAU) - corner_angle_polar)
+            .rem_euclid(TAU)
+            .abs()
+            < TAU * 0.5
+            && span_a <= span_b
+        {
+            span_a
+        } else {
+            TAU - span_b
+        };
+        let _ = sweep;
+        let sweep = {
+            let mid_a = start_angle + span_a * 0.5;
+            let mid_b = end_angle + span_b * 0.5;
+            let dist_a = (mid_a - corner_angle_polar).rem_euclid(TAU);
+            let dist_b = (corner_angle_polar - mid_b).rem_euclid(TAU);
+            if span_a.min(dist_a) <= span_b.min(dist_b.min(TAU)) || span_a <= span_b {
+                span_a
+            } else {
+                TAU - span_b
+            }
+        };
+
+        for s in 0..=ARC_SAMPLES {
+            let t = s as f32 / ARC_SAMPLES as f32;
+            let angle = start_angle + sweep * t;
+            emit(
+                &mut buckets,
+                &mut filled,
+                center.0 + radius * angle.cos(),
+                center.1 + radius * angle.sin(),
+            );
+        }
+        emit(&mut buckets, &mut filled, end.0, end.1);
+
+        let next_index = (i + 1) % count;
+        let next_start = if next_index == 0 {
+            let (sx, sy) = corner_start(vertices, 0, corner_rounding);
+            (sx, sy)
+        } else {
+            corner_start(vertices, next_index, corner_rounding)
+        };
+        let mid = ((end.0 + next_start.0) * 0.5, (end.1 + next_start.1) * 0.5);
+        emit(&mut buckets, &mut filled, mid.0, mid.1);
+    }
+
+    let filled_indices: Vec<usize> = (0..OUTLINE_BUCKETS).filter(|&i| filled[i]).collect();
+    if filled_indices.is_empty() {
+        return vec![1.0; SHAPE_SAMPLES];
+    }
+    for k in 0..filled_indices.len() {
+        let current = filled_indices[k];
+        let next = filled_indices[(k + 1) % filled_indices.len()];
+        let span = if next > current {
+            next - current
+        } else {
+            OUTLINE_BUCKETS - current + next
+        };
+        for step in 1..span {
+            let bucket = (current + step) % OUTLINE_BUCKETS;
+            let t = step as f32 / span as f32;
+            buckets[bucket] = buckets[current] + (buckets[next] - buckets[current]) * t;
         }
     }
+
+    (0..SHAPE_SAMPLES)
+        .map(|i| {
+            let theta = TAU * i as f32 / SHAPE_SAMPLES as f32;
+            let bucket = ((theta / TAU) * OUTLINE_BUCKETS as f32) as usize % OUTLINE_BUCKETS;
+            buckets[bucket]
+        })
+        .collect()
+}
+
+fn corner_start(vertices: &[(f32, f32)], index: usize, corner_rounding: f32) -> (f32, f32) {
+    let count = vertices.len();
+    let prev = vertices[(index + count - 1) % count];
+    let cur = vertices[index];
+    let in_x = prev.0 - cur.0;
+    let in_y = prev.1 - cur.1;
+    let in_len = (in_x * in_x + in_y * in_y).sqrt();
+    if in_len < 1.0e-6 {
+        return cur;
+    }
+    let (in_x, in_y) = (in_x / in_len, in_y / in_len);
+    let out_x = vertices[(index + 1) % count].0 - cur.0;
+    let out_y = vertices[(index + 1) % count].1 - cur.1;
+    let out_len = (out_x * out_x + out_y * out_y).sqrt();
+    if out_len < 1.0e-6 {
+        return cur;
+    }
+    let (out_x, out_y) = (out_x / out_len, out_y / out_len);
+    let cos_corner = (in_x * out_x + in_y * out_y).clamp(-1.0, 1.0);
+    let half = cos_corner.acos() * 0.5;
+    let mut tangent = corner_rounding / half.tan();
+    tangent = tangent.min(in_len * 0.5);
+    (cur.0 + in_x * tangent, cur.1 + in_y * tangent)
 }
 
 fn sample_radii(shape: MorphShape) -> Vec<f32> {
-    let mut radii = Vec::with_capacity(SHAPE_SAMPLES);
-    let mut max = 0.0_f32;
-    for i in 0..SHAPE_SAMPLES {
-        let theta = TAU * i as f32 / SHAPE_SAMPLES as f32;
-        let radius = shape.radius_at(theta);
-        max = max.max(radius);
-        radii.push(radius);
-    }
-    if max > 0.0 {
-        for radius in &mut radii {
-            *radius /= max;
-        }
-    }
-    radii
-}
-
-fn star_radius(theta: f32, spikes: u32, outer: f32, inner: f32, rotation: f32) -> f32 {
-    let step = std::f32::consts::PI / spikes as f32;
-    let local = (theta - rotation).rem_euclid(TAU);
-    let index = (local / step).floor() as u32;
-    let angle_a = rotation + index as f32 * step;
-    let angle_b = angle_a + step;
-    let radius_a = if index.is_multiple_of(2) {
-        outer
-    } else {
-        inner
-    };
-    let radius_b = if index.is_multiple_of(2) {
-        inner
-    } else {
-        outer
-    };
-    chord_radius(theta, angle_a, radius_a, angle_b, radius_b)
-}
-
-fn chord_radius(theta: f32, angle_a: f32, radius_a: f32, angle_b: f32, radius_b: f32) -> f32 {
-    let (sin_a, cos_a) = angle_a.sin_cos();
-    let (sin_b, cos_b) = angle_b.sin_cos();
-    let x_a = radius_a * cos_a;
-    let y_a = radius_a * sin_a;
-    let x_b = radius_b * cos_b;
-    let y_b = radius_b * sin_b;
-    let denominator = (y_b - y_a) * theta.cos() - (x_b - x_a) * theta.sin();
-    if denominator.abs() < 1.0e-6 {
-        return radius_a.max(radius_b);
-    }
-    let cross = x_a * y_b - x_b * y_a;
-    let radius = cross / denominator;
-    if radius > 0.0 {
-        radius
-    } else {
-        radius_a.max(radius_b)
-    }
+    shape.shape_radii().clone()
 }
 
 fn rounded_rect_radius(
@@ -351,10 +541,19 @@ mod tests {
     }
 
     #[test]
-    fn star_radius_hits_vertices() {
-        let outer = star_radius(0.0, 4, 1.0, 0.5, 0.0);
-        assert!((outer - 1.0).abs() < 1.0e-4);
-        let inner = star_radius(std::f32::consts::PI / 4.0, 4, 1.0, 0.5, 0.0);
-        assert!((inner - 0.5).abs() < 1.0e-4);
+    fn star_vertices_alternate_radii() {
+        let vertices = star_vertices(4, 1.0, 0.5, 0.0);
+        assert_eq!(vertices.len(), 8);
+        let first = (vertices[0].0 * vertices[0].0 + vertices[0].1 * vertices[0].1).sqrt();
+        let second = (vertices[1].0 * vertices[1].0 + vertices[1].1 * vertices[1].1).sqrt();
+        assert!((first - 1.0).abs() < 1.0e-4);
+        assert!((second - 0.5).abs() < 1.0e-4);
+    }
+
+    #[test]
+    fn rounded_cookie4_stays_within_unit_circle() {
+        let radii = MorphShape::Cookie4.compute_radii();
+        assert!(radii.iter().all(|r| *r <= 1.0 + 1.0e-3));
+        assert!(radii.iter().all(|r| r.is_finite() && *r > 0.0));
     }
 }
