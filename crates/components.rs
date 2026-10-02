@@ -11,8 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#[path = "components/BackdropScaffold.rs"]
+mod backdrop_scaffold;
 #[path = "components/Badge.rs"]
 mod badge;
+#[path = "components/BottomDrawer.rs"]
+mod bottom_drawer;
 #[path = "components/BottomSheet.rs"]
 mod bottom_sheet;
 #[path = "components/Button.rs"]
@@ -80,7 +84,9 @@ mod toggle_button;
 #[path = "components/TopAppBar.rs"]
 mod top_app_bar;
 
+pub use backdrop_scaffold::{BackdropScaffold, BackdropScaffoldState};
 pub use badge::{Badge, BadgeStyle, BadgedBox, badged};
+pub use bottom_drawer::{BottomDrawer, BottomDrawerState};
 pub use bottom_sheet::{BottomSheetScaffold, BottomSheetStyle, ModalBottomSheet};
 pub use button::{
     Button, ButtonState, ButtonVariant, ElevatedButton, FilledTonalButton, OutlinedButton,

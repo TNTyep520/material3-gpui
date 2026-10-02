@@ -17,7 +17,7 @@ use gpui::{
 };
 use material3_gpui::prelude::*;
 
-use super::{gallery, showcase_group};
+use super::{full_width_group, gallery, showcase_group};
 
 type DismissHandler = std::rc::Rc<dyn Fn(&mut App)>;
 
@@ -25,6 +25,8 @@ pub struct SheetsPage {
     pub(crate) open_button: Entity<ButtonState>,
     pub(crate) sheet_open: bool,
     on_dismiss: Option<DismissHandler>,
+    backdrop: Entity<BackdropScaffoldState>,
+    bottom_drawer: Entity<BottomDrawerState>,
 }
 
 impl SheetsPage {
@@ -32,10 +34,55 @@ impl SheetsPage {
         let open_button = Button::new("open-sheet-btn", "Share this page")
             .filled()
             .build(cx);
-        cx.new(|_| Self {
-            open_button,
-            sheet_open: false,
-            on_dismiss: None,
+        let backdrop = BackdropScaffold::new("backdrop-demo")
+            .height(px(320.))
+            .back_content(|| {
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(4.))
+                    .px(px(16.))
+                    .py(px(12.))
+                    .child("Front layer reveals the back layer")
+                    .child("Tap the handle to conceal")
+                    .into_any_element()
+            })
+            .front_content(|| {
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(8.))
+                    .px(px(16.))
+                    .py(px(16.))
+                    .child("Front layer")
+                    .child("Tap the handle to reveal the back layer.")
+                    .into_any_element()
+            })
+            .build(cx);
+        let bottom_drawer = BottomDrawer::new("bottom-drawer-demo")
+            .height(px(260.))
+            .content(|| {
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(8.))
+                    .px(px(16.))
+                    .py(px(16.))
+                    .child("Bottom drawer content")
+                    .child("Tap the handle to open or close.")
+                    .into_any_element()
+            })
+            .build(cx);
+        cx.new(|cx| {
+            cx.observe(&backdrop, |_, _, cx| cx.notify()).detach();
+            cx.observe(&bottom_drawer, |_, _, cx| cx.notify()).detach();
+            Self {
+                open_button,
+                sheet_open: false,
+                on_dismiss: None,
+                backdrop,
+                bottom_drawer,
+            }
         })
     }
 
@@ -118,6 +165,26 @@ impl Render for SheetsPage {
                     })
                     .into_any_element(),
             ))
+            .chain([
+                full_width_group(
+                    cx,
+                    "Backdrop scaffold",
+                    [div()
+                        .w_full()
+                        .child(self.backdrop.clone())
+                        .into_any_element()],
+                )
+                .into_any_element(),
+                full_width_group(
+                    cx,
+                    "Bottom drawer",
+                    [div()
+                        .w_full()
+                        .child(self.bottom_drawer.clone())
+                        .into_any_element()],
+                )
+                .into_any_element(),
+            ])
             .collect::<Vec<_>>(),
         )
     }

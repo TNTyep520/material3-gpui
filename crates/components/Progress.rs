@@ -22,6 +22,7 @@ use gpui::{
     svg,
 };
 
+use crate::motion::easing;
 use crate::theme::ActiveTheme;
 
 #[derive(IntoElement)]
@@ -232,51 +233,77 @@ impl RenderOnce for LinearWavyProgressIndicator {
                 let phase = phase.get();
                 let width = f32::from(bounds.size.width);
                 let middle = bounds.size.height * 0.5;
-                let (start, end) = match value {
-                    Some(v) => (0.0, width * v),
+
+                let paint_wave = |builder: &mut PathBuilder, start: f32, end: f32, amp: f32| {
+                    let mut top = Vec::new();
+                    let mut x = start;
+                    while x <= end {
+                        let offset = amp * (TAU * (x / f32::from(wavelength) - phase)).sin();
+                        top.push((x, middle + px(offset) - thickness * 0.5));
+                        x += 3.0;
+                    }
+                    if top.len() < 2 {
+                        return;
+                    }
+                    for (i, (x, y)) in top.iter().enumerate() {
+                        let point = point(px(*x), *y);
+                        if i == 0 {
+                            builder.move_to(point);
+                        } else {
+                            builder.line_to(point);
+                        }
+                    }
+                    for (x, y) in top.iter().rev() {
+                        builder.line_to(point(px(*x), *y + thickness));
+                    }
+                    builder.close();
+                };
+
+                match value {
+                    Some(v) => {
+                        let end = width * v;
+                        let gap = f32::from(px(4.));
+                        let stop = f32::from(Tokens::STOP_SIZE.pixels());
+                        let amp = f32::from(amplitude);
+                        let mut builder = PathBuilder::fill();
+                        paint_wave(&mut builder, 0.0, end, amp);
+                        if end + gap < width {
+                            builder.move_to(point(px(end + gap), middle - thickness * 0.5));
+                            builder.line_to(point(px(width), middle - thickness * 0.5));
+                            builder.line_to(point(px(width), middle + thickness * 0.5));
+                            builder.line_to(point(px(end + gap), middle + thickness * 0.5));
+                            builder.close();
+                        }
+                        if end + gap + stop <= width {
+                            builder.move_to(point(px(width - stop), middle - thickness * 0.5));
+                            builder.line_to(point(px(width), middle - thickness * 0.5));
+                            builder.line_to(point(px(width), middle + thickness * 0.5));
+                            builder.line_to(point(px(width - stop), middle + thickness * 0.5));
+                            builder.close();
+                        }
+                        if let Ok(path) = builder.build() {
+                            window.paint_path(path, active);
+                        }
+                    }
                     None => {
-                        let eased = |t: f32| t.clamp(0.0, 1.0) * t.clamp(0.0, 1.0);
-                        let head = eased(phase * 1.25);
-                        let tail = eased(phase * 1.25 - 0.25);
-                        (width * tail, width * head)
+                        let t = phase;
+                        let accelerate = |x: f32| {
+                            easing::EMPHASIZED_ACCELERATE.sample(f64::from(x.clamp(0.0, 1.0)))
+                                as f32
+                        };
+                        let head = accelerate(t / 1.75);
+                        let tail = accelerate((t - 0.25) / 1.75);
+                        let (start, end) = (width * tail.min(head), width * head);
+                        if end - start < 2.0 {
+                            return;
+                        }
+                        let amp = f32::from(amplitude);
+                        let mut builder = PathBuilder::fill();
+                        paint_wave(&mut builder, start, end, amp);
+                        if let Ok(path) = builder.build() {
+                            window.paint_path(path, active);
+                        }
                     }
-                };
-                if end - start < 2.0 {
-                    return;
-                }
-                let amplitude_scale = match value {
-                    Some(v) => (v / 0.1).min(1.0) * ((1.0 - v) / 0.05).min(1.0),
-                    None => 1.0,
-                };
-                let amp = f32::from(amplitude) * amplitude_scale;
-                let mut builder = PathBuilder::fill();
-                let mut top = Vec::with_capacity(((end - start) / 3.0) as usize + 2);
-                let mut x = start;
-                while x <= end {
-                    let offset = amp * (TAU * (x / f32::from(wavelength) - phase)).sin();
-                    top.push((x, middle + px(offset) - thickness * 0.5));
-                    x += 3.0;
-                }
-                if top.len() < 2 {
-                    return;
-                }
-                for (i, (x, y)) in top.iter().enumerate() {
-                    let point = point(px(*x), *y);
-                    if i == 0 {
-                        builder.move_to(point);
-                    } else {
-                        builder.line_to(point);
-                    }
-                }
-                for (_, y) in top.iter().rev() {
-                    builder.line_to(point(px(0.), *y + thickness));
-                }
-                for (x, y) in top.iter().rev() {
-                    builder.line_to(point(px(*x), *y + thickness));
-                }
-                builder.close();
-                if let Ok(path) = builder.build() {
-                    window.paint_path(path, active);
                 }
             },
         );
@@ -288,16 +315,18 @@ impl RenderOnce for LinearWavyProgressIndicator {
             .w_full()
             .flex_none()
             .h(wave_height)
-            .child(
-                div()
-                    .absolute()
-                    .top((wave_height - thickness) * 0.5)
-                    .left_0()
-                    .right_0()
-                    .h(thickness)
-                    .rounded_full()
-                    .bg(track_color),
-            )
+            .when(value.is_none(), |el| {
+                el.child(
+                    div()
+                        .absolute()
+                        .top((wave_height - thickness) * 0.5)
+                        .left_0()
+                        .right_0()
+                        .h(thickness)
+                        .rounded_full()
+                        .bg(track_color),
+                )
+            })
             .child(wave.absolute().size_full())
             .with_animation(
                 self.id,

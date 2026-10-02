@@ -380,12 +380,17 @@ impl Render for TextFieldState {
             .flex()
             .flex_col()
             .justify_center()
-            .when(!self.plain, |el| {
-                el.rounded(theme.shapes().extra_small)
-                    .when(self.outlined, |el| el.border_1())
-                    .when(!self.outlined, |el| el.border_b_1())
+            .rounded(theme.shapes().medium)
+            .when(!self.plain && !self.outlined, |el| {
+                el.bg(style.container_color)
+            })
+            .when(!self.plain && self.outlined, |el| {
+                el.border_1()
                     .border_color(border_color)
-                    .bg(style.container_color)
+                    .when(focused && !self.disabled, |el| {
+                        el.border_2()
+                            .border_color(if has_error { colors.error } else { accent })
+                    })
             })
             .when(!self.disabled, |el| el.cursor_text())
             .when(!self.disabled, |element| {
@@ -402,25 +407,7 @@ impl Render for TextFieldState {
                     }
                 });
             })
-            .track_focus(&self.focus)
-            .when(
-                !self.plain && (focused || p > 0.0) && !self.disabled,
-                |el| {
-                    el.child(
-                        div()
-                            .absolute()
-                            .inset_0()
-                            .rounded(theme.shapes().extra_small)
-                            .when(self.outlined, |overlay| overlay.border_2())
-                            .when(!self.outlined, |overlay| overlay.border_b_2())
-                            .border_color(if has_error {
-                                colors.error.opacity(p.max(0.001))
-                            } else {
-                                accent.opacity(p.max(0.001))
-                            }),
-                    )
-                },
-            );
+            .track_focus(&self.focus);
 
         let row = div()
             .flex()
@@ -472,7 +459,8 @@ impl Render for TextFieldState {
                     }),
             );
 
-        let label_el = if floating {
+        let inside_label = floating && !self.outlined;
+        let label_el = if floating && self.outlined {
             div()
                 .absolute()
                 .top(px(-8.))
@@ -501,6 +489,17 @@ impl Render for TextFieldState {
         };
 
         container
+            .when(inside_label, |el| {
+                el.child(
+                    label_style
+                        .label_small
+                        .apply(div())
+                        .pl(px(tokens.horizontal_padding))
+                        .pt(px(4.))
+                        .text_color(label_color)
+                        .child(self.label.clone()),
+                )
+            })
             .child(
                 div()
                     .relative()
@@ -686,7 +685,7 @@ mod appearance {
                 } else if outlined {
                     colors.surface
                 } else {
-                    colors.surface_container_highest
+                    colors.surface_container
                 },
                 border_color: if disabled {
                     colors.disabled_container(state)
@@ -703,7 +702,11 @@ mod appearance {
                 } else {
                     colors.on_surface_variant
                 },
-                focused_label_color: if error { colors.error } else { colors.primary },
+                focused_label_color: if error {
+                    colors.error
+                } else {
+                    colors.on_surface_variant
+                },
                 text_color: if disabled {
                     colors.disabled_content(state)
                 } else {

@@ -7,7 +7,7 @@ description = "material3-gpui component showcase (not published)"
 
 [dependencies]
 gpui = "0.2.2"
-material3-gpui = { path = ".." }
+material3-gpui = { path = "..", features = ["dynamic-color"] }
 
 # macOS:catalog 经 AppKit 隐藏绿色最大化红绿灯(gpui 未暴露单灯显隐;
 # objc2 绑定为安全方法,实现见 src/main.rs)

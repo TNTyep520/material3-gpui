@@ -15,8 +15,8 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use gpui::{
-    App, ClickEvent, Hsla, IntoElement, MouseButton, ParentElement as _, RenderOnce, Rgba,
-    StatefulInteractiveElement as _, Styled, Window, WindowControlArea, div, prelude::*, px,
+    App, ClickEvent, FontWeight, Hsla, IntoElement, MouseButton, ParentElement as _, RenderOnce,
+    Rgba, StatefulInteractiveElement as _, Styled, Window, WindowControlArea, div, prelude::*, px,
 };
 use material3_gpui::icon::{Icon, IconName};
 use material3_gpui::prelude::ActiveTheme;
@@ -89,8 +89,9 @@ impl RenderOnce for CustomTitleBar {
                 .min_w_0()
                 .truncate()
                 .text_size(px(14.))
+                .font_weight(FontWeight::BOLD)
                 .text_color(colors.on_surface)
-                .child("Material 3 · Catalog"),
+                .child("Material 3 Catalog"),
         );
 
         let controls = if is_mac {

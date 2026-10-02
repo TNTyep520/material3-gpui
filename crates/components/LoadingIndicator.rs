@@ -274,6 +274,22 @@ fn ellipse_radius(theta: f32, semi_major: f32, semi_minor: f32, rotation: f32) -
     semi_major * semi_minor / denominator
 }
 
+fn chaikin_smooth(points: &[Point<Pixels>], iterations: usize) -> Vec<Point<Pixels>> {
+    let mut current = points.to_vec();
+    for _ in 0..iterations {
+        let source = current.clone();
+        current.clear();
+        let count = source.len();
+        for i in 0..count {
+            let a = source[i];
+            let b = source[(i + 1) % count];
+            current.push(point(a.x + (b.x - a.x) * 0.75, a.y + (b.y - a.y) * 0.75));
+            current.push(point(a.x + (b.x - a.x) * 0.25, a.y + (b.y - a.y) * 0.25));
+        }
+    }
+    current
+}
+
 fn draw_morphing_shape(
     window: &mut Window,
     center: Point<Pixels>,
@@ -293,16 +309,20 @@ fn draw_morphing_shape(
     let rotation = progress * TAU;
 
     let scale = radius * breathing;
-    let mut builder = PathBuilder::fill();
+    let mut outline = Vec::with_capacity(SHAPE_SAMPLES);
     for i in 0..SHAPE_SAMPLES {
         let theta = TAU * i as f32 / SHAPE_SAMPLES as f32;
         let interpolated = from[i] + (to[i] - from[i]) * morph;
         let angle = theta + rotation;
         let (sin, cos) = angle.sin_cos();
-        let point = point(
+        outline.push(point(
             center.x + px(interpolated * scale * cos),
             center.y + px(interpolated * scale * sin),
-        );
+        ));
+    }
+
+    let mut builder = PathBuilder::fill();
+    for (i, point) in chaikin_smooth(&outline, 2).into_iter().enumerate() {
         if i == 0 {
             builder.move_to(point);
         } else {

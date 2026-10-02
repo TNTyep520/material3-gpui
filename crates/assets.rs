@@ -18,18 +18,10 @@ use std::path::PathBuf;
 
 pub const PROGRESS_ARC_SVG_PATH: &str = "md3-icons/progress_arc.svg";
 
-pub const MATERIAL3_FAVICON_SVG_PATH: &str = "md3-icons/material3-favicon.svg";
-
-static RESOURCES: &[(&str, &[u8])] = &[
-    (
-        "md3-icons/progress_arc.svg",
-        include_bytes!("assets/progress_arc.svg").as_slice(),
-    ),
-    (
-        "md3-icons/material3-favicon.svg",
-        include_bytes!("assets/material3-favicon.svg").as_slice(),
-    ),
-];
+static RESOURCES: &[(&str, &[u8])] = &[(
+    "md3-icons/progress_arc.svg",
+    include_bytes!("assets/progress_arc.svg").as_slice(),
+)];
 
 pub struct Md3Assets {
     icon_dirs: Vec<PathBuf>,
@@ -151,13 +143,12 @@ mod tests {
     use anyhow::Result;
     use gpui::{AssetSource, SharedString};
 
-    use super::{MATERIAL3_FAVICON_SVG_PATH, Md3Assets, PROGRESS_ARC_SVG_PATH};
+    use super::{Md3Assets, PROGRESS_ARC_SVG_PATH};
 
     #[test]
     fn embedded_resources_load() -> Result<()> {
         let assets = Md3Assets::new();
         assert!(assets.load(PROGRESS_ARC_SVG_PATH)?.is_some());
-        assert!(assets.load(MATERIAL3_FAVICON_SVG_PATH)?.is_some());
         assert!(assets.load("md3-icons/not_embedded.svg")?.is_none());
         Ok(())
     }
