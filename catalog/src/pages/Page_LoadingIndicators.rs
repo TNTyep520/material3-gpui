@@ -39,7 +39,11 @@ impl Render for LoadingIndicatorsPage {
                         div()
                             .size(px(112.))
                             .flex_none()
-                            .child(LoadingIndicator::new("loading-xl").size(px(112.)))
+                            .child(
+                                LoadingIndicator::new("loading-demo-default")
+                                    .size(px(112.))
+                                    .indicator_size(px(89.)),
+                            )
                             .into_any_element(),
                         specimen(
                             cx,
@@ -61,12 +65,38 @@ impl Render for LoadingIndicatorsPage {
                         div()
                             .size(px(112.))
                             .flex_none()
-                            .child(ContainedLoadingIndicator::new("contained-xl").size(px(112.)))
+                            .child(
+                                ContainedLoadingIndicator::new("loading-demo-contained")
+                                    .size(px(112.))
+                                    .indicator_size(px(89.)),
+                            )
                             .into_any_element(),
                         specimen(
                             cx,
                             "48 dp",
                             ContainedLoadingIndicator::new("contained-48").size(px(48.)),
+                        ),
+                    ],
+                )
+                .into_any_element(),
+                showcase_group(
+                    cx,
+                    "Determinate",
+                    [
+                        specimen(
+                            cx,
+                            "25 %",
+                            LoadingIndicator::new("determinate-25").progress(0.25),
+                        ),
+                        specimen(
+                            cx,
+                            "60 %",
+                            LoadingIndicator::new("determinate-60").progress(0.6),
+                        ),
+                        specimen(
+                            cx,
+                            "100 %",
+                            LoadingIndicator::new("determinate-100").progress(1.0),
                         ),
                     ],
                 )

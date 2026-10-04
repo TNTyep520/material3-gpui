@@ -16,6 +16,7 @@ pub mod assets;
 pub mod components;
 #[path = "fonts.rs"]
 pub mod fonts;
+pub mod shape;
 pub use components::icon;
 #[path = "interaction.rs"]
 pub mod interaction;
