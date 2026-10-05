@@ -67,7 +67,7 @@ jobs:
       - name: Build catalog
         shell: bash
         run: >
-          cargo +nightly build --release --target ${{ matrix.target }} -p catalog
+          cargo +nightly build --release --locked --target ${{ matrix.target }} -p catalog
           -Z build-std=std,core
           -Z build-std-features=default,optimize_for_size
 
