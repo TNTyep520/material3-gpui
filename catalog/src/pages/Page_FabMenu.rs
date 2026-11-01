@@ -11,10 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use gpui::{App, AppContext as _, Entity, IntoElement, Render, Window, div, prelude::*, px};
+use gpui::{AnyElement, App, AppContext as _, Entity, IntoElement, ParentElement, Styled, div, px};
+
 use material3_gpui::prelude::*;
 
-use super::{page, showcase_group};
+use super::{ComponentPage, ExampleMeta, example_content};
 
 pub struct FabMenuPage {
     fab_menu: Entity<FabMenuState>,
@@ -47,24 +48,28 @@ impl FabMenuPage {
     }
 }
 
-impl Render for FabMenuPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        let theme = cx.theme();
-        let typography = *theme.typography();
-        let state = if self.fab_menu.read(cx).expanded() {
-            "expanded"
-        } else {
-            "collapsed"
-        };
+impl ComponentPage for FabMenuPage {
+    fn description(&self) -> &'static str {
+        "The FAB Menu displays additional key actions on click of a FAB."
+    }
 
-        page(
-            cx,
-            "FAB menu",
-            "Tap the FAB to expand its actions; items animate with expressive springs.",
-            [showcase_group(
-                cx,
-                "Floating action button menu",
-                [div()
+    fn examples(&self) -> &'static [ExampleMeta] {
+        &[ExampleMeta {
+            name: "FloatingActionButtonMenuSample",
+            description: "FAB Menu examples",
+        }]
+    }
+
+    fn example(&self, index: usize, cx: &App) -> AnyElement {
+        match index {
+            0 => {
+                let theme = cx.theme();
+                let state = if self.fab_menu.read(cx).expanded() {
+                    "expanded"
+                } else {
+                    "collapsed"
+                };
+                example_content([div()
                     .h(px(280.))
                     .w_full()
                     .flex()
@@ -77,7 +82,8 @@ impl Render for FabMenuPage {
                             .items_end()
                             .gap(px(8.))
                             .child(
-                                typography
+                                theme
+                                    .typography()
                                     .body_medium
                                     .apply(div())
                                     .text_color(theme.colors().on_surface_variant)
@@ -85,8 +91,9 @@ impl Render for FabMenuPage {
                             )
                             .child(self.fab_menu.clone()),
                     )
-                    .into_any_element()],
-            )],
-        )
+                    .into_any_element()])
+            }
+            _ => example_content(Vec::<AnyElement>::new()),
+        }
     }
 }

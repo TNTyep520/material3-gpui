@@ -11,10 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use gpui::{AnyElement, App, Entity, IntoElement, Render, Window, div, prelude::*, px};
+use gpui::{AnyElement, App, AppContext as _, Entity, IntoElement, ParentElement, Styled, div, px};
+
 use material3_gpui::prelude::*;
 
-use super::{catalog_card, gallery, showcase_group};
+use super::{ComponentPage, ExampleMeta, catalog_card, example_content, example_row};
 
 const ENTRIES: [(&str, &str, &str, Option<&str>); 5] = [
     ("Proofs batch", "Jan 9, 2026", "star", Some("3")),
@@ -32,8 +33,8 @@ const ENTRIES: [(&str, &str, &str, Option<&str>); 5] = [
 pub struct ListsPage;
 
 impl ListsPage {
-    pub fn new(cx: &mut App) -> Entity<Self> {
-        cx.new(|_| Self)
+    pub fn new(_cx: &mut App) -> Entity<Self> {
+        _cx.new(|_| Self)
     }
 }
 
@@ -63,32 +64,77 @@ fn inbox_row(
     div().child(item).into_any_element()
 }
 
-impl Render for ListsPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        let rows = ENTRIES
-            .iter()
-            .enumerate()
-            .flat_map(|(ix, (title, supporting, icon, trailing))| {
-                let row = inbox_row(ix, title, supporting, icon, *trailing);
-                if ix + 1 < ENTRIES.len() {
-                    vec![row, Divider::horizontal().inset().into_any_element()]
-                } else {
-                    vec![row]
-                }
-            })
-            .collect::<Vec<_>>();
+impl ComponentPage for ListsPage {
+    fn description(&self) -> &'static str {
+        "Lists are continuous, vertical indexes of text or images."
+    }
 
-        gallery([
-            showcase_group(
-                cx,
-                "List items & dividers",
-                [div()
-                    .w_full()
-                    .min_w_0()
-                    .child(List::new().children(rows))
-                    .into_any_element()],
-            ),
-            showcase_group(
+    fn examples(&self) -> &'static [ExampleMeta] {
+        &[
+            ExampleMeta {
+                name: "ClickableListItemSample",
+                description: "List examples",
+            },
+            ExampleMeta {
+                name: "SwipeToDismiss",
+                description: "Swipe to dismiss examples",
+            },
+        ]
+    }
+
+    fn example(&self, index: usize, cx: &App) -> AnyElement {
+        match index {
+            0 => {
+                let rows = ENTRIES
+                    .iter()
+                    .enumerate()
+                    .flat_map(|(ix, (title, supporting, icon, trailing))| {
+                        let row = inbox_row(ix, title, supporting, icon, *trailing);
+                        if ix + 1 < ENTRIES.len() {
+                            vec![row, Divider::horizontal().inset().into_any_element()]
+                        } else {
+                            vec![row]
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                example_content([
+                    div()
+                        .w_full()
+                        .min_w_0()
+                        .child(List::new().children(rows))
+                        .into_any_element(),
+                    example_row(
+                        cx,
+                        "Segmented list item",
+                        [div()
+                            .w(px(320.))
+                            .max_w_full()
+                            .child(
+                                List::new().child(
+                                    SegmentedListItem::new(
+                                        "segmented-item",
+                                        "Segmented item",
+                                        0,
+                                        2,
+                                    )
+                                    .supporting_text("The first of two joined rows")
+                                    .on_click(
+                                        |_, window, cx| {
+                                            show_snackbar(
+                                                window,
+                                                cx,
+                                                Snackbar::new("Segmented row tapped"),
+                                                None,
+                                            );
+                                        },
+                                    ),
+                                ),
+                            )
+                            .into_any_element()],
+                    ),
+                ])
+            }
+            1 => example_content([example_row(
                 cx,
                 "Swipe to dismiss",
                 [SwipeToDismissBox::new(
@@ -97,21 +143,8 @@ impl Render for ListsPage {
                 )
                 .background(div().bg(cx.theme().colors().error_container))
                 .into_any_element()],
-            )
-            .into_any_element(),
-            showcase_group(
-                cx,
-                "Scrollbar",
-                [div()
-                    .relative()
-                    .h(px(72.))
-                    .w(px(280.))
-                    .max_w_full()
-                    .child("Scrollable stack")
-                    .child(Scrollbar::new("scrollbar").position(0.35))
-                    .into_any_element()],
-            )
-            .into_any_element(),
-        ])
+            )]),
+            _ => example_content(Vec::<AnyElement>::new()),
+        }
     }
 }

@@ -23,11 +23,10 @@ pub struct CatalogAssets;
 
 impl AssetSource for CatalogAssets {
     fn load(&self, path: &str) -> gpui::Result<Option<Cow<'static, [u8]>>> {
-        if let Some(name) = path
+        let name = path
             .strip_prefix("md3-icons/")
-            .and_then(|rest| rest.strip_suffix(".svg"))
-            && let Some(bytes) = registry::lookup(name)
-        {
+            .and_then(|rest| rest.strip_suffix(".svg"));
+        if let Some(bytes) = name.and_then(registry::lookup) {
             return Ok(Some(Cow::Borrowed(bytes)));
         }
         Md3Assets::new().load(path)

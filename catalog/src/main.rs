@@ -10,252 +10,83 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// 壳层布局对齐 Compose Material Catalog(androidx):
+// home(卡片网格)→ component(描述 + 示例列表)→ example(居中示例)。
 
 #![windows_subsystem = "windows"]
 
 mod icons;
 mod pages;
-mod titlebar;
-
-use std::time::Instant;
 
 use gpui::{
-    AnyView, App, Bounds, Context, Entity, IntoElement, KeyDownEvent, Render, TitlebarOptions,
-    Window, WindowBounds, WindowOptions, div, point, prelude::*, px, size,
+    App, Bounds, Context, Entity, IntoElement, Render, TitlebarOptions, Window, WindowBounds,
+    WindowOptions, div, prelude::*, px, size,
 };
 
-use material3_gpui::motion::{Animatable, AnimatedComponent, AnimationDriver, MotionRole};
-use material3_gpui::overlay::host;
 use material3_gpui::prelude::*;
-use pages::{LogErr as _, Pages, palette_strip};
+use pages::{LogErr as _, PAGES, PageId, Pages};
 
 const DEFAULT_SEED: u32 = 0x6750A4;
 
+/// 顶栏标题与菜单文案,逐字取自 Compose Material Catalog 的字符串资源。
+const APP_TITLE: &str = "Compose Material 3";
+
+const GUIDELINES_URL: &str = "https://m3.material.io/components";
+
+const DOCS_URL: &str =
+    "https://developer.android.com/reference/kotlin/androidx/compose/material3/package-summary";
+
+const SOURCE_URL: &str = "https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/material3/";
+
+const ISSUE_URL: &str = "https://issuetracker.google.com/issues?q=component:907884";
+
+/// 导航栈条目,对应 APK 的 home / component/{id} / example/{id}/{index}。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum PageId {
-    Buttons,
-    ButtonsExtended,
-    IconButtonsFab,
-    Selection,
-    Chips,
-    Sliders,
-    LoadingIndicators,
-    Progress,
-    TextFields,
-    Search,
-    Pickers,
-    Tabs,
-    Navigation,
-    AppBars,
-    Cards,
-    Lists,
-    Dialogs,
-    Sheets,
-    Overlays,
-    Toolbars,
-    FabMenu,
-    Carousel,
-    Motion,
+enum Route {
+    Home,
+    Component(PageId),
+    Example(PageId, usize),
 }
-
-pub(crate) struct PageMeta {
-    pub(crate) id: PageId,
-
-    pub(crate) section: &'static str,
-
-    pub(crate) title: &'static str,
-    pub(crate) icon: &'static str,
-}
-
-const PAGES: [PageMeta; 23] = [
-    PageMeta {
-        id: PageId::Buttons,
-        section: "Buttons",
-        title: "Buttons",
-        icon: "star",
-    },
-    PageMeta {
-        id: PageId::ButtonsExtended,
-        section: "Buttons",
-        title: "Groups & split",
-        icon: "more_vert",
-    },
-    PageMeta {
-        id: PageId::IconButtonsFab,
-        section: "Buttons",
-        title: "Icon buttons & FAB",
-        icon: "favorite",
-    },
-    PageMeta {
-        id: PageId::Selection,
-        section: "Selection",
-        title: "Selection",
-        icon: "check",
-    },
-    PageMeta {
-        id: PageId::Chips,
-        section: "Selection",
-        title: "Chips",
-        icon: "label",
-    },
-    PageMeta {
-        id: PageId::Sliders,
-        section: "Sliders",
-        title: "Sliders",
-        icon: "tune",
-    },
-    PageMeta {
-        id: PageId::LoadingIndicators,
-        section: "Loading & progress",
-        title: "Loading indicators",
-        icon: "progress_activity",
-    },
-    PageMeta {
-        id: PageId::Progress,
-        section: "Loading & progress",
-        title: "Progress",
-        icon: "autorenew",
-    },
-    PageMeta {
-        id: PageId::TextFields,
-        section: "Text fields",
-        title: "Text fields",
-        icon: "edit",
-    },
-    PageMeta {
-        id: PageId::Search,
-        section: "Search",
-        title: "Search",
-        icon: "search",
-    },
-    PageMeta {
-        id: PageId::Pickers,
-        section: "Date & time pickers",
-        title: "Date & time",
-        icon: "calendar_month",
-    },
-    PageMeta {
-        id: PageId::Tabs,
-        section: "Tabs",
-        title: "Tabs",
-        icon: "tab",
-    },
-    PageMeta {
-        id: PageId::Navigation,
-        section: "Navigation",
-        title: "Navigation",
-        icon: "menu",
-    },
-    PageMeta {
-        id: PageId::AppBars,
-        section: "App bars",
-        title: "App bars",
-        icon: "home",
-    },
-    PageMeta {
-        id: PageId::Cards,
-        section: "Cards",
-        title: "Cards",
-        icon: "dashboard",
-    },
-    PageMeta {
-        id: PageId::Lists,
-        section: "Lists",
-        title: "Lists",
-        icon: "list",
-    },
-    PageMeta {
-        id: PageId::Dialogs,
-        section: "Dialogs",
-        title: "Dialogs",
-        icon: "delete",
-    },
-    PageMeta {
-        id: PageId::Sheets,
-        section: "Sheets",
-        title: "Bottom sheet",
-        icon: "expand_less",
-    },
-    PageMeta {
-        id: PageId::Overlays,
-        section: "Overlays",
-        title: "Overlays",
-        icon: "notifications",
-    },
-    PageMeta {
-        id: PageId::Toolbars,
-        section: "Toolbars",
-        title: "Toolbars",
-        icon: "build",
-    },
-    PageMeta {
-        id: PageId::FabMenu,
-        section: "Toolbars",
-        title: "FAB menu",
-        icon: "add",
-    },
-    PageMeta {
-        id: PageId::Carousel,
-        section: "Additional",
-        title: "Carousel",
-        icon: "view_carousel",
-    },
-    PageMeta {
-        id: PageId::Motion,
-        section: "Additional",
-        title: "Motion",
-        icon: "animation",
-    },
-];
 
 struct Catalog {
     dark: bool,
-    seed: u32,
-    page: PageId,
+    pin: bool,
+    theme_sheet_open: bool,
     dialog_open: bool,
     wired: bool,
     dark_switch: Entity<SwitchState>,
     pages: Pages,
-    transition: Animatable,
-    transition_direction: f32,
-    driver: AnimationDriver,
+    route_stack: Vec<Route>,
 }
 
 impl Catalog {
     fn new(cx: &mut Context<Self>) -> Self {
         Self {
             dark: false,
-            seed: DEFAULT_SEED,
-            page: PageId::Buttons,
+            pin: false,
+            theme_sheet_open: false,
             dialog_open: false,
             wired: false,
             dark_switch: Switch::new("theme-switch").build(cx),
             pages: Pages::new(cx),
-            transition: Animatable::new(1.0, 1.0e-3),
-            transition_direction: 1.,
-            driver: AnimationDriver::default(),
+            route_stack: vec![Route::Home],
         }
     }
 
-    fn navigate(&mut self, target: PageId, window: &mut Window, cx: &mut Context<Self>) {
-        if self.page == target {
-            return;
-        }
-        let position = |id: PageId| PAGES.iter().position(|meta| meta.id == id).unwrap_or(0);
-        self.transition_direction = if position(target) >= position(self.page) {
-            1.
-        } else {
-            -1.
-        };
-        self.page = target;
-        let spec = *cx.theme().motion().spec(MotionRole::DefaultEffects);
-        self.transition.stop();
-        self.transition.snap_to(0.0);
-        self.transition.animate_to(1.0, &spec, Instant::now());
-        if self.transition.is_running() {
-            self.schedule_next(window, cx);
-        }
+    fn route(&self) -> Route {
+        *self.route_stack.last().expect("route stack never empty")
+    }
+
+    fn navigate(&mut self, route: Route, cx: &mut Context<Self>) {
+        self.route_stack.push(route);
         cx.notify();
+    }
+
+    fn go_back(&mut self, cx: &mut Context<Self>) {
+        if self.route_stack.len() > 1 {
+            self.route_stack.pop();
+            cx.notify();
+        }
     }
 
     fn apply_theme(&self, cx: &mut App) {
@@ -264,7 +95,10 @@ impl Catalog {
         } else {
             ThemeMode::Light
         };
-        Theme::set(cx, Theme::from_seed(self.seed, mode, Profile::Baseline2021));
+        Theme::set(
+            cx,
+            Theme::from_seed(DEFAULT_SEED, mode, Profile::Baseline2021),
+        );
         cx.refresh_windows();
     }
 
@@ -284,46 +118,10 @@ impl Catalog {
             });
         });
 
-        let open_button = self.pages.sheets.read(cx).open_button.clone();
-        let sheets_weak = self.pages.sheets.downgrade();
-        open_button.update(cx, |button, _| {
-            button.set_on_click(move |_, _, cx| {
-                sheets_weak
-                    .update(cx, |page, cx| {
-                        page.sheet_open = true;
-                        cx.notify();
-                    })
-                    .log_err();
-            });
-        });
-
-        let sheets_weak = self.pages.sheets.downgrade();
-        self.pages.sheets.update(cx, |page, _| {
-            page.set_on_dismiss(move |cx| {
-                sheets_weak
-                    .update(cx, |page, cx| {
-                        page.sheet_open = false;
-                        cx.notify();
-                    })
-                    .log_err();
-            });
-        });
-
-        let this = cx.entity();
-        self.pages.text_fields.update(cx, |page, _| {
-            page.set_on_seed_changed(std::rc::Rc::new(move |seed, cx| {
-                this.update(cx, |d, cx| {
-                    if seed != d.seed {
-                        d.seed = seed;
-                        d.apply_theme(cx);
-                    }
-                });
-            }));
-        });
-
-        let this = cx.entity();
+        // Dialogs 示例的启动按钮 → 根对话框。
+        let handle = cx.entity();
         let dialogs_page = self.pages.dialogs.clone();
-        let handle = this.clone();
+        let launchers = dialogs_page.read(cx).launchers();
         dialogs_page.update(cx, |page, _| {
             page.set_on_open_dialog(std::rc::Rc::new(move |(), cx: &mut App| {
                 handle.update(cx, |d, cx| {
@@ -333,9 +131,9 @@ impl Catalog {
             }));
         });
         let page_handle = dialogs_page.clone();
-        let _handle = this.clone();
-        dialogs_page.update(cx, |page, cx| {
-            page.b_dialog.update(cx, |button, _| {
+        for launcher in launchers {
+            let page_handle = page_handle.clone();
+            launcher.update(cx, |button, _| {
                 button.set_on_click(move |_, _window, cx| {
                     page_handle.update(cx, |page, cx| {
                         if let Some(handler) = page.on_open_dialog.clone() {
@@ -344,289 +142,220 @@ impl Catalog {
                     });
                 });
             });
-        });
-        let handle = this.clone();
-        dialogs_page.update(cx, |page, cx| {
-            page.dlg_cancel.update(cx, |button, _| {
-                button.set_on_click(move |_, _window, cx| {
-                    handle.update(cx, |d, cx| {
-                        d.dialog_open = false;
+        }
+
+        // Sheets 示例:打开按钮与关闭回调。
+        let open_button = self.pages.bottom_sheet.read(cx).open_button.clone();
+        let sheet_page = self.pages.bottom_sheet.downgrade();
+        open_button.update(cx, |button, _| {
+            button.set_on_click(move |_, _, cx| {
+                sheet_page
+                    .update(cx, |page, cx| {
+                        page.sheet_open = true;
                         cx.notify();
-                    });
-                });
+                    })
+                    .log_err();
             });
         });
-        let handle = this;
-        dialogs_page.update(cx, |page, cx| {
-            page.dlg_ok.update(cx, |button, _| {
-                button.set_on_click(move |_, window, cx| {
-                    handle.update(cx, |d, cx| {
-                        d.dialog_open = false;
+        let sheet_page = self.pages.bottom_sheet.downgrade();
+        self.pages.bottom_sheet.update(cx, |page, _| {
+            page.set_on_dismiss(move |cx| {
+                sheet_page
+                    .update(cx, |page, cx| {
+                        page.sheet_open = false;
                         cx.notify();
-                    });
-                    material3_gpui::overlay::show_snackbar(
-                        window,
-                        cx,
-                        Snackbar::new("3 recordings deleted"),
-                        None,
-                    );
-                });
+                    })
+                    .log_err();
             });
         });
-    }
-}
-
-impl AnimatedComponent for Catalog {
-    fn step(&mut self, now: Instant) -> bool {
-        self.transition.tick(now)
-    }
-
-    fn driver_mut(&mut self) -> &mut AnimationDriver {
-        &mut self.driver
     }
 }
 
 impl Render for Catalog {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.wire(cx);
-        #[cfg(target_os = "macos")]
-        hide_maximize_buttons();
 
-        if self.transition.is_running() {
-            self.schedule_next(window, cx);
-        }
-
-        let this = cx.entity();
         let colors = *cx.theme().colors();
         let typography = *cx.theme().typography();
         let font_family = cx.theme().font_family().clone();
-        let page = self.page;
+        let route = self.route();
+        let theme_sheet_open = self.theme_sheet_open;
         let dialog_open = self.dialog_open;
-        let transition = self.transition.value() as f32;
-        let transition_offset = px(self.transition_direction * (1. - transition) * 24.);
+        let pin = self.pin;
 
-        let page_view: AnyView = match self.page {
-            PageId::Buttons => self.pages.buttons.clone().into(),
-            PageId::ButtonsExtended => self.pages.buttons_extended.clone().into(),
-            PageId::IconButtonsFab => self.pages.icon_buttons_fab.clone().into(),
-            PageId::Selection => self.pages.selection.clone().into(),
-            PageId::Chips => self.pages.chips.clone().into(),
-            PageId::Sliders => self.pages.sliders.clone().into(),
-            PageId::LoadingIndicators => self.pages.loading_indicators.clone().into(),
-            PageId::Progress => self.pages.progress.clone().into(),
-            PageId::TextFields => self.pages.text_fields.clone().into(),
-            PageId::Search => self.pages.search.clone().into(),
-            PageId::Pickers => self.pages.pickers.clone().into(),
-            PageId::Tabs => self.pages.tabs.clone().into(),
-            PageId::Navigation => self.pages.navigation.clone().into(),
-            PageId::AppBars => self.pages.app_bars.clone().into(),
-            PageId::Cards => self.pages.cards.clone().into(),
-            PageId::Lists => self.pages.lists.clone().into(),
-            PageId::Dialogs => self.pages.dialogs.clone().into(),
-            PageId::Sheets => self.pages.sheets.clone().into(),
-            PageId::Overlays => self.pages.overlays.clone().into(),
-            PageId::Toolbars => self.pages.toolbars.clone().into(),
-            PageId::FabMenu => self.pages.fab_menu.clone().into(),
-            PageId::Carousel => self.pages.carousel.clone().into(),
-            PageId::Motion => self.pages.motion.clone().into(),
+        let title = match route {
+            Route::Home => APP_TITLE.to_string(),
+            Route::Component(id) => PAGES
+                .iter()
+                .find(|meta| meta.id == id)
+                .map(|meta| meta.name.to_string())
+                .unwrap_or_default(),
+            Route::Example(id, index) => {
+                let page = self.pages.page(id, cx);
+                page.examples()
+                    .get(index)
+                    .map(|example| example.name.to_string())
+                    .unwrap_or_default()
+            }
         };
-        let meta = &PAGES[PAGES.iter().position(|p| p.id == page).unwrap_or(0)];
+
+        // 返回按钮(非首页)。
+        let back_button = div()
+            .id("topbar-back")
+            .size(px(40.))
+            .flex_none()
+            .flex()
+            .items_center()
+            .justify_center()
+            .rounded_full()
+            .cursor_pointer()
+            .hover(move |style| style.bg(colors.surface_container_highest))
+            .child(
+                Icon::new(IconName::new("arrow_back"))
+                    .size(px(24.))
+                    .color(colors.on_surface),
+            )
+            .on_click(cx.listener(|this, _, _, cx| this.go_back(cx)));
+
+        // Pin / Palette / More 三个顶栏操作。
+        let pin_icon = if pin { "push_pin_filled" } else { "push_pin" };
+        let pin_color = if pin {
+            colors.primary
+        } else {
+            colors.on_surface_variant
+        };
+        let pin_button = div()
+            .id("topbar-pin")
+            .size(px(40.))
+            .flex_none()
+            .flex()
+            .items_center()
+            .justify_center()
+            .rounded_full()
+            .cursor_pointer()
+            .hover(move |style| style.bg(colors.surface_container_highest))
+            .child(
+                Icon::new(IconName::new(pin_icon))
+                    .size(px(24.))
+                    .color(pin_color),
+            )
+            .on_click(cx.listener(|this, _, _, cx| {
+                this.pin = !this.pin;
+                cx.notify();
+            }));
+
+        let palette_button = div()
+            .id("topbar-theme")
+            .size(px(40.))
+            .flex_none()
+            .flex()
+            .items_center()
+            .justify_center()
+            .rounded_full()
+            .cursor_pointer()
+            .hover(move |style| style.bg(colors.surface_container_highest))
+            .child(
+                Icon::new(IconName::new("palette"))
+                    .size(px(24.))
+                    .color(colors.on_surface_variant),
+            )
+            .on_click(cx.listener(|this, _, _, cx| {
+                this.theme_sheet_open = true;
+                cx.notify();
+            }));
+
+        let menu = MenuState::new()
+            .item(
+                MenuItem::new("View design guidelines").on_click(|_window, cx| {
+                    cx.open_url(GUIDELINES_URL);
+                }),
+            )
+            .item(
+                MenuItem::new("View developer docs").on_click(|_window, cx| {
+                    cx.open_url(DOCS_URL);
+                }),
+            )
+            .item(MenuItem::new("View source code").on_click(|_window, cx| {
+                cx.open_url(SOURCE_URL);
+            }))
+            .item(MenuItem::new("Report an issue").on_click(|_window, cx| {
+                cx.open_url(ISSUE_URL);
+            }))
+            .build(cx);
+
+        let more_button = div()
+            .id("topbar-more")
+            .size(px(40.))
+            .flex_none()
+            .flex()
+            .items_center()
+            .justify_center()
+            .rounded_full()
+            .cursor_pointer()
+            .hover(move |style| style.bg(colors.surface_container_highest))
+            .child(
+                Icon::new(IconName::new("more_vert"))
+                    .size(px(24.))
+                    .color(colors.on_surface_variant),
+            )
+            .on_click(move |event, window, cx| {
+                let anchor = gpui::Bounds {
+                    origin: event.position(),
+                    size: size(px(0.), px(0.)),
+                };
+                show_menu(window, cx, menu.clone(), anchor);
+            });
+
+        let top_bar = div()
+            .w_full()
+            .h(px(64.))
+            .flex_none()
+            .flex()
+            .items_center()
+            .gap(px(12.))
+            .px(px(4.))
+            .bg(colors.surface)
+            .child(
+                div()
+                    .w(px(48.))
+                    .flex_none()
+                    .flex()
+                    .justify_center()
+                    .when(!matches!(route, Route::Home), |el| el.child(back_button)),
+            )
+            .child(
+                typography
+                    .title_large
+                    .apply(div())
+                    .flex_1()
+                    .min_w_0()
+                    .truncate()
+                    .text_color(colors.on_surface)
+                    .child(title),
+            )
+            .child(
+                div()
+                    .flex_none()
+                    .flex()
+                    .items_center()
+                    .child(pin_button)
+                    .child(palette_button)
+                    .child(more_button),
+            );
+
+        let content = match route {
+            Route::Home => self.render_home(cx).into_any_element(),
+            Route::Component(id) => self.render_component(id, cx).into_any_element(),
+            Route::Example(id, index) => self.render_example(id, index, cx).into_any_element(),
+        };
 
         let dialogs = self.pages.dialogs.read(cx);
         let dlg_cancel = dialogs.dlg_cancel.clone();
         let dlg_ok = dialogs.dlg_ok.clone();
+        let dark_switch = self.dark_switch.clone();
+        let sheet_open = self.pages.bottom_sheet.read(cx).sheet_open();
+        let sheet = self.pages.bottom_sheet.read(cx).sheet(cx);
 
-        let rail_pane = div()
-            .w(px(232.))
-            .h_full()
-            .flex_none()
-            .flex()
-            .flex_col()
-            .border_r_1()
-            .border_color(colors.outline_variant)
-            .child(
-                typography
-                    .label_large
-                    .apply(div())
-                    .px(px(20.))
-                    .py(px(20.))
-                    .text_color(colors.on_surface_variant)
-                    .child("Components"),
-            )
-            .child(
-                div()
-                    .id("catalog-navigation")
-                    .flex_1()
-                    .min_h_0()
-                    .overflow_y_scroll()
-                    .px(px(12.))
-                    .pb(px(12.))
-                    .children(
-                        PAGES
-                            .iter()
-                            .enumerate()
-                            .filter_map(|(index, meta)| {
-                                let first_of_section =
-                                    index == 0 || PAGES[index - 1].section != meta.section;
-                                first_of_section.then_some((index, meta.section))
-                            })
-                            .collect::<Vec<_>>()
-                            .into_iter()
-                            .flat_map(|(_section_index, section)| {
-                                let header = typography
-                                    .label_medium
-                                    .apply(div())
-                                    .pt(px(16.))
-                                    .pb(px(8.))
-                                    .px(px(16.))
-                                    .text_color(colors.on_surface_variant)
-                                    .child(section)
-                                    .into_any_element();
-                                let items = PAGES
-                                    .iter()
-                                    .enumerate()
-                                    .filter(|(_, meta)| meta.section == section)
-                                    .map(|(index, meta)| {
-                                        let selected = meta.id == page;
-                                        let target = meta.id;
-                                        let color = if selected {
-                                            colors.on_secondary_container
-                                        } else {
-                                            colors.on_surface
-                                        };
-                                        div()
-                                            .id(("catalog-page", index))
-                                            .focusable()
-                                            .tab_stop(true)
-                                            .w_full()
-                                            .h(px(56.))
-                                            .mb(px(2.))
-                                            .px(px(16.))
-                                            .rounded(px(28.))
-                                            .flex()
-                                            .items_center()
-                                            .gap(px(12.))
-                                            .cursor_pointer()
-                                            .focus(|style| style.bg(colors.secondary_container))
-                                            .text_color(color)
-                                            .when(selected, |element| {
-                                                element.bg(colors.secondary_container)
-                                            })
-                                            .when(!selected, |element| {
-                                                element.hover(move |style| {
-                                                    style.bg(colors.surface_container_high)
-                                                })
-                                            })
-                                            .child(Icon::new(meta.icon).size(px(20.)).color(color))
-                                            .child(
-                                                typography
-                                                    .label_large
-                                                    .apply(div())
-                                                    .child(meta.title),
-                                            )
-                                            .on_key_down(cx.listener(
-                                                move |this, event: &KeyDownEvent, window, cx| {
-                                                    if matches!(
-                                                        event.keystroke.key.as_str(),
-                                                        "enter" | "space"
-                                                    ) {
-                                                        this.navigate(target, window, cx);
-                                                        cx.stop_propagation();
-                                                    }
-                                                },
-                                            ))
-                                            .on_click(cx.listener(move |this, _, window, cx| {
-                                                this.navigate(target, window, cx);
-                                            }))
-                                            .into_any_element()
-                                    })
-                                    .collect::<Vec<_>>();
-                                std::iter::once(header).chain(items)
-                            }),
-                    ),
-            );
-        let theme_action = div()
-            .flex()
-            .flex_none()
-            .items_center()
-            .gap(px(12.))
-            .px(px(12.))
-            .child(
-                typography
-                    .label_large
-                    .apply(div())
-                    .text_color(colors.on_surface_variant)
-                    .child(if self.dark { "Dark" } else { "Light" }),
-            )
-            .child(self.dark_switch.clone());
-
-        let detail_bar = div()
-            .h(px(72.))
-            .w_full()
-            .flex_none()
-            .px(px(28.))
-            .border_b_1()
-            .border_color(colors.outline_variant)
-            .flex()
-            .items_center()
-            .justify_between()
-            .child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .gap(px(2.))
-                    .child(
-                        typography
-                            .title_large
-                            .apply(div())
-                            .text_color(colors.on_surface)
-                            .child(meta.title),
-                    )
-                    .child(
-                        typography
-                            .label_medium
-                            .apply(div())
-                            .text_color(colors.on_surface_variant)
-                            .child("Material 3 · variants and states"),
-                    ),
-            )
-            .child(
-                div()
-                    .flex()
-                    .items_center()
-                    .gap(px(24.))
-                    .child(palette_strip(cx))
-                    .child(theme_action),
-            );
-
-        let content = div()
-            .flex_1()
-            .min_w_0()
-            .h_full()
-            .flex()
-            .flex_col()
-            .child(detail_bar)
-            .child(
-                div()
-                    .id((
-                        "catalog-content",
-                        PAGES.iter().position(|meta| meta.id == page).unwrap_or(0),
-                    ))
-                    .flex_1()
-                    .min_h_0()
-                    .min_w_0()
-                    .overflow_y_scroll()
-                    .p(px(28.))
-                    .child(
-                        div().w_full().max_w(px(1120.)).mx_auto().child(
-                            div()
-                                .relative()
-                                .opacity(transition.clamp(0., 1.))
-                                .left(transition_offset)
-                                .child(page_view),
-                        ),
-                    ),
-            );
         div()
             .id("catalog-root")
             .relative()
@@ -636,20 +365,64 @@ impl Render for Catalog {
             .bg(colors.surface)
             .font_family(font_family)
             .text_color(colors.on_surface)
-            .child(titlebar::CustomTitleBar)
+            .child(top_bar)
             .child(
                 div()
                     .flex_1()
                     .min_h_0()
+                    .min_w_0()
                     .flex()
                     .overflow_hidden()
-                    .child(rail_pane)
                     .child(content),
             )
             .child(host(window, cx))
+            .when(sheet_open, |el| el.child(sheet))
+            .when(theme_sheet_open, |el| {
+                el.child(
+                    ModalBottomSheet::new("theme-sheet")
+                        .on_dismiss({
+                            let this = cx.entity();
+                            move |_, cx| {
+                                this.update(cx, |d, cx| {
+                                    d.theme_sheet_open = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
+                        .child(
+                            div()
+                                .p(px(24.))
+                                .flex()
+                                .flex_col()
+                                .gap(px(16.))
+                                .child(
+                                    typography
+                                        .title_large
+                                        .apply(div())
+                                        .text_color(colors.on_surface)
+                                        .child("Change theme"),
+                                )
+                                .child(
+                                    div()
+                                        .w_full()
+                                        .flex()
+                                        .items_center()
+                                        .justify_between()
+                                        .child(
+                                            typography
+                                                .body_large
+                                                .apply(div())
+                                                .text_color(colors.on_surface)
+                                                .child("Dark mode"),
+                                        )
+                                        .child(dark_switch),
+                                ),
+                        ),
+                )
+            })
             .when(dialog_open, |el| {
                 let close = {
-                    let this = this.clone();
+                    let this = cx.entity();
                     move |cx: &mut App| {
                         this.update(cx, |d, cx| {
                             d.dialog_open = false;
@@ -673,24 +446,248 @@ impl Render for Catalog {
     }
 }
 
+impl Catalog {
+    /// APK Home:自适应 180dp 列宽的组件卡片网格。
+    fn render_home(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let colors = *cx.theme().colors();
+        let typography = *cx.theme().typography();
+
+        let cards = PAGES
+            .iter()
+            .enumerate()
+            .map(|(index, meta)| {
+                let target = meta.id;
+                let info = meta.additional_info;
+                div()
+                    .id(("home-card", index))
+                    .w(px(180.))
+                    .h(px(180.))
+                    .m(px(4.))
+                    .p(px(16.))
+                    .relative()
+                    .border_1()
+                    .border_color(colors.outline_variant)
+                    .rounded(px(12.))
+                    .bg(colors.surface)
+                    .cursor_pointer()
+                    .hover(move |style| style.bg(colors.surface_container_low))
+                    .child(
+                        div()
+                            .absolute()
+                            .inset_0()
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .child(
+                                Icon::new(IconName::new(meta.icon))
+                                    .size(px(80.))
+                                    .color(colors.on_surface_variant),
+                            ),
+                    )
+                    .when(!info.is_empty(), |el| {
+                        el.child(
+                            div()
+                                .absolute()
+                                .top(px(8.))
+                                .right(px(8.))
+                                .px(px(4.))
+                                .rounded(px(8.))
+                                .bg(colors.error)
+                                .child(
+                                    typography
+                                        .label_small
+                                        .apply(div())
+                                        .text_color(colors.surface)
+                                        .child(info),
+                                ),
+                        )
+                    })
+                    .child(
+                        typography
+                            .body_small
+                            .apply(div())
+                            .absolute()
+                            .bottom(px(16.))
+                            .left(px(16.))
+                            .text_color(colors.on_surface)
+                            .child(meta.name),
+                    )
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        this.navigate(Route::Component(target), cx);
+                    }))
+                    .into_any_element()
+            })
+            .collect::<Vec<_>>();
+
+        div()
+            .id("home-scroll")
+            .flex_1()
+            .min_h_0()
+            .min_w_0()
+            .overflow_y_scroll()
+            .p(px(8.))
+            .flex()
+            .flex_wrap()
+            .content_start()
+            .children(cards)
+    }
+
+    /// APK Component 页:居中大图标 + Description + Examples 卡片列表。
+    fn render_component(&self, id: PageId, cx: &mut Context<Self>) -> impl IntoElement {
+        let colors = *cx.theme().colors();
+        let typography = *cx.theme().typography();
+        let meta = PAGES
+            .iter()
+            .find(|meta| meta.id == id)
+            .expect("valid PageId");
+        let page = self.pages.page(id, cx);
+        let description = page.description();
+        let examples = page.examples();
+
+        let example_items = examples
+            .iter()
+            .enumerate()
+            .map(|(index, example)| {
+                let target = (id, index);
+                div()
+                    .id(("example-item", index))
+                    .w_full()
+                    .p(px(16.))
+                    .border_1()
+                    .border_color(colors.outline_variant)
+                    .rounded(px(12.))
+                    .bg(colors.surface)
+                    .cursor_pointer()
+                    .hover(move |style| style.bg(colors.surface_container_low))
+                    .flex()
+                    .items_center()
+                    .gap(px(16.))
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .flex()
+                            .flex_col()
+                            .gap(px(8.))
+                            .child(
+                                typography
+                                    .title_small
+                                    .apply(div())
+                                    .text_color(colors.on_surface)
+                                    .child(example.name),
+                            )
+                            .child(
+                                typography
+                                    .body_small
+                                    .apply(div())
+                                    .text_color(colors.on_surface_variant)
+                                    .child(example.description),
+                            ),
+                    )
+                    .child(
+                        Icon::new(IconName::new("chevron_right"))
+                            .size(px(24.))
+                            .color(colors.on_surface_variant),
+                    )
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        this.navigate(Route::Example(target.0, target.1), cx);
+                    }))
+                    .into_any_element()
+            })
+            .collect::<Vec<_>>();
+
+        div()
+            .id(("component-scroll", meta.id as usize))
+            .flex_1()
+            .min_h_0()
+            .min_w_0()
+            .overflow_y_scroll()
+            .p(px(16.))
+            .flex()
+            .flex_col()
+            .child(
+                div().w_full().py(px(42.)).flex().justify_center().child(
+                    Icon::new(IconName::new(meta.icon))
+                        .size(px(108.))
+                        .color(colors.on_surface_variant),
+                ),
+            )
+            .child(
+                div()
+                    .w_full()
+                    .flex()
+                    .flex_col()
+                    .gap(px(16.))
+                    .pb(px(32.))
+                    .child(
+                        typography
+                            .body_large
+                            .apply(div())
+                            .text_color(colors.on_surface)
+                            .child("Description"),
+                    )
+                    .child(
+                        typography
+                            .body_medium
+                            .apply(div())
+                            .text_color(colors.on_surface)
+                            .child(description),
+                    ),
+            )
+            .child(
+                typography
+                    .body_large
+                    .apply(div())
+                    .pb(px(16.))
+                    .text_color(colors.on_surface)
+                    .child("Examples"),
+            )
+            .children(example_items)
+    }
+
+    /// APK Example 页:顶栏下居中的示例内容。
+    fn render_example(&self, id: PageId, index: usize, cx: &mut Context<Self>) -> impl IntoElement {
+        let page = self.pages.page(id, cx);
+        let content = page.example(index, cx);
+        div()
+            .id(("example-scroll", index))
+            .flex_1()
+            .min_h_0()
+            .min_w_0()
+            .overflow_y_scroll()
+            .p(px(16.))
+            .flex()
+            .flex_col()
+            .child(
+                div()
+                    .min_h_0()
+                    .w_full()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .child(div().w_full().max_w(px(960.)).min_w_0().child(content)),
+            )
+    }
+}
+
 fn main() {
     gpui::Application::new()
         .with_assets(icons::CatalogAssets)
         .run(|cx: &mut App| {
             material3_gpui::init(cx);
 
-            let initial = size(px(996.), px(621.));
+            let initial = size(px(1080.), px(760.));
             let min_size = size(px(996.), px(621.));
             let bounds = Bounds::centered(None, initial, cx);
             cx.open_window(
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     titlebar: Some(TitlebarOptions {
-                        title: Some("material3-gpui".into()),
+                        title: Some("Compose Material 3 Catalog".into()),
 
-                        appears_transparent: true,
+                        appears_transparent: false,
 
-                        traffic_light_position: Some(point(px(9.), px(24.))),
+                        ..Default::default()
                     }),
                     window_min_size: Some(min_size),
                     ..Default::default()
@@ -700,19 +697,4 @@ fn main() {
             .unwrap();
             cx.activate(true);
         });
-}
-
-#[cfg(target_os = "macos")]
-fn hide_maximize_buttons() {
-    use objc2::MainThreadMarker;
-    use objc2_app_kit::{NSApplication, NSWindowButton};
-
-    if let Some(mtm) = MainThreadMarker::new() {
-        let app = NSApplication::sharedApplication(mtm);
-        for window in app.windows().iter() {
-            if let Some(zoom) = window.standardWindowButton(NSWindowButton::ZoomButton) {
-                zoom.setHidden(true);
-            }
-        }
-    }
 }

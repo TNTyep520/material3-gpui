@@ -12,16 +12,18 @@
 // limitations under the License.
 
 use gpui::{
-    App, AppContext as _, Context, Entity, IntoElement, Render, Window, div, prelude::*, px,
+    AnyElement, App, AppContext as _, Context, Entity, IntoElement, ParentElement as _, Styled,
+    div, px,
 };
+
 use material3_gpui::prelude::*;
 
-use super::{LogErr as _, page, showcase_group};
+use super::{ComponentPage, ExampleMeta, LogErr as _, example_content, example_row};
 
 pub struct SearchPage {
     search_field: Entity<TextFieldState>,
     expanded_field: Entity<TextFieldState>,
-    secure_field: Entity<TextFieldState>,
+    fullscreen_field: Entity<TextFieldState>,
     query: String,
 }
 
@@ -30,7 +32,7 @@ impl SearchPage {
         cx.new(|cx| {
             let weak = cx.entity().downgrade();
             let search_field = {
-                let weak = weak.clone();
+                let weak = weak;
                 TextField::new("search-query", "Search")
                     .plain(true)
                     .leading_icon(IconName::new("search"))
@@ -49,44 +51,55 @@ impl SearchPage {
                 TextField::new("search-expanded", "Recent searches")
                     .plain(true)
                     .leading_icon(IconName::new("search"))
-                    .on_value_change(move |value, _, cx| {
-                        weak.update(cx, |page: &mut Self, cx: &mut Context<Self>| {
-                            if page.query != value {
-                                page.query = value.to_string();
-                                cx.notify();
-                            }
-                        })
-                        .log_err();
-                    })
                     .build(cx)
             };
-            let secure_field = SecureTextField::new("secure", "Passphrase")
-                .value("secret")
-                .build(cx);
+            let fullscreen_field = {
+                TextField::new("search-fullscreen", "Search")
+                    .plain(true)
+                    .leading_icon(IconName::new("search"))
+                    .build(cx)
+            };
             Self {
                 search_field,
                 expanded_field,
-                secure_field,
+                fullscreen_field,
                 query: String::new(),
             }
         })
     }
 }
 
-impl Render for SearchPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        let theme = cx.theme();
-        let colors = *theme.colors();
-        let typography = *theme.typography();
+impl ComponentPage for SearchPage {
+    fn description(&self) -> &'static str {
+        "Search bars allow users to enter a keyword or phrase and get relevant information."
+    }
 
-        page(
-            cx,
-            "Search",
-            "Search bar in collapsed and expanded forms, plus a secure text field.",
-            [
-                showcase_group(
+    fn examples(&self) -> &'static [ExampleMeta] {
+        &[
+            ExampleMeta {
+                name: "SimpleSearchBarSample",
+                description: "Search bar examples",
+            },
+            ExampleMeta {
+                name: "DockedSearchBarScaffoldSample",
+                description: "Search bar examples",
+            },
+            ExampleMeta {
+                name: "FullScreenSearchBarScaffoldSample",
+                description: "Search bar examples",
+            },
+        ]
+    }
+
+    fn example(&self, index: usize, cx: &App) -> AnyElement {
+        match index {
+            0 => {
+                let theme = cx.theme();
+                let colors = *theme.colors();
+                let typography = *theme.typography();
+                example_content([example_row(
                     cx,
-                    "Search bar",
+                    "Collapsed",
                     [div()
                         .w_full()
                         .min_w_0()
@@ -106,44 +119,45 @@ impl Render for SearchPage {
                                 }),
                         )
                         .into_any_element()],
-                )
-                .into_any_element(),
-                showcase_group(
-                    cx,
-                    "Expanded search",
-                    [div()
-                        .w_full()
-                        .min_w_0()
-                        .child(
-                            SearchBar::new("search-expanded", self.expanded_field.clone())
-                                .expanded(true)
-                                .child(
-                                    ListItem::new(("suggestion-1", 0usize), "Riso poster drafts")
-                                        .leading_icon(IconName::new("history")),
-                                )
-                                .child(
-                                    ListItem::new(("suggestion-2", 1usize), "Cutting mat restock")
-                                        .leading_icon(IconName::new("history")),
-                                )
-                                .child(
-                                    ListItem::new(("suggestion-3", 2usize), "Proof reading queue")
-                                        .leading_icon(IconName::new("history")),
-                                ),
-                        )
-                        .into_any_element()],
-                )
-                .into_any_element(),
-                showcase_group(
-                    cx,
-                    "Secure text field",
-                    [div()
-                        .w(px(280.))
-                        .max_w_full()
-                        .child(self.secure_field.clone())
-                        .into_any_element()],
-                )
-                .into_any_element(),
-            ],
-        )
+                )])
+            }
+            1 => example_content([example_row(
+                cx,
+                "Expanded · suggestions",
+                [div()
+                    .w_full()
+                    .min_w_0()
+                    .child(
+                        SearchBar::new("search-expanded", self.expanded_field.clone())
+                            .expanded(true)
+                            .child(
+                                ListItem::new(("suggestion-1", 0usize), "Riso poster drafts")
+                                    .leading_icon(IconName::new("history")),
+                            )
+                            .child(
+                                ListItem::new(("suggestion-2", 1usize), "Cutting mat restock")
+                                    .leading_icon(IconName::new("history")),
+                            )
+                            .child(
+                                ListItem::new(("suggestion-3", 2usize), "Proof reading queue")
+                                    .leading_icon(IconName::new("history")),
+                            ),
+                    )
+                    .into_any_element()],
+            )]),
+            2 => example_content([example_row(
+                cx,
+                "Expanded · full width",
+                [div()
+                    .w_full()
+                    .min_w_0()
+                    .child(
+                        SearchBar::new("search-fullscreen", self.fullscreen_field.clone())
+                            .expanded(true),
+                    )
+                    .into_any_element()],
+            )]),
+            _ => example_content(Vec::<AnyElement>::new()),
+        }
     }
 }

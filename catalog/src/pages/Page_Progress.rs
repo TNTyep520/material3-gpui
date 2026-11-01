@@ -11,58 +11,188 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use gpui::{App, Entity, IntoElement, Render, Window, prelude::*, px};
+use gpui::{
+    AnyElement, App, AppContext as _, Entity, IntoElement, ParentElement as _, Styled, div, px,
+};
+
 use material3_gpui::prelude::*;
 
-use super::{full_width_group, page, showcase_group};
+use super::{ComponentPage, ExampleMeta, example_content, example_row};
 
 pub struct ProgressPage;
 
 impl ProgressPage {
-    pub fn new(cx: &mut App) -> Entity<Self> {
-        cx.new(|_| Self)
+    pub fn new(_cx: &mut App) -> Entity<Self> {
+        _cx.new(|_| Self)
     }
 }
 
-impl Render for ProgressPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        page(
-            cx,
-            "Progress",
-            "Linear and circular indicators, including the expressive wavy variants.",
-            [
-                full_width_group(
+impl ComponentPage for ProgressPage {
+    fn description(&self) -> &'static str {
+        "Progress indicators express an unspecified wait time or display the length of \
+         a process."
+    }
+
+    fn examples(&self) -> &'static [ExampleMeta] {
+        &[
+            ExampleMeta {
+                name: "LinearProgressIndicatorSample",
+                description: "Progress indicators examples",
+            },
+            ExampleMeta {
+                name: "LinearWavyProgressIndicatorSample",
+                description: "Progress indicators examples",
+            },
+            ExampleMeta {
+                name: "IndeterminateLinearProgressIndicatorSample",
+                description: "Progress indicators examples",
+            },
+            ExampleMeta {
+                name: "IndeterminateLinearWavyProgressIndicatorSample",
+                description: "Progress indicators examples",
+            },
+            ExampleMeta {
+                name: "CircularProgressIndicatorSample",
+                description: "Progress indicators examples",
+            },
+            ExampleMeta {
+                name: "CircularWavyProgressIndicatorSample",
+                description: "Progress indicators examples",
+            },
+            ExampleMeta {
+                name: "IndeterminateCircularProgressIndicatorSample",
+                description: "Progress indicators examples",
+            },
+            ExampleMeta {
+                name: "IndeterminateCircularWavyProgressIndicatorSample",
+                description: "Progress indicators examples",
+            },
+        ]
+    }
+
+    fn example(&self, index: usize, cx: &App) -> AnyElement {
+        match index {
+            0 => example_content([
+                example_row(
                     cx,
-                    "Linear",
-                    [
-                        LinearProgress::new("linear-30").value(0.3),
-                        LinearProgress::new("linear-70").value(0.7),
-                        LinearProgress::new("linear-indeterminate").indeterminate(),
-                    ],
-                )
-                .into_any_element(),
-                showcase_group(cx, "Circular", [CircularProgress::new().size(px(48.))])
-                    .into_any_element(),
-                full_width_group(
+                    "30 %",
+                    [div()
+                        .w(px(360.))
+                        .max_w_full()
+                        .child(LinearProgress::new("linear-30").value(0.3))
+                        .into_any_element()],
+                ),
+                example_row(
                     cx,
-                    "Wavy linear",
-                    [
-                        LinearWavyProgressIndicator::new("wavy-40").value(0.4),
-                        LinearWavyProgressIndicator::new("wavy-80").value(0.8),
-                        LinearWavyProgressIndicator::new("wavy-indeterminate").indeterminate(),
-                    ],
-                )
-                .into_any_element(),
-                showcase_group(
+                    "70 %",
+                    [div()
+                        .w(px(360.))
+                        .max_w_full()
+                        .child(LinearProgress::new("linear-70").value(0.7))
+                        .into_any_element()],
+                ),
+                example_row(
                     cx,
-                    "Wavy circular",
+                    "Indeterminate",
+                    [div()
+                        .w(px(360.))
+                        .max_w_full()
+                        .child(LinearProgress::new("linear-indeterminate").indeterminate())
+                        .into_any_element()],
+                ),
+            ]),
+            1 => example_content([
+                example_row(
+                    cx,
+                    "40 %",
+                    [div()
+                        .w(px(360.))
+                        .max_w_full()
+                        .child(LinearWavyProgressIndicator::new("wavy-40").value(0.4))
+                        .into_any_element()],
+                ),
+                example_row(
+                    cx,
+                    "80 %",
+                    [div()
+                        .w(px(360.))
+                        .max_w_full()
+                        .child(LinearWavyProgressIndicator::new("wavy-80").value(0.8))
+                        .into_any_element()],
+                ),
+                example_row(
+                    cx,
+                    "Indeterminate",
+                    [div()
+                        .w(px(360.))
+                        .max_w_full()
+                        .child(
+                            LinearWavyProgressIndicator::new("wavy-indeterminate").indeterminate(),
+                        )
+                        .into_any_element()],
+                ),
+            ]),
+            2 => example_content([example_row(
+                cx,
+                "Indeterminate",
+                [div()
+                    .w(px(360.))
+                    .max_w_full()
+                    .child(LinearProgress::new("linear-indeterminate").indeterminate())
+                    .into_any_element()],
+            )]),
+            3 => example_content([example_row(
+                cx,
+                "Indeterminate",
+                [div()
+                    .w(px(360.))
+                    .max_w_full()
+                    .child(LinearWavyProgressIndicator::new("wavy-indeterminate").indeterminate())
+                    .into_any_element()],
+            )]),
+            4 => example_content([
+                example_row(
+                    cx,
+                    "Determinate",
+                    [CircularProgress::new().size(px(48.)).into_any_element()],
+                ),
+                example_row(
+                    cx,
+                    "Indeterminate",
+                    [CircularProgress::new().size(px(48.)).into_any_element()],
+                ),
+            ]),
+            5 => example_content([
+                example_row(
+                    cx,
+                    "Determinate",
+                    [CircularWavyProgressIndicator::new("wavy-circular-40")
+                        .value(0.4)
+                        .into_any_element()],
+                ),
+                example_row(
+                    cx,
+                    "Indeterminate",
                     [
-                        CircularWavyProgressIndicator::new("wavy-circular-40").value(0.4),
-                        CircularWavyProgressIndicator::new("wavy-circular-indeterminate"),
+                        CircularWavyProgressIndicator::new("wavy-circular-indeterminate")
+                            .into_any_element(),
                     ],
-                )
-                .into_any_element(),
-            ],
-        )
+                ),
+            ]),
+            6 => example_content([example_row(
+                cx,
+                "Indeterminate",
+                [CircularProgress::new().size(px(48.)).into_any_element()],
+            )]),
+            7 => example_content([example_row(
+                cx,
+                "Indeterminate",
+                [
+                    CircularWavyProgressIndicator::new("wavy-circular-indeterminate")
+                        .into_any_element(),
+                ],
+            )]),
+            _ => example_content(Vec::<AnyElement>::new()),
+        }
     }
 }

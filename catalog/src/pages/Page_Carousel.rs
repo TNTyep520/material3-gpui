@@ -11,10 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use gpui::{App, AppContext as _, Entity, IntoElement, Render, Window, div, prelude::*, px};
+use gpui::{
+    AnyElement, App, AppContext as _, Entity, IntoElement, ParentElement as _, Styled, div, px,
+};
+
 use material3_gpui::prelude::*;
 
-use super::{page, showcase_group};
+use super::{ComponentPage, ExampleMeta, example_content};
 
 pub struct CarouselPage {
     carousel: Entity<CarouselState>,
@@ -54,21 +57,26 @@ impl CarouselPage {
     }
 }
 
-impl Render for CarouselPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        let theme = cx.theme();
-        let colors = *theme.colors();
-        let typography = *theme.typography();
-        let carousel = self.carousel.clone();
+impl ComponentPage for CarouselPage {
+    fn description(&self) -> &'static str {
+        "Carousels are stylized versions of lists that provide a unique viewing and \
+         behavior that suit large imagery and other visually rich content."
+    }
 
-        page(
-            cx,
-            "Carousel",
-            "Multi-browse arrangement: the selected item expands, neighbors stay as previews.",
-            [showcase_group(
-                cx,
-                "Multi-browse carousel",
-                [div()
+    fn examples(&self) -> &'static [ExampleMeta] {
+        &[ExampleMeta {
+            name: "HorizontalMultiBrowseCarouselSample",
+            description: "Carousel examples",
+        }]
+    }
+
+    fn example(&self, index: usize, cx: &App) -> AnyElement {
+        match index {
+            0 => {
+                let theme = cx.theme();
+                let colors = *theme.colors();
+                let typography = *theme.typography();
+                example_content([div()
                     .w_full()
                     .min_w_0()
                     .flex()
@@ -84,9 +92,10 @@ impl Render for CarouselPage {
                                 self.carousel.read(cx).selected() + 1
                             )),
                     )
-                    .child(carousel)
-                    .into_any_element()],
-            )],
-        )
+                    .child(self.carousel.clone())
+                    .into_any_element()])
+            }
+            _ => example_content(Vec::<AnyElement>::new()),
+        }
     }
 }

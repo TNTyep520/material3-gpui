@@ -10,12 +10,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// 参考 https://github.com/Glavo/m3fx/blob/main/demo/src/main/java/org/glavo/m3fx/demo/LoadingIndicatorDemoPage.java
 
-use gpui::{App, Entity, IntoElement, Render, Window, div, prelude::*, px};
+use gpui::{
+    AnyElement, App, AppContext as _, Entity, IntoElement, ParentElement as _, Styled, div, px,
+};
+
 use material3_gpui::prelude::*;
 
-use super::{page, showcase_group, specimen};
+use super::{ComponentPage, ExampleMeta, example_content, example_row};
 
 pub struct LoadingIndicatorsPage;
 
@@ -25,83 +27,118 @@ impl LoadingIndicatorsPage {
     }
 }
 
-impl Render for LoadingIndicatorsPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        page(
-            cx,
-            "Loading indicators",
-            "Expressive morphing shapes; the contained variant wraps the shape in a tonal circle.",
-            [
-                showcase_group(
+impl ComponentPage for LoadingIndicatorsPage {
+    fn description(&self) -> &'static str {
+        "Loading indicators express an unspecified wait time or display the length of \
+         a loading process."
+    }
+
+    fn examples(&self) -> &'static [ExampleMeta] {
+        &[
+            ExampleMeta {
+                name: "LoadingIndicatorSample",
+                description: "Loading indicators examples",
+            },
+            ExampleMeta {
+                name: "ContainedLoadingIndicatorSample",
+                description: "Loading indicators examples",
+            },
+            ExampleMeta {
+                name: "DeterminateLoadingIndicatorSample",
+                description: "Loading indicators examples",
+            },
+            ExampleMeta {
+                name: "DeterminateContainedLoadingIndicatorSample",
+                description: "Loading indicators examples",
+            },
+        ]
+    }
+
+    fn example(&self, index: usize, cx: &App) -> AnyElement {
+        match index {
+            0 => example_content([
+                example_row(
                     cx,
-                    "Default",
-                    [
-                        div()
-                            .size(px(112.))
-                            .flex_none()
-                            .child(
-                                LoadingIndicator::new("loading-demo-default")
-                                    .size(px(112.))
-                                    .indicator_size(px(89.)),
-                            )
-                            .into_any_element(),
-                        specimen(
-                            cx,
-                            "48 dp",
-                            LoadingIndicator::new("loading-48").size(px(48.)),
-                        ),
-                        specimen(
-                            cx,
-                            "32 dp",
-                            LoadingIndicator::new("loading-32").size(px(32.)),
-                        ),
-                    ],
-                )
-                .into_any_element(),
-                showcase_group(
+                    "112 dp",
+                    [div()
+                        .size(px(112.))
+                        .flex_none()
+                        .child(
+                            LoadingIndicator::new("loading-demo-default")
+                                .size(px(112.))
+                                .indicator_size(px(89.)),
+                        )
+                        .into_any_element()],
+                ),
+                example_row(
                     cx,
-                    "Contained",
-                    [
-                        div()
-                            .size(px(112.))
-                            .flex_none()
-                            .child(
-                                ContainedLoadingIndicator::new("loading-demo-contained")
-                                    .size(px(112.))
-                                    .indicator_size(px(89.)),
-                            )
-                            .into_any_element(),
-                        specimen(
-                            cx,
-                            "48 dp",
-                            ContainedLoadingIndicator::new("contained-48").size(px(48.)),
-                        ),
-                    ],
-                )
-                .into_any_element(),
-                showcase_group(
+                    "48 dp",
+                    [LoadingIndicator::new("loading-48")
+                        .size(px(48.))
+                        .into_any_element()],
+                ),
+                example_row(
                     cx,
-                    "Determinate",
-                    [
-                        specimen(
-                            cx,
-                            "25 %",
-                            LoadingIndicator::new("determinate-25").progress(0.25),
-                        ),
-                        specimen(
-                            cx,
-                            "60 %",
-                            LoadingIndicator::new("determinate-60").progress(0.6),
-                        ),
-                        specimen(
-                            cx,
-                            "100 %",
-                            LoadingIndicator::new("determinate-100").progress(1.0),
-                        ),
-                    ],
-                )
-                .into_any_element(),
-            ],
-        )
+                    "32 dp",
+                    [LoadingIndicator::new("loading-32")
+                        .size(px(32.))
+                        .into_any_element()],
+                ),
+            ]),
+            1 => example_content([
+                example_row(
+                    cx,
+                    "112 dp",
+                    [div()
+                        .size(px(112.))
+                        .flex_none()
+                        .child(
+                            ContainedLoadingIndicator::new("loading-demo-contained")
+                                .size(px(112.))
+                                .indicator_size(px(89.)),
+                        )
+                        .into_any_element()],
+                ),
+                example_row(
+                    cx,
+                    "48 dp",
+                    [ContainedLoadingIndicator::new("contained-48")
+                        .size(px(48.))
+                        .into_any_element()],
+                ),
+            ]),
+            2 => example_content([
+                example_row(
+                    cx,
+                    "25 %",
+                    [LoadingIndicator::new("determinate-25")
+                        .progress(0.25)
+                        .into_any_element()],
+                ),
+                example_row(
+                    cx,
+                    "60 %",
+                    [LoadingIndicator::new("determinate-60")
+                        .progress(0.6)
+                        .into_any_element()],
+                ),
+                example_row(
+                    cx,
+                    "100 %",
+                    [LoadingIndicator::new("determinate-100")
+                        .progress(1.0)
+                        .into_any_element()],
+                ),
+            ]),
+            3 => example_content([example_row(
+                cx,
+                "Contained · 60 %",
+                [LoadingIndicator::new("determinate-contained-60")
+                    .contained()
+                    .progress(0.6)
+                    .into_any_element()],
+            )]),
+            _ => example_content(Vec::<AnyElement>::new()),
+        }
     }
 }

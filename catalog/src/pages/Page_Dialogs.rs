@@ -11,14 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use gpui::{App, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px};
+use gpui::{AnyElement, App, AppContext as _, Entity, IntoElement, ParentElement, Styled, div, px};
+
 use material3_gpui::prelude::*;
 
-use super::{gallery, showcase_group};
+use super::{ComponentPage, ExampleMeta, example_content};
 
 pub struct DialogsPage {
     pub b_dialog: Entity<ButtonState>,
-    pub b_help: Entity<ButtonState>,
+    pub b_alert: Entity<ButtonState>,
+    pub b_basic: Entity<ButtonState>,
+    pub b_icon: Entity<ButtonState>,
     pub dlg_cancel: Entity<ButtonState>,
     pub dlg_ok: Entity<ButtonState>,
 
@@ -27,30 +30,37 @@ pub struct DialogsPage {
 
 impl DialogsPage {
     pub fn new(cx: &mut App) -> Entity<Self> {
-        let b_dialog = Button::new("b-dialog", "Delete recordings")
-            .filled()
-            .build(cx);
-        let b_help = Button::new("b-dialog-help", "How dialogs work")
+        let b_dialog = Button::new("b-dialog", "Show dialog").filled().build(cx);
+        let b_alert = Button::new("b-dialog-alert", "Alert dialog")
             .tonal()
-            .on_click(|_, window, cx| {
-                show_snackbar(
-                    window,
-                    cx,
-                    Snackbar::new("Dialogs mount at the window root"),
-                    None,
-                );
-            })
+            .build(cx);
+        let b_basic = Button::new("b-dialog-basic", "Basic dialog")
+            .outlined()
+            .build(cx);
+        let b_icon = Button::new("b-dialog-icon", "With icon")
+            .outlined()
             .build(cx);
         let dlg_cancel = Button::new("dlg-cancel", "Cancel").text().build(cx);
         let dlg_ok = Button::new("dlg-ok", "Delete").text().build(cx);
 
         cx.new(|_| Self {
             b_dialog,
-            b_help,
+            b_alert,
+            b_basic,
+            b_icon,
             dlg_cancel,
             dlg_ok,
             on_open_dialog: None,
         })
+    }
+
+    /// 打开窗口根对话框的三个启动按钮(AlertDialog / WithIcon / Basic 共用同一 Dialog)。
+    pub fn launchers(&self) -> Vec<Entity<ButtonState>> {
+        vec![
+            self.b_dialog.clone(),
+            self.b_alert.clone(),
+            self.b_basic.clone(),
+        ]
     }
 
     pub fn set_on_open_dialog(&mut self, handler: super::PageCallback<()>) {
@@ -58,41 +68,58 @@ impl DialogsPage {
     }
 }
 
-impl Render for DialogsPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        let theme = cx.theme();
-        let colors = *theme.colors();
-        let typography = *theme.typography();
+impl ComponentPage for DialogsPage {
+    fn description(&self) -> &'static str {
+        "Dialogs provide important prompts in a user flow. They can require an action, \
+         communicate information, or help users accomplish a task."
+    }
 
-        gallery([showcase_group(
-            cx,
-            "Dialog launchers",
-            [div()
-                .w_full()
-                .min_w_0()
-                .flex()
-                .flex_col()
-                .gap(px(12.))
-                .child(
-                    typography
+    fn examples(&self) -> &'static [ExampleMeta] {
+        &[
+            ExampleMeta {
+                name: "AlertDialogSample",
+                description: "Dialog examples",
+            },
+            ExampleMeta {
+                name: "AlertDialogWithIconSample",
+                description: "Dialog examples",
+            },
+            ExampleMeta {
+                name: "BasicAlertDialogSample",
+                description: "Dialog examples",
+            },
+        ]
+    }
+
+    fn example(&self, index: usize, cx: &App) -> AnyElement {
+        match index {
+            0 => {
+                let theme = cx.theme();
+                example_content([
+                    theme
+                        .typography()
                         .body_medium
                         .apply(div())
-                        .text_color(colors.on_surface_variant)
+                        .text_color(theme.colors().on_surface_variant)
                         .child(
                             "Destructive actions pause on a modal dialog first. Tap \
                              scrim or Cancel to dismiss, Delete to confirm.",
-                        ),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .flex_wrap()
-                        .items_center()
-                        .gap(px(8.))
-                        .child(self.b_dialog.clone())
-                        .child(self.b_help.clone()),
-                )
-                .into_any_element()],
-        )])
+                        )
+                        .into_any_element(),
+                    self.b_dialog.clone().into_any_element(),
+                ])
+            }
+            1 => example_content([self.b_icon.clone().into_any_element()]),
+            2 => example_content([div()
+                .w_full()
+                .min_w_0()
+                .flex()
+                .flex_wrap()
+                .gap(px(8.))
+                .child(self.b_alert.clone())
+                .child(self.b_basic.clone())
+                .into_any_element()]),
+            _ => example_content(Vec::<AnyElement>::new()),
+        }
     }
 }

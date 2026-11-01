@@ -10,18 +10,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// 参考 https://github.com/Glavo/m3fx/blob/main/demo/src/main/java/org/glavo/m3fx/demo/SlidersDemoPage.java
-
+// 参考 Compose Material Catalog SlidersSamples.kt 的示例分组。
 use gpui::{
-    App, AppContext as _, Entity, IntoElement, Render, Styled, Window, div, prelude::*, px,
+    AnyElement, App, AppContext as _, Entity, IntoElement, ParentElement as _, Styled, div, px,
 };
+
 use material3_gpui::prelude::*;
 
-use super::{full_width_group, page, showcase_group};
+use super::{ComponentPage, ExampleMeta, example_content, example_row};
 
 pub struct SlidersPage {
-    continuous_a: Entity<SliderState>,
-    continuous_b: Entity<SliderState>,
+    continuous: Entity<SliderState>,
     continuous_disabled: Entity<SliderState>,
     discrete_10: Entity<SliderState>,
     discrete_5: Entity<SliderState>,
@@ -30,8 +29,7 @@ pub struct SlidersPage {
     centered_positive: Entity<SliderState>,
     sizes: [Entity<SliderState>; 5],
     value_indicator: Entity<SliderState>,
-    vertical: Entity<SliderState>,
-    vertical_centered: Entity<SliderState>,
+    track_icons: Entity<SliderState>,
 }
 
 impl SlidersPage {
@@ -55,171 +53,148 @@ impl SlidersPage {
                 .inactive_track_icon(IconName::new("visibility"))
                 .build(cx),
         ];
-        cx.new(|cx| Self {
-            continuous_a: Slider::new(0., 100., 24.).build(cx),
-            continuous_b: Slider::new(0., 100., 64.).build(cx),
-            continuous_disabled: Slider::new(0., 100., 50.).disabled(true).build(cx),
-            discrete_10: Slider::new(0., 100., 30.).step(10.).build(cx),
-            discrete_5: Slider::new(0., 100., 70.).step(5.).build(cx),
-            centered_negative: Slider::new(-100., 100., -45.).centered(true).build(cx),
-            centered_zero: Slider::new(-100., 100., 0.).centered(true).build(cx),
-            centered_positive: Slider::new(-100., 100., 60.)
-                .step(20.)
-                .centered(true)
-                .build(cx),
+        let continuous = Slider::new(0., 100., 24.).build(cx);
+        let continuous_disabled = Slider::new(0., 100., 50.).disabled(true).build(cx);
+        let discrete_10 = Slider::new(0., 100., 30.).step(10.).build(cx);
+        let discrete_5 = Slider::new(0., 100., 70.).step(5.).build(cx);
+        let centered_negative = Slider::new(-100., 100., -45.).centered(true).build(cx);
+        let centered_zero = Slider::new(-100., 100., 0.).centered(true).build(cx);
+        let centered_positive = Slider::new(-100., 100., 60.)
+            .step(20.)
+            .centered(true)
+            .build(cx);
+        let value_indicator = Slider::new(0., 100., 50.)
+            .step(10.)
+            .show_value_indicator(true)
+            .build(cx);
+        let track_icons = Slider::new(0., 100., 40.)
+            .active_track_icon(IconName::new("visibility"))
+            .inactive_track_icon(IconName::new("visibility"))
+            .build(cx);
+        cx.new(|_| Self {
+            continuous,
+            continuous_disabled,
+            discrete_10,
+            discrete_5,
+            centered_negative,
+            centered_zero,
+            centered_positive,
             sizes,
-            value_indicator: Slider::new(0., 100., 50.)
-                .step(10.)
-                .show_value_indicator(true)
-                .build(cx),
-            vertical: VerticalSlider::new(0., 100., 40.).build(cx),
-            vertical_centered: VerticalSlider::new(-100., 100., -40.)
-                .centered(true)
-                .build(cx),
+            value_indicator,
+            track_icons,
         })
     }
 }
 
-fn slider_row(cx: &App, label: &'static str, slider: impl IntoElement) -> impl IntoElement {
-    let theme = cx.theme();
-    div()
-        .w_full()
-        .min_w_0()
-        .flex()
-        .items_center()
-        .gap(px(16.))
-        .child(
-            theme
-                .typography()
-                .label_large
-                .apply(div())
-                .w(px(88.))
-                .flex_none()
-                .text_color(theme.colors().on_surface_variant)
-                .child(label),
-        )
-        .child(div().flex_1().min_w_0().child(slider))
+/// 固定宽度包裹滑块,保持各行布局与旧示例一致。
+fn slider_at(slider: impl IntoElement, width: f32) -> AnyElement {
+    div().w(px(width)).child(slider).into_any_element()
 }
 
-impl Render for SlidersPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
-        let size_labels = [
-            "XS · 16 dp",
-            "S · 24 dp",
-            "M · 40 dp",
-            "L · 56 dp",
-            "XL · 96 dp",
-        ];
+impl ComponentPage for SlidersPage {
+    fn description(&self) -> &'static str {
+        "Sliders allow users to make selections from a range of values."
+    }
 
-        page(
-            cx,
-            "Sliders",
-            "Continuous, discrete, centered, range and expressive sizes.",
-            [
-                showcase_group(
-                    cx,
-                    "Continuous",
+    fn examples(&self) -> &'static [ExampleMeta] {
+        &[
+            ExampleMeta {
+                name: "SliderSample",
+                description: "Sliders examples",
+            },
+            ExampleMeta {
+                name: "StepsSliderSample",
+                description: "Sliders examples",
+            },
+            ExampleMeta {
+                name: "CenteredSliderSample",
+                description: "Sliders examples",
+            },
+            ExampleMeta {
+                name: "RangeSliderSample",
+                description: "Sliders examples",
+            },
+            ExampleMeta {
+                name: "SliderWithCustomThumbSample",
+                description: "Sliders examples",
+            },
+            ExampleMeta {
+                name: "SliderWithTrackIconsSample",
+                description: "Sliders examples",
+            },
+        ]
+    }
+
+    fn example(&self, index: usize, cx: &App) -> AnyElement {
+        match index {
+            0 => {
+                let size_labels = [
+                    "Extra small",
+                    "Small",
+                    "Medium",
+                    "Large · track icons",
+                    "Extra large",
+                ];
+                example_content(
                     [
-                        div()
-                            .w(px(260.))
-                            .max_w_full()
-                            .child(self.continuous_a.clone()),
-                        div()
-                            .w(px(260.))
-                            .max_w_full()
-                            .child(self.continuous_b.clone()),
-                        div()
-                            .w(px(260.))
-                            .max_w_full()
-                            .child(self.continuous_disabled.clone()),
-                    ],
-                )
-                .into_any_element(),
-                showcase_group(
-                    cx,
-                    "Discrete",
-                    [
-                        div()
-                            .w(px(260.))
-                            .max_w_full()
-                            .child(self.discrete_10.clone()),
-                        div()
-                            .w(px(260.))
-                            .max_w_full()
-                            .child(self.discrete_5.clone()),
-                    ],
-                )
-                .into_any_element(),
-                showcase_group(
-                    cx,
-                    "Centered",
-                    [
-                        div()
-                            .w(px(260.))
-                            .max_w_full()
-                            .child(self.centered_negative.clone()),
-                        div()
-                            .w(px(260.))
-                            .max_w_full()
-                            .child(self.centered_zero.clone()),
-                        div()
-                            .w(px(260.))
-                            .max_w_full()
-                            .child(self.centered_positive.clone()),
-                    ],
-                )
-                .into_any_element(),
-                showcase_group(
-                    cx,
-                    "Range",
-                    [
-                        div().w(px(300.)).max_w_full().child(RangeSlider::new(
-                            "range-continuous",
-                            0.20,
-                            0.78,
-                        )),
-                        div().w(px(300.)).max_w_full().child(
-                            RangeSlider::new("range-small", 0.30, 0.70).size(SliderSize::Small),
+                        example_row(cx, "Continuous", [slider_at(self.continuous.clone(), 260.)]),
+                        example_row(
+                            cx,
+                            "Disabled",
+                            [slider_at(self.continuous_disabled.clone(), 260.)],
                         ),
-                        div()
-                            .w(px(300.))
-                            .max_w_full()
-                            .child(RangeSlider::new("range-disabled", 0.35, 0.85).enabled(false)),
-                    ],
+                    ]
+                    .into_iter()
+                    .chain(self.sizes.iter().zip(size_labels).map(|(slider, label)| {
+                        example_row(cx, label, [slider_at(slider.clone(), 320.)])
+                    }))
+                    .collect::<Vec<_>>(),
                 )
-                .into_any_element(),
-                full_width_group(
+            }
+            1 => example_content([example_row(
+                cx,
+                "Discrete",
+                [
+                    slider_at(self.discrete_10.clone(), 260.),
+                    slider_at(self.discrete_5.clone(), 260.),
+                ],
+            )]),
+            2 => example_content([
+                example_row(
                     cx,
-                    "Expressive sizes",
-                    self.sizes
-                        .iter()
-                        .zip(size_labels)
-                        .map(|(slider, label)| slider_row(cx, label, slider.clone()))
-                        .collect::<Vec<_>>(),
-                )
-                .into_any_element(),
-                showcase_group(
+                    "Negative",
+                    [slider_at(self.centered_negative.clone(), 260.)],
+                ),
+                example_row(cx, "Zero", [slider_at(self.centered_zero.clone(), 260.)]),
+                example_row(
                     cx,
-                    "Value indicator",
-                    [div()
-                        .w(px(260.))
-                        .max_w_full()
-                        .child(self.value_indicator.clone())],
-                )
-                .into_any_element(),
-                showcase_group(
-                    cx,
-                    "Vertical",
-                    [
-                        div().h(px(220.)).flex_none().child(self.vertical.clone()),
-                        div()
-                            .h(px(220.))
-                            .flex_none()
-                            .child(self.vertical_centered.clone()),
-                    ],
-                )
-                .into_any_element(),
-            ],
-        )
+                    "Positive · steps",
+                    [slider_at(self.centered_positive.clone(), 260.)],
+                ),
+            ]),
+            3 => example_content([example_row(
+                cx,
+                "Range",
+                [
+                    slider_at(RangeSlider::new("range-slider-1", 0.2, 0.8), 260.),
+                    slider_at(RangeSlider::new("range-slider-2", 0.1, 0.5), 260.),
+                    slider_at(
+                        RangeSlider::new("range-slider-3", 0.3, 0.7).enabled(false),
+                        260.,
+                    ),
+                ],
+            )]),
+            4 => example_content([example_row(
+                cx,
+                "Value indicator",
+                [slider_at(self.value_indicator.clone(), 260.)],
+            )]),
+            5 => example_content([example_row(
+                cx,
+                "Track icons",
+                [slider_at(self.track_icons.clone(), 260.)],
+            )]),
+            _ => example_content(Vec::<AnyElement>::new()),
+        }
     }
 }
